@@ -18,7 +18,15 @@ class User(
     @Column(length = 1000)
     var allergies: String? = null,
 
-    var specialDiet: String? = null,
+    @Column(length = 1000)
+    var diseases: String? = null,
 
+    var specialDiet: String? = null,
     var dislikedIngredients: String? = null
-)
+){
+    fun updateProfile(nickname: String, allergies: String?, diseases: String?) {
+        this.nickname = nickname
+        this.allergies = allergies
+        this.diseases = diseases
+    }
+}
