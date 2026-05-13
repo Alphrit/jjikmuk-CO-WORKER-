@@ -29,6 +29,10 @@ class ProductInitializer(
             println("Product.csv 데이터를 DB로 마이그레이션 시작...")
 
             val resource = ClassPathResource("data/Product.csv")
+            if (!resource.exists()) {
+                println("data/Product.csv 파일이 없어 제품 초기 적재를 건너뜁니다.")
+                return@CommandLineRunner
+            }
             val batchSize = 1000
             val productList = mutableListOf<Product>()
 
