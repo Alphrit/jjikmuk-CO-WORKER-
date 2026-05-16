@@ -20,7 +20,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:usesCleartextTraffic="true"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Frontend">
+        android:name=".JjikmukApplication"
+        android:theme="@style/Theme.JJIKMUK">
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -31,7 +32,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".barcode.BarcodeScannerActivity"
+            android:name=".feature.scanner.BarcodeScannerActivity"
             android:exported="false" />
     </application>
 

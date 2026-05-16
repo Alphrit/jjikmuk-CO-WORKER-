@@ -1,7 +1,20 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Frontend" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+
+    <style name="Base.Theme.JJIKMUK" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 현재 앱 디자인은 흰 배경 기준이므로 night에서도 동일하게 유지 -->
+        <item name="colorPrimary">@color/jjikmuk_green</item>
+        <item name="colorPrimaryVariant">@color/jjikmuk_dark_green</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowBackground">@color/white</item>
+
+        <item name="android:ambientShadowAlpha">0.3</item>
+        <item name="android:spotShadowAlpha">0.5</item>
     </style>
+
+    <style name="Theme.JJIKMUK" parent="Base.Theme.JJIKMUK" />
+
 </resources>

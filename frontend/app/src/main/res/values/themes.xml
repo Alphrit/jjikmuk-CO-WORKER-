@@ -1,9 +1,22 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Frontend" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+
+    <style name="Base.Theme.JJIKMUK" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- App main colors -->
+        <item name="colorPrimary">@color/jjikmuk_green</item>
+        <item name="colorPrimaryVariant">@color/jjikmuk_dark_green</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- Window settings -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowBackground">@color/white</item>
+
+        <!-- Shadow settings used by XML elevation -->
+        <item name="android:ambientShadowAlpha">0.3</item>
+        <item name="android:spotShadowAlpha">0.5</item>
     </style>
 
-    <style name="Theme.Frontend" parent="Base.Theme.Frontend" />
+    <style name="Theme.JJIKMUK" parent="Base.Theme.JJIKMUK" />
+
 </resources>

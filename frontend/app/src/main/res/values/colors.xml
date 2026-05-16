@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- JJIKMUK main colors -->
+    <color name="jjikmuk_green">#18A83B</color>
+    <color name="jjikmuk_dark_green">#0D5A2A</color>
+    <color name="jjikmuk_light_green">#F1FBEA</color>
+    <color name="jjikmuk_nav_green">#F2FFE8</color>
+    <color name="jjikmuk_gray">#F1F1F1</color>
+    <color name="jjikmuk_text_gray">#8A8A8A</color>
+    <color name="jjikmuk_black">#222222</color>
+    <color name="jjikmuk_yellow">#FFDD4A</color>
+    <color name="jjikmuk_tag_red">#FFECEC</color>
+
+    <!-- Basic colors -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>
