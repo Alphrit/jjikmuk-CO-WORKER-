@@ -2,8 +2,8 @@ package com.coworker.jjikmuk.feature.home
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -15,16 +15,11 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.Switch
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import com.coworker.jjikmuk.R
-import com.coworker.jjikmuk.data.remote.api.ApiClient
-import com.coworker.jjikmuk.data.remote.api.ProductScanResponse
 import com.coworker.jjikmuk.feature.chat.ChatFragment
-import com.coworker.jjikmuk.feature.scanner.BarcodeScanContract
-import kotlinx.coroutines.launch
+import com.coworker.jjikmuk.feature.scanner.BarcodeScannerActivity
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
@@ -57,25 +52,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     )
 
     private lateinit var layoutSelectedProfiles: FrameLayout
-
-    private val barcodeScannerLauncher = registerForActivityResult(BarcodeScanContract()) { barcode ->
-        if (barcode == null) {
-            Log.d(TAG, "Barcode scan canceled or no barcode detected.")
-            Toast.makeText(requireContext(), "Barcode scan canceled.", Toast.LENGTH_SHORT).show()
-            return@registerForActivityResult
-        }
-
-        Log.d(TAG, "Barcode scan completed. barcode=$barcode")
-        submitBarcode(barcode)
-    }
+    private lateinit var navCamera: ImageButton
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         layoutSelectedProfiles = view.findViewById(R.id.layoutSelectedProfiles)
+        navCamera = view.findViewById(R.id.navCamera)
 
         val etHomeMessage = view.findViewById<EditText>(R.id.etHomeMessage)
-        val btnPlus = view.findViewById<ImageButton>(R.id.btnPlus)
         val btnSend = view.findViewById<ImageButton>(R.id.btnSend)
 
         updateSelectedProfileImages()
@@ -84,8 +69,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             showScanTargetPopup(layoutSelectedProfiles)
         }
 
-        btnPlus.setOnClickListener {
-            barcodeScannerLauncher.launch(Unit)
+        navCamera.setOnClickListener {
+            startActivity(Intent(requireContext(), BarcodeScannerActivity::class.java))
         }
 
         btnSend.setOnClickListener {
@@ -101,52 +86,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 .addToBackStack(null)
                 .commit()
         }
-    }
-
-    private fun submitBarcode(barcode: String) {
-        Log.d(TAG, "Submitting scanned barcode to backend. path=/api/products/$barcode")
-        Toast.makeText(requireContext(), "Scanned: $barcode", Toast.LENGTH_SHORT).show()
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.productApi.scanProduct(barcode)
-                Log.d(
-                    TAG,
-                    "Product lookup completed. code=${response.code()} success=${response.isSuccessful}"
-                )
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    Log.d(TAG, "Product lookup response. ${buildProductLog(body, barcode)}")
-                    Toast.makeText(
-                        requireContext(),
-                        body?.data?.product?.productName ?: "Product lookup completed.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    Log.d(TAG, "Product lookup failed. body=$errorBody")
-                    Toast.makeText(
-                        requireContext(),
-                        "Product lookup failed: HTTP ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (exception: Exception) {
-                Log.e(TAG, "Product lookup request failed.", exception)
-                Toast.makeText(
-                    requireContext(),
-                    exception.message ?: "Product lookup failed.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
-    private fun buildProductLog(response: ProductScanResponse?, fallbackBarcode: String): String {
-        val product = response?.data?.product
-        return "message=${response?.message}, barcode=${response?.barcode ?: fallbackBarcode}, " +
-            "productName=${product?.productName}, manufacturer=${product?.manufacturer}"
     }
 
     private fun showScanTargetPopup(anchorView: View) {
@@ -271,9 +210,5 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()
-    }
-
-    private companion object {
-        const val TAG = "BarcodeScanFlow"
     }
 }
