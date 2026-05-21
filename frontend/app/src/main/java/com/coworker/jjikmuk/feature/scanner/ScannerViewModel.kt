@@ -56,7 +56,7 @@ class ScannerViewModel @Inject constructor(
                 return@launch
             }
 
-            when (val result = productRepository.scanProduct(barcode)) {
+            when (val result = productRepository.scanProduct(barcode, scanUserId())) {
                 is ApiResult.Success -> {
                     val product = result.data.product
                     Log.d(
@@ -70,6 +70,7 @@ class ScannerViewModel @Inject constructor(
                             scanResult = ScannerResult(
                                 barcode = result.data.barcode,
                                 product = product,
+                                nutrientPercents = result.data.nutrientPercents,
                                 analysis = result.data.analysis,
                                 requiresRegistration = product == null
                             ),
@@ -80,6 +81,18 @@ class ScannerViewModel @Inject constructor(
 
                 is ApiResult.Error -> {
                     Log.d(TAG, "Product lookup error: ${result.message}", result.throwable)
+                    if (result.statusCode != HTTP_NOT_FOUND) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                scannedBarcode = barcode,
+                                scanResult = null
+                            )
+                        }
+                        _effect.emit(ScannerUiEffect.ShowToast(result.message))
+                        return@launch
+                    }
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -87,6 +100,7 @@ class ScannerViewModel @Inject constructor(
                             scanResult = ScannerResult(
                                 barcode = barcode,
                                 product = null,
+                                nutrientPercents = null,
                                 analysis = null,
                                 requiresRegistration = true
                             ),
@@ -104,6 +118,7 @@ class ScannerViewModel @Inject constructor(
             return ScannerResult(
                 barcode = barcode,
                 product = null,
+                nutrientPercents = null,
                 analysis = null,
                 requiresRegistration = true
             )
@@ -117,10 +132,20 @@ class ScannerViewModel @Inject constructor(
                 productName = "농심 새우깡",
                 manufacturer = "농심",
                 allergy = null,
+                nutrientText = null,
+                imageUrl = null,
+                source = "mock",
+                rawMaterials = null,
                 calories = 220.0,
+                carbs = null,
+                protein = null,
+                fat = 7.0,
                 sugar = 25.0,
-                sodium = 180.0
+                sodium = 180.0,
+                cholesterol = null,
+                allergyWarning = null
             ),
+            nutrientPercents = null,
             analysis = ProductAnalysis(
                 isDangerous = false,
                 dangerousIngredients = emptyList(),
@@ -130,8 +155,13 @@ class ScannerViewModel @Inject constructor(
         )
     }
 
+    private fun scanUserId(): Long? {
+        return BuildConfig.SCAN_USER_ID.toLongOrNull()
+    }
+
     private companion object {
         const val TAG = "ScannerViewModel"
+        const val HTTP_NOT_FOUND = 404
         const val MOCK_LOOKUP_DELAY_MS = 500L
         const val MOCK_UNREGISTERED_SUFFIX = "0"
     }

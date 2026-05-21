@@ -10,6 +10,9 @@ val apiBaseUrl = providers.gradleProperty("API_BASE_URL")
 val useMockScan = providers.gradleProperty("USE_MOCK_SCAN")
     .orElse("true")
     .get()
+val scanUserId = providers.gradleProperty("SCAN_USER_ID")
+    .orElse("")
+    .get()
 
 android {
     namespace = "com.coworker.jjikmuk"
@@ -30,6 +33,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("Boolean", "USE_MOCK_SCAN", useMockScan)
+        buildConfigField("String", "SCAN_USER_ID", "\"$scanUserId\"")
     }
 
     buildFeatures {

@@ -71,6 +71,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
     private lateinit var registrationMessageText: TextView
     private lateinit var resultSafetyText: TextView
     private lateinit var resultProductNameText: TextView
+    private lateinit var resultAnalysisText: TextView
     private lateinit var nutritionLayout: LinearLayout
     private lateinit var caloriesText: TextView
     private lateinit var sugarText: TextView
@@ -131,6 +132,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
         registrationMessageText = findViewById(R.id.tvRegistrationMessage)
         resultSafetyText = findViewById(R.id.tvScanResultSafety)
         resultProductNameText = findViewById(R.id.tvScanResultProductName)
+        resultAnalysisText = findViewById(R.id.tvScanResultAnalysis)
         nutritionLayout = findViewById(R.id.layoutScanNutrition)
         caloriesText = findViewById(R.id.tvScanCalories)
         sugarText = findViewById(R.id.tvScanSugar)
@@ -273,8 +275,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
     ): List<GalleryBarcodeCandidate> {
         return barcodes.mapNotNull { barcode ->
             val rawValue = barcode.rawValue
-                ?.filter { it.isDigit() }
-                ?.takeIf { it.isNotBlank() }
+                ?.toScanBarcode()
                 ?: return@mapNotNull null
             val bounds = barcode.boundingBox ?: return@mapNotNull null
             if (bounds.width() <= 0 || bounds.height() <= 0) return@mapNotNull null
@@ -388,6 +389,8 @@ class BarcodeScannerActivity : AppCompatActivity() {
                             isBarcodeLookupInFlight = false
                             lastScanResult = result
                             showResultSheet(result)
+                        } else if (!state.isLoading && result == null) {
+                            isBarcodeLookupInFlight = false
                         }
                     }
                 }
@@ -489,8 +492,8 @@ class BarcodeScannerActivity : AppCompatActivity() {
                 val barcode = barcodes
                     .asSequence()
                     .mapNotNull { it.rawValue }
-                    .map { rawValue -> rawValue.filter { it.isDigit() } }
-                    .firstOrNull { it.length == EAN_13_LENGTH }
+                    .mapNotNull { rawValue -> rawValue.toScanBarcode() }
+                    .firstOrNull()
 
                 if (barcode != null) {
                     Log.d(TAG, "Barcode detected: $barcode")
@@ -538,6 +541,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
             registrationMessageText.visibility = View.VISIBLE
             resultSafetyText.visibility = View.INVISIBLE
             resultProductNameText.visibility = View.INVISIBLE
+            resultAnalysisText.visibility = View.INVISIBLE
             nutritionLayout.visibility = View.INVISIBLE
             resultPrimaryButton.text = "제품 등록하기"
             return
@@ -547,6 +551,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
         registrationMessageText.visibility = View.GONE
         resultSafetyText.visibility = View.VISIBLE
         resultProductNameText.visibility = View.VISIBLE
+        resultAnalysisText.visibility = View.VISIBLE
         nutritionLayout.visibility = View.VISIBLE
         resultPrimaryButton.text = "MORE →"
 
@@ -556,10 +561,27 @@ class BarcodeScannerActivity : AppCompatActivity() {
             Color.parseColor(if (isDangerous) "#D96B5F" else "#16A635")
         )
         resultProductNameText.text = product.productName.orEmpty().ifBlank { "상품명 없음" }
-        caloriesText.text = formatNutrition(product.calories, "kcal")
-        sugarText.text = formatNutrition(product.sugar, "g")
-        fatText.text = "-"
-        sodiumText.text = formatNutrition(product.sodium, "mg")
+        resultAnalysisText.text = formatAnalysisMessage(result)
+        caloriesText.text = formatNutrition(
+            value = product.calories,
+            unit = "kcal",
+            percent = result.nutrientPercents?.energyPercent
+        )
+        sugarText.text = formatNutrition(
+            value = product.sugar,
+            unit = "g",
+            percent = result.nutrientPercents?.sugarPercent
+        )
+        fatText.text = formatNutrition(
+            value = product.fat,
+            unit = "g",
+            percent = result.nutrientPercents?.fatPercent
+        )
+        sodiumText.text = formatNutrition(
+            value = product.sodium,
+            unit = "mg",
+            percent = result.nutrientPercents?.sodiumPercent
+        )
     }
 
     private fun hideResultSheet(showPreviousScans: Boolean) {
@@ -625,14 +647,42 @@ class BarcodeScannerActivity : AppCompatActivity() {
         }
     }
 
-    private fun formatNutrition(value: Double?, unit: String): String {
+    private fun formatNutrition(value: Double?, unit: String, percent: Int? = null): String {
         if (value == null) return "-"
         val number = if (value % 1.0 == 0.0) {
             value.toInt().toString()
         } else {
             String.format("%.1f", value)
         }
-        return "$number$unit"
+        val amount = "$number$unit"
+        return if (percent != null) {
+            "$amount\n${percent}%"
+        } else {
+            amount
+        }
+    }
+
+    private fun formatAnalysisMessage(result: ScannerResult): String {
+        val ingredients = result.analysis?.dangerousIngredients.orEmpty()
+        if (ingredients.isNotEmpty()) {
+            return "주의 성분: ${ingredients.joinToString(", ")}"
+        }
+        return result.analysis?.message.orEmpty().ifBlank {
+            result.product?.allergy?.let { allergy ->
+                "알레르기 표시: $allergy"
+            }.orEmpty().ifBlank {
+                "알레르기 위험 성분이 확인되지 않았습니다."
+            }
+        }
+    }
+
+    private fun String.toScanBarcode(): String? {
+        val digits = filter { it.isDigit() }
+        return when (digits.length) {
+            UPC_A_LENGTH -> "0$digits"
+            EAN_13_LENGTH -> digits
+            else -> null
+        }
     }
 
     override fun onDestroy() {
@@ -643,8 +693,9 @@ class BarcodeScannerActivity : AppCompatActivity() {
     }
 
     private companion object {
+        const val UPC_A_LENGTH = 12
         const val EAN_13_LENGTH = 13
-        const val SCAN_TIMEOUT_MS = 3_000L
+        const val SCAN_TIMEOUT_MS = 10_000L
         const val SHEET_ANIMATION_MS = 260L
         const val SHEET_DISMISS_THRESHOLD = 0.18f
         const val DISABLED_BUTTON_ALPHA = 0.45f

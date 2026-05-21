@@ -4,5 +4,5 @@ import com.coworker.jjikmuk.core.common.ApiResult
 import com.coworker.jjikmuk.domain.model.ProductScanResult
 
 interface ProductRepository {
-    suspend fun scanProduct(barcode: String): ApiResult<ProductScanResult>
+    suspend fun scanProduct(barcode: String, userId: Long? = null): ApiResult<ProductScanResult>
 }

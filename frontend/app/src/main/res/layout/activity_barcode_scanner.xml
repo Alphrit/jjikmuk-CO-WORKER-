@@ -379,11 +379,25 @@
             android:textStyle="bold"
             tools:text="농심 새우깡" />
 
+        <TextView
+            android:id="@+id/tvScanResultAnalysis"
+            android:layout_width="match_parent"
+            android:layout_height="34dp"
+            android:layout_marginTop="6dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:maxLines="2"
+            android:textColor="#727681"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            tools:text="안전하게 섭취할 수 있습니다." />
+
         <LinearLayout
             android:id="@+id/layoutScanNutrition"
             android:layout_width="match_parent"
             android:layout_height="88dp"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="14dp"
             android:background="@drawable/bg_scan_result_info_card"
             android:gravity="center"
             android:orientation="horizontal"
@@ -420,6 +434,7 @@
                     android:id="@+id/tvScanCalories"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:includeFontPadding="false"
                     android:textColor="#111111"
                     android:textSize="12sp"
@@ -457,6 +472,7 @@
                     android:id="@+id/tvScanSugar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:includeFontPadding="false"
                     android:textColor="#111111"
                     android:textSize="12sp"
@@ -494,6 +510,7 @@
                     android:id="@+id/tvScanFat"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:includeFontPadding="false"
                     android:text="-"
                     android:textColor="#111111"
@@ -531,6 +548,7 @@
                     android:id="@+id/tvScanSodium"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:includeFontPadding="false"
                     android:textColor="#E07064"
                     android:textSize="12sp"
