@@ -2,6 +2,10 @@ package org.jjikmuk.backend.domain.user
 
 import jakarta.persistence.*
 
+enum class UserRole {
+    USER, ADMIN
+}
+
 @Entity
 @Table(name = "users")
 class User(
@@ -20,6 +24,12 @@ class User(
 
     @Column(length = 1000)
     var diseases: String? = null,
+
+    @Column(nullable = false)
+    var password: String,
+
+    @Enumerated(EnumType.STRING)
+    var role: UserRole = UserRole.USER,
 
     var specialDiet: String? = null,
     var dislikedIngredients: String? = null

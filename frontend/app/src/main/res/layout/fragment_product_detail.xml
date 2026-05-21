@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <ImageButton
+        android:id="@+id/btnProductDetailBack"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="40dp"
+        android:background="@android:color/transparent"
+        android:backgroundTint="@android:color/transparent"
+        android:contentDescription="뒤로가기"
+        android:elevation="12dp"
+        android:padding="0dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_back"
+        android:translationZ="12dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="TouchTargetSizeCheck" />
+
+    <ScrollView
+        android:id="@+id/scrollProductDetail"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="24dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:paddingTop="0dp"
+        android:paddingBottom="108dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/layoutProductDetailContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="20dp"
+            android:paddingBottom="28dp">
+
+            <FrameLayout
+                android:id="@+id/layoutProductImageArea"
+                android:layout_width="match_parent"
+                android:layout_height="188dp">
+
+                <ImageView
+                    android:id="@+id/ivProductDetailImage"
+                    android:layout_width="128dp"
+                    android:layout_height="188dp"
+                    android:layout_gravity="top|center_horizontal"
+                    android:contentDescription="상품 이미지"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_launcher_foreground" />
+
+                <ImageButton
+                    android:id="@+id/btnProductFavorite"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="end|bottom"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="32dp"
+                    android:adjustViewBounds="true"
+                    android:background="@android:color/transparent"
+                    android:backgroundTint="@android:color/transparent"
+                    android:contentDescription="Likes"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_heart_outline"
+                    tools:ignore="TouchTargetSizeCheck" />
+
+                <LinearLayout
+                    android:id="@+id/layoutProductImageIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="0dp"
+                    android:orientation="horizontal">
+
+                    <!-- TODO: 빌드 확인용 임시 대체 리소스입니다. 추후 @drawable/bg_product_detail_dot_active를 만들어서 교체하세요. -->
+                    <View
+                        android:id="@+id/indicatorDot1"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/bg_camera_circle" />
+
+                    <!-- TODO: 빌드 확인용 임시 대체 리소스입니다. 추후 @drawable/bg_product_detail_dot_inactive를 만들어서 교체하세요. -->
+                    <View
+                        android:id="@+id/indicatorDot2"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_profile_circle" />
+
+                    <!-- TODO: 빌드 확인용 임시 대체 리소스입니다. 추후 @drawable/bg_product_detail_dot_inactive를 만들어서 교체하세요. -->
+                    <View
+                        android:id="@+id/indicatorDot3"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_profile_circle" />
+
+                </LinearLayout>
+            </FrameLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="#E5E5E5" />
+
+            <LinearLayout
+                android:id="@+id/layoutProductTitleSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvProductDetailCategory"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#9A9A9A"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:text="해태제과" />
+
+                    <TextView
+                        android:id="@+id/tvProductDetailName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="#111111"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        tools:text="해태 포키 블루베리" />
+                </LinearLayout>
+
+                <!-- TODO: 빌드 확인용 임시 대체 리소스입니다. 추후 @drawable/bg_product_detail_safe_circle를 만들어서 교체하세요. -->
+                <FrameLayout
+                    android:id="@+id/layoutSafetyIconBox"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/bg_camera_circle">
+
+                    <TextView
+                        android:id="@+id/tvSafetyIcon"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="☺"
+                        android:textColor="#009B7A"
+                        android:textSize="34sp" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutSafetyWarning"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_marginTop="28dp"
+                android:background="@drawable/bg_product_detail_warning_box"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="16dp"
+                tools:visibility="visible">
+
+                <TextView
+                    android:id="@+id/tvSafetyTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚠ 사용자 맞춤 위험 성분 감지"
+                    android:textColor="#9F3F3D"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSafetyDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="이 제품은 사용자에게 제외될 수 있는 땅콩, 우유 성분을 포함하고 있습니다. 섭취에 각별히 주의하세요."
+                    android:textColor="#9F3F3D"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvAllergyTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="주의 성분(알레르기)"
+                android:textColor="#111111"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/layoutAllergyTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvDetailAllergyTag1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_recommend_tag"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#E84242"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="🥜 땅콩" />
+
+                <TextView
+                    android:id="@+id/tvDetailAllergyTag2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="28dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_recommend_tag"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#E84242"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="🥛 우유" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvNutritionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="영양 밸런스"
+                android:textColor="#111111"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <!-- TODO: 빌드 확인용 임시 배경색입니다. 추후 @drawable/bg_product_detail_nutrition_box를 만들어서 교체하세요. -->
+            <LinearLayout
+                android:id="@+id/layoutNutritionBalance"
+                android:layout_width="match_parent"
+                android:layout_height="116dp"
+                android:layout_marginTop="12dp"
+                android:background="#FAFAFA"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp">
+
+                <FrameLayout
+                    android:id="@+id/layoutNutritionChart"
+                    android:layout_width="82dp"
+                    android:layout_height="82dp">
+
+                    <!-- TODO: 빌드 확인용 임시 색상 박스입니다. 추후 @drawable/bg_product_detail_chart_ring을 만들어서 교체하세요. -->
+                    <View
+                        android:layout_width="82dp"
+                        android:layout_height="82dp"
+                        android:background="#5A78FF" />
+
+                    <View
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center"
+                        android:background="#FFFFFF" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="22dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="#5A78FF" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="탄수화물"
+                            android:textColor="#111111"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvCarbohydratePercent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="55%"
+                            android:textColor="#111111"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="#E25143" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="단백질"
+                            android:textColor="#111111"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvProteinPercent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="15%"
+                            android:textColor="#111111"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="#E4B328" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="지방"
+                            android:textColor="#111111"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvFatPercent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="30%"
+                            android:textColor="#111111"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutNutritionValues"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvTotalCaloriesLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="총 칼로리"
+                        android:textColor="#111111"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvTotalCalories"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical|end"
+                        android:text="229.8 kcal"
+                        android:textColor="#111111"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvProteinLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="단백질"
+                        android:textColor="#111111"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvProtein"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical|end"
+                        android:text="12.7 g"
+                        android:textColor="#111111"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvFatLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="지방"
+                        android:textColor="#111111"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvFat"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical|end"
+                        android:text="6.3 g"
+                        android:textColor="#111111"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvCarbohydrateLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="탄수화물"
+                        android:textColor="#111111"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvCarbohydrate"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical|end"
+                        android:text="26.7 g"
+                        android:textColor="#111111"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- TODO: 빌드 확인용 임시 배경색입니다. 추후 @drawable/bg_product_detail_ingredient_box를 만들어서 교체하세요. -->
+            <TextView
+                android:id="@+id/tvIngredientDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:background="#FAFAFA"
+                android:paddingStart="16dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="14dp"
+                android:text="소맥분(미국산), 혼합식용유[팜올레유(말레이시아), 해바라기유(외국산), 새우(국산, 미국산), 전분, 조미료, 미강유, 황미증진제, 땅콩, 우유 함유"
+                android:textColor="#555555"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <include
+        android:id="@+id/layoutBottomNav"
+        layout="@layout/layout_bottom_nav"
+        android:layout_width="0dp"
+        android:layout_height="92dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

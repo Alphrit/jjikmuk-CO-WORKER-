@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog">
+
+    <LinearLayout
+        android:id="@+id/layoutScanTargetHeader"
+        android:layout_width="0dp"
+        android:layout_height="64dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="24dp"
+        android:paddingEnd="20dp"
+        android:background="#F9FAFB"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/tvScanTargetIcon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="10dp"
+            android:src="@drawable/ic_scan_setting" />
+
+        <TextView
+            android:id="@+id/tvScanTargetTitle"
+            android:layout_width="0dp"
+            android:layout_height="22dp"
+            android:layout_weight="1"
+            android:text="스캔 대상 설정"
+            android:textColor="#1E2939"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnCloseScanTarget"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="닫기"
+            android:src="@drawable/ic_scan_close"
+            tools:ignore="TouchTargetSizeCheck" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/viewScanTargetDividerTop"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#F1F2F4"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutScanTargetHeader" />
+
+    <LinearLayout
+        android:id="@+id/layoutScanProfileList"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:orientation="vertical"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/viewScanTargetDividerTop" />
+
+    <View
+        android:id="@+id/viewScanTargetDividerBottom"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#F1F2F4"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutScanProfileList" />
+
+    <TextView
+        android:id="@+id/tvScanTargetDescription"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:background="#F9FAFB"
+        android:gravity="center"
+        android:text="활성화된 가족의 알레르기만 검사합니다."
+        android:textColor="#6A7282"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/viewScanTargetDividerBottom" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

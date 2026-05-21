@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.ClassPathResource
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.nio.charset.Charset
 
 @Configuration
 class ProductInitializer(
@@ -28,9 +27,15 @@ class ProductInitializer(
 
             println("Product.csv 데이터를 DB로 마이그레이션 시작...")
 
+            // ⚠️ 읽어올 파일명이 'Product.csv'인지, 'final_product_db.csv'인지 맞게 수정해주세요!
             val resource = ClassPathResource("data/Product.csv")
+            if (!resource.exists()) {
+                println("data/Product.csv 파일이 없어 제품 초기 적재를 건너뜁니다.")
+                return@CommandLineRunner
+            }
             val batchSize = 1000
             val productList = mutableListOf<Product>()
+            val existingBarcodes = mutableSetOf<String>() // 💡 중복 바코드 방어용 Set
 
             var count = 0
 
@@ -39,69 +44,66 @@ class ProductInitializer(
                 val headerRegex = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()
                 val headers = line!!.split(headerRegex).map { it.removeSurrounding("\"").trim() }
 
-                // [기본 정보 인덱스]
-                val reportNoIdx = headers.indexOf("품목제조보고번호")
+                // 🚀 [새롭게 바뀐 17개 영문 헤더 인덱스 매핑]
                 val barcodeIdx = headers.indexOf("barcode")
-                val foodCodeIdx = headers.indexOf("식품코드")
-                val productNameIdx = headers.indexOf("식품명")
-                val manufacturerIdx = headers.indexOf("제조사명")
-                val prdlstDcnmIdx = headers.indexOf("PRDLST_DCNM")
-                val imageIdx = headers.indexOf("image_url")
+                val productNameIdx = headers.indexOf("product_name")
+                val manufacturerIdx = headers.indexOf("manufacturer")
+                val reportNoIdx = headers.indexOf("report_no")
                 val allergyIdx = headers.indexOf("allergy")
-                val rawmtrlNmIdx = headers.indexOf("RAWMTRL_NM")
-
-                // [영양 성분 인덱스]
-                val servingSizeIdx = headers.indexOf("영양성분함량기준량")
-                val caloriesIdx = headers.indexOf("에너지(kcal)")
-                val carbsIdx = headers.indexOf("탄수화물(g)")
-                val proteinIdx = headers.indexOf("단백질(g)")
-                val fatIdx = headers.indexOf("지방(g)")
-                val sugarIdx = headers.indexOf("당류(g)")
-                val sodiumIdx = headers.indexOf("나트륨(mg)")
-                val cholesterolIdx = headers.indexOf("콜레스테롤(mg)")
-                val saturatedFatIdx = headers.indexOf("포화지방산(g)")
-                val transFatIdx = headers.indexOf("트랜스지방산(g)")
+                val nutrientTextIdx = headers.indexOf("nutrient_text")
+                val imageIdx = headers.indexOf("image_url")
+                val sourceIdx = headers.indexOf("source")
+                val rawMaterialsIdx = headers.indexOf("raw_materials")
+                val energyKcalIdx = headers.indexOf("energy_kcal")
+                val carbsGIdx = headers.indexOf("carbs_g")
+                val proteinGIdx = headers.indexOf("protein_g")
+                val fatGIdx = headers.indexOf("fat_g")
+                val sugarGIdx = headers.indexOf("sugar_g")
+                val sodiumMgIdx = headers.indexOf("sodium_mg")
+                val cholesterolMgIdx = headers.indexOf("cholesterol_mg")
+                val allergyWarningIdx = headers.indexOf("allergy_warning")
 
                 println("헤더 파싱 완료! 바코드 열의 위치는: $barcodeIdx 번 칸입니다.")
 
-                var count = 0
                 while (reader.readLine().also { line = it } != null) {
                     try {
-                        val regex = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()
-                        val data = line!!.split(regex).map { it.removeSurrounding("\"").trim() }
+                        val data = line!!.split(headerRegex).map { it.removeSurrounding("\"").trim() }
 
                         if (data.size < headers.size - 2) continue
 
                         count++
 
                         fun getString(idx: Int): String? =
-                            if (idx != -1) data.getOrNull(idx)?.takeIf { it.isNotBlank() } else null
+                            if (idx in data.indices) data[idx].takeIf { it.isNotBlank() } else null
 
                         fun getDouble(idx: Int): Double? =
                             getString(idx)?.toDoubleOrNull()
 
-                        val product = Product(
-                            reportNo = getString(reportNoIdx) ?: "UNKNOWN_${count}",
+                        // 💡 PK(바코드)가 null일 경우 임시 키 발급
+                        val barcodeStr = getString(barcodeIdx) ?: "UNKNOWN_$count"
 
-                            barcode = getString(barcodeIdx),
-                            foodCode = getString(foodCodeIdx),
+                        // 💡 바코드 중복(PK 충돌) 시 에러 방지 후 스킵
+                        if (existingBarcodes.contains(barcodeStr)) continue
+                        existingBarcodes.add(barcodeStr)
+
+                        val product = Product(
+                            barcode = barcodeStr,
                             productName = getString(productNameIdx),
                             manufacturer = getString(manufacturerIdx),
-                            prdlstDcnm = getString(prdlstDcnmIdx),
-                            imageUrl = getString(imageIdx),
+                            reportNo = getString(reportNoIdx),
                             allergy = getString(allergyIdx),
-                            rawmtrlNm = getString(rawmtrlNmIdx),
-
-                            servingSize = getString(servingSizeIdx),
-                            calories = getDouble(caloriesIdx),
-                            carbs = getDouble(carbsIdx),
-                            protein = getDouble(proteinIdx),
-                            fat = getDouble(fatIdx),
-                            sugar = getDouble(sugarIdx),
-                            sodium = getDouble(sodiumIdx),
-                            cholesterol = getDouble(cholesterolIdx),
-                            saturatedFat = getDouble(saturatedFatIdx),
-                            transFat = getDouble(transFatIdx)
+                            nutrientText = getString(nutrientTextIdx),
+                            imageUrl = getString(imageIdx),
+                            source = getString(sourceIdx),
+                            rawMaterials = getString(rawMaterialsIdx),
+                            energyKcal = getDouble(energyKcalIdx),
+                            carbsG = getDouble(carbsGIdx),
+                            proteinG = getDouble(proteinGIdx),
+                            fatG = getDouble(fatGIdx),
+                            sugarG = getDouble(sugarGIdx),
+                            sodiumMg = getDouble(sodiumMgIdx),
+                            cholesterolMg = getDouble(cholesterolMgIdx),
+                            allergyWarning = getString(allergyWarningIdx)
                         )
 
                         productList.add(product)
@@ -110,8 +112,8 @@ class ProductInitializer(
                             productRepository.saveAll(productList)
                             productList.clear()
 
-                            val percent = (count / 240000.0) * 100
-                            print("\rDB 적재 중: ${String.format("%.1f", percent)}% ($count / 240000)")
+                            val percent = (count / 233799.0) * 100 // 23만건 기준
+                            print("\rDB 적재 중: ${String.format("%.1f", percent)}% ($count / 233799)")
                         }
 
                     } catch (e: Exception) {
@@ -124,10 +126,11 @@ class ProductInitializer(
                     productRepository.saveAll(productList)
                 }
 
-                println("\n총 $count 개의 제품 데이터가 DB에 성공적으로 저장되었습니다!")
+                println("\n총 ${existingBarcodes.size} 개의 제품 데이터가 DB에 성공적으로 저장되었습니다!")
             }
+
             val versionKey = "PRODUCT_DB_VERSION"
-            val newVersionName = "V1.0"
+            val newVersionName = "V2.0" // DB 스키마가 바뀌었으니 V2로 승격!
             val config = systemConfigRepository.findById(versionKey)
                 .orElse(SystemConfig(configKey = versionKey, configValue = newVersionName))
 

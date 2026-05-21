@@ -9,33 +9,54 @@ import jakarta.persistence.Table
 @Table(name = "products")
 class Product(
     @Id
-    val reportNo: String,
+    @Column(name = "barcode", nullable = false)
+    val barcode: String, // 🚀 PK가 바코드로 변경됨!
 
-    val barcode: String?,
-    val foodCode: String?,
-
-    @Column(length = 1000)
+    @Column(name = "product_name", length = 1000)
     val productName: String?,
 
+    @Column(name = "manufacturer")
     val manufacturer: String?,
-    val prdlstDcnm: String?,
 
-    @Column(length = 2000)
-    val imageUrl: String?,
+    @Column(name = "report_no")
+    val reportNo: String?, // 이제 PK가 아닌 일반 컬럼
 
-    @Column(length = 1000)
+    @Column(name = "allergy", length = 1000)
     val allergy: String?,
 
-    @Column(columnDefinition = "TEXT")
-    val rawmtrlNm: String?,
-    val servingSize: String?,
-    val calories: Double?,
-    val carbs: Double?,
-    val protein: Double?,
-    val fat: Double?,
-    val sugar: Double?,
-    val sodium: Double?,
-    val cholesterol: Double?,
-    val saturatedFat: Double?,
-    val transFat: Double?
+    @Column(name = "nutrient_text", columnDefinition = "TEXT")
+    val nutrientText: String?, // 영양성분 원본 텍스트
+
+    @Column(name = "image_url", length = 2000)
+    val imageUrl: String?,
+
+    @Column(name = "source")
+    val source: String?, // 출처 (추가됨)
+
+    @Column(name = "raw_materials", columnDefinition = "TEXT")
+    val rawMaterials: String?,
+
+    @Column(name = "energy_kcal")
+    val energyKcal: Double?,
+
+    @Column(name = "carbs_g")
+    val carbsG: Double?,
+
+    @Column(name = "protein_g")
+    val proteinG: Double?,
+
+    @Column(name = "fat_g")
+    val fatG: Double?,
+
+    @Column(name = "sugar_g")
+    val sugarG: Double?,
+
+    @Column(name = "sodium_mg")
+    val sodiumMg: Double?,
+
+    @Column(name = "cholesterol_mg")
+    val cholesterolMg: Double?,
+
+    @Column(name = "allergy_warning", length = 1000)
+    val allergyWarning: String? // 기원 불명 경고 성분
 )
