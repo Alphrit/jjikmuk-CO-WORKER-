@@ -1,0 +1,1 @@
+"""Food chatbot application package."""
