@@ -1,14 +1,21 @@
 package com.coworker.jjikmuk.domain.model
 
+data class Product(
+    val id: String,
+    val category: String,
+    val name: String,
+    val allergyTags: List<String> = emptyList()
+)
+
 data class ProductScanResult(
     val message: String?,
     val barcode: String,
-    val product: Product?,
+    val product: ScannedProduct?,
     val nutrientPercents: NutrientPercents?,
     val analysis: ProductAnalysis?
 )
 
-data class Product(
+data class ScannedProduct(
     val reportNo: String?,
     val barcode: String?,
     val productName: String?,

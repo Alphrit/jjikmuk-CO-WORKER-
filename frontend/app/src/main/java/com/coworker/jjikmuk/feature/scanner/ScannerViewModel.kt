@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.coworker.jjikmuk.BuildConfig
 import com.coworker.jjikmuk.core.common.ApiResult
-import com.coworker.jjikmuk.domain.model.Product
 import com.coworker.jjikmuk.domain.model.ProductAnalysis
+import com.coworker.jjikmuk.domain.model.ScannedProduct
 import com.coworker.jjikmuk.domain.repository.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -126,7 +126,7 @@ class ScannerViewModel @Inject constructor(
 
         return ScannerResult(
             barcode = barcode,
-            product = Product(
+            product = ScannedProduct(
                 reportNo = "mock-report",
                 barcode = barcode,
                 productName = "농심 새우깡",

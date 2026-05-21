@@ -13,7 +13,7 @@
         android:id="@+id/btnProductDetailBack"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:layout_marginStart="20dp"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="40dp"
         android:background="@android:color/transparent"
         android:backgroundTint="@android:color/transparent"
@@ -31,7 +31,7 @@
         android:id="@+id/scrollProductDetail"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginHorizontal="20dp"
+        android:layout_marginHorizontal="24dp"
         android:clipToPadding="false"
         android:fillViewport="true"
         android:overScrollMode="never"
@@ -87,25 +87,29 @@
                     android:layout_marginBottom="0dp"
                     android:orientation="horizontal">
 
+                    <!-- TODO: 빌드 확인용 임시 대체 리소스입니다. 추후 @drawable/bg_product_detail_dot_active를 만들어서 교체하세요. -->
                     <View
                         android:id="@+id/indicatorDot1"
                         android:layout_width="8dp"
                         android:layout_height="8dp"
-                        android:background="@drawable/bg_product_detail_dot_active" />
+                        android:background="@drawable/bg_camera_circle" />
 
+                    <!-- TODO: 빌드 확인용 임시 대체 리소스입니다. 추후 @drawable/bg_product_detail_dot_inactive를 만들어서 교체하세요. -->
                     <View
                         android:id="@+id/indicatorDot2"
                         android:layout_width="8dp"
                         android:layout_height="8dp"
                         android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_product_detail_dot_inactive" />
+                        android:background="@drawable/bg_profile_circle" />
 
+                    <!-- TODO: 빌드 확인용 임시 대체 리소스입니다. 추후 @drawable/bg_product_detail_dot_inactive를 만들어서 교체하세요. -->
                     <View
                         android:id="@+id/indicatorDot3"
                         android:layout_width="8dp"
                         android:layout_height="8dp"
                         android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_product_detail_dot_inactive" />
+                        android:background="@drawable/bg_profile_circle" />
+
                 </LinearLayout>
             </FrameLayout>
 
@@ -151,11 +155,12 @@
                         tools:text="해태 포키 블루베리" />
                 </LinearLayout>
 
+                <!-- TODO: 빌드 확인용 임시 대체 리소스입니다. 추후 @drawable/bg_product_detail_safe_circle를 만들어서 교체하세요. -->
                 <FrameLayout
                     android:id="@+id/layoutSafetyIconBox"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
-                    android:background="@drawable/bg_product_detail_safe_circle">
+                    android:background="@drawable/bg_camera_circle">
 
                     <TextView
                         android:id="@+id/tvSafetyIcon"
@@ -254,12 +259,13 @@
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
+            <!-- TODO: 빌드 확인용 임시 배경색입니다. 추후 @drawable/bg_product_detail_nutrition_box를 만들어서 교체하세요. -->
             <LinearLayout
                 android:id="@+id/layoutNutritionBalance"
                 android:layout_width="match_parent"
                 android:layout_height="116dp"
                 android:layout_marginTop="12dp"
-                android:background="@drawable/bg_product_detail_nutrition_box"
+                android:background="#FAFAFA"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="18dp"
@@ -270,10 +276,11 @@
                     android:layout_width="82dp"
                     android:layout_height="82dp">
 
+                    <!-- TODO: 빌드 확인용 임시 색상 박스입니다. 추후 @drawable/bg_product_detail_chart_ring을 만들어서 교체하세요. -->
                     <View
                         android:layout_width="82dp"
                         android:layout_height="82dp"
-                        android:background="@drawable/bg_product_detail_chart_ring" />
+                        android:background="#5A78FF" />
 
                     <View
                         android:layout_width="48dp"
@@ -499,12 +506,13 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- TODO: 빌드 확인용 임시 배경색입니다. 추후 @drawable/bg_product_detail_ingredient_box를 만들어서 교체하세요. -->
             <TextView
                 android:id="@+id/tvIngredientDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
-                android:background="@drawable/bg_product_detail_ingredient_box"
+                android:background="#FAFAFA"
                 android:paddingStart="16dp"
                 android:paddingTop="14dp"
                 android:paddingEnd="16dp"

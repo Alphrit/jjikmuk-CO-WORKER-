@@ -1,8 +1,8 @@
 package com.coworker.jjikmuk.feature.scanner
 
 import com.coworker.jjikmuk.domain.model.NutrientPercents
-import com.coworker.jjikmuk.domain.model.Product
 import com.coworker.jjikmuk.domain.model.ProductAnalysis
+import com.coworker.jjikmuk.domain.model.ScannedProduct
 
 data class ScannerUiState(
     val isLoading: Boolean = false,
@@ -13,7 +13,7 @@ data class ScannerUiState(
 
 data class ScannerResult(
     val barcode: String,
-    val product: Product?,
+    val product: ScannedProduct?,
     val nutrientPercents: NutrientPercents?,
     val analysis: ProductAnalysis?,
     val requiresRegistration: Boolean

@@ -1,19 +1,34 @@
 [versions]
 # Android Studio / Gradle 공통 설정
 # Mac과 Windows에서 같은 Gradle Wrapper를 사용하면 동일하게 동작합니다.
-agp = "9.1.0"
-hilt = "2.59.2"
-ksp = "2.3.4"
+# Hilt Gradle Plugin이 AGP 9.1.0에서 Android BaseExtension을 찾지 못해 실패했기 때문에
+# Hilt 적용을 위해 AGP 8.x 안정 조합으로 낮춥니다.
+agp = "8.9.1"
+
+# AGP 8.x에서는 Kotlin Android 플러그인을 별도로 적용해야 Kotlin 파일을 컴파일할 수 있습니다.
+# AGP 9.x에서는 Kotlin 지원이 내장되어 있었지만, AGP 8.x로 내리면 이 플러그인이 필요합니다.
+kotlin = "2.1.20"
 
 # AndroidX / Material
 coreKtx = "1.10.1"
 appcompat = "1.6.1"
 activityKtx = "1.8.0"
+fragmentKtx = "1.8.5"
 constraintlayout = "2.2.0"
 recyclerview = "1.3.2"
 material = "1.12.0"
-lifecycleViewmodelKtx = "2.8.7"
-fragmentKtx = "1.8.5"
+
+# Lifecycle / ViewModel
+lifecycle = "2.8.7"
+
+# DataStore
+datastorePreferences = "1.1.1"
+
+# Hilt / KSP
+# AGP 8.x + Hilt 조합에서는 KSP를 사용해 Hilt compiler를 실행합니다.
+# kapt 대신 KSP를 사용하되, Kotlin Android 플러그인은 위에서 별도로 적용합니다.
+hilt = "2.52"
+ksp = "2.1.20-2.0.1"
 
 # Test
 junit = "4.13.2"
@@ -24,19 +39,44 @@ espressoCore = "3.5.1"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
-androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
+
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+
+# Hilt 런타임 라이브러리입니다.
+# @AndroidEntryPoint, @HiltViewModel, @Inject 같은 Hilt API를 사용할 때 필요합니다.
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+
+# Hilt 어노테이션 처리기입니다.
+# @Inject, @HiltViewModel, @Module 등을 분석해서 필요한 DI 코드를 빌드 시점에 생성합니다.
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
 [plugins]
+# Android Application 플러그인입니다.
+# 앱 모듈을 Android 애플리케이션으로 빌드하기 위해 사용합니다.
 android-application = { id = "com.android.application", version.ref = "agp" }
+
+# Kotlin Android 플러그인입니다.
+# AGP 8.x 환경에서 Kotlin 기반 Activity, Fragment, ViewModel 파일을 컴파일하기 위해 필요합니다.
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
+# Hilt Gradle Plugin입니다.
+# Hilt의 Android 코드 생성과 컴포넌트 연결을 활성화합니다.
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
+# KSP 플러그인입니다.
+# Hilt compiler를 KSP 방식으로 실행하기 위해 사용합니다.
+# ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
+# KAPT 플러그인입니다.
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
