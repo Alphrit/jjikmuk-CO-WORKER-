@@ -7,7 +7,7 @@ import com.coworker.jjikmuk.BuildConfig
 import com.coworker.jjikmuk.core.common.ApiResult
 import com.coworker.jjikmuk.domain.model.ProductAnalysis
 import com.coworker.jjikmuk.domain.model.ScannedProduct
-import com.coworker.jjikmuk.domain.repository.ProductRepository
+import com.coworker.jjikmuk.domain.repository.ProductScanRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class ScannerViewModel @Inject constructor(
-    private val productRepository: ProductRepository
+    private val productScanRepository: ProductScanRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScannerUiState())
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
@@ -56,7 +56,7 @@ class ScannerViewModel @Inject constructor(
                 return@launch
             }
 
-            when (val result = productRepository.scanProduct(barcode, scanUserId())) {
+            when (val result = productScanRepository.scanProduct(barcode, scanUserId())) {
                 is ApiResult.Success -> {
                     val product = result.data.product
                     Log.d(
