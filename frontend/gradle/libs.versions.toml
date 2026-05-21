@@ -78,6 +78,5 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 # Hilt compiler를 KSP 방식으로 실행하기 위해 사용합니다.
 # ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
-
 # KAPT 플러그인입니다.
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }

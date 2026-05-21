@@ -8,6 +8,8 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.coworker.jjikmuk.feature.home.HomeFragment
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -19,11 +21,26 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
         showSystemBarsConsistently()
+        applySystemBarInsets()
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.mainContainer, HomeFragment())
                 .commit()
+        }
+    }
+
+    private fun applySystemBarInsets() {
+        val mainContainer = findViewById<View>(R.id.mainContainer)
+        ViewCompat.setOnApplyWindowInsetsListener(mainContainer) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                systemBars.bottom
+            )
+            insets
         }
     }
 

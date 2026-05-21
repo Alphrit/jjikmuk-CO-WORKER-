@@ -67,7 +67,12 @@ class ProductController(
         val responseData = productService.searchProductsAnalysis(keyword, targetUserId)
 
         if (responseData.isEmpty()) {
-            return ResponseEntity.ok(mapOf("message" to "'$keyword'에 해당하는 제품을 찾을 수 없습니다.", "data" to emptyList<Any>()))
+            return ResponseEntity.ok(
+                mapOf(
+                    "message" to "'$keyword'에 해당하는 제품을 찾을 수 없습니다.",
+                    "data" to emptyList<Any>()
+                )
+            )
         }
 
         return ResponseEntity.ok(mapOf("message" to "검색 성공", "data" to responseData))

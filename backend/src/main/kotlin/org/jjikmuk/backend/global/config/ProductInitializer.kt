@@ -29,6 +29,10 @@ class ProductInitializer(
 
             // ⚠️ 읽어올 파일명이 'Product.csv'인지, 'final_product_db.csv'인지 맞게 수정해주세요!
             val resource = ClassPathResource("data/Product.csv")
+            if (!resource.exists()) {
+                println("data/Product.csv 파일이 없어 제품 초기 적재를 건너뜁니다.")
+                return@CommandLineRunner
+            }
             val batchSize = 1000
             val productList = mutableListOf<Product>()
             val existingBarcodes = mutableSetOf<String>() // 💡 중복 바코드 방어용 Set

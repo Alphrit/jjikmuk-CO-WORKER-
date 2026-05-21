@@ -1,10 +1,12 @@
 package com.coworker.jjikmuk.di
 
 import com.coworker.jjikmuk.data.repository.ChatRepositoryImpl
+import com.coworker.jjikmuk.data.repository.FakeUserProfileRepository
 import com.coworker.jjikmuk.data.repository.ProductRepositoryImpl
+import com.coworker.jjikmuk.data.repository.ProductScanRepositoryImpl
 import com.coworker.jjikmuk.domain.repository.ChatRepository
 import com.coworker.jjikmuk.domain.repository.ProductRepository
-import com.coworker.jjikmuk.data.repository.FakeUserProfileRepository
+import com.coworker.jjikmuk.domain.repository.ProductScanRepository
 import com.coworker.jjikmuk.domain.repository.UserProfileRepository
 import dagger.Binds
 import dagger.Module
@@ -21,6 +23,12 @@ abstract class RepositoryModule {
     abstract fun bindProductRepository(
         impl: ProductRepositoryImpl
     ): ProductRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindProductScanRepository(
+        impl: ProductScanRepositoryImpl
+    ): ProductScanRepository
 
     @Binds
     @Singleton

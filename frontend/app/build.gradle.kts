@@ -5,6 +5,16 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+val apiBaseUrl = providers.gradleProperty("API_BASE_URL")
+    .orElse("http://10.0.2.2:8080/")
+    .get()
+val useMockScan = providers.gradleProperty("USE_MOCK_SCAN")
+    .orElse("false")
+    .get()
+val scanUserId = providers.gradleProperty("SCAN_USER_ID")
+    .orElse("")
+    .get()
+
 android {
     namespace = "com.coworker.jjikmuk"
     compileSdk = 36
@@ -17,9 +27,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("Boolean", "USE_MOCK_SCAN", useMockScan)
+        buildConfigField("String", "SCAN_USER_ID", "\"$scanUserId\"")
     }
 
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
 
@@ -37,9 +51,7 @@ android {
         }
     }
 
-
     compileOptions {
-        // Mac / Windows 양쪽에서 같은 기준으로 빌드되도록 Java 11 고정
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -54,14 +66,21 @@ kapt {
 }
 
 kotlin {
-    // Java 컴파일 기준이 VERSION_11이므로 Kotlin JVM target도 11로 맞춥니다.
-    // AGP 8.x + Kotlin Android 플러그인 조합에서 Kotlin이 JDK 21 기준으로 잡히면
-    // Java target 11 / Kotlin target 21 불일치 오류가 발생할 수 있습니다.
     jvmToolchain(11)
 }
 
 dependencies {
-    // Android 기본
+    val cameraxVersion = "1.3.0"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.fragment.ktx)
@@ -69,20 +88,14 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.material)
 
-    // Lifecycle / ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // DataStore
     implementation(libs.androidx.datastore.preferences)
 
-    // Hilt 런타임 라이브러리입니다.
-    // @Inject, @AndroidEntryPoint, @HiltViewModel 같은 Hilt API를 사용할 때 필요합니다.
     implementation(libs.hilt.android)
-
     kapt(libs.hilt.compiler)
 
-    // Test
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

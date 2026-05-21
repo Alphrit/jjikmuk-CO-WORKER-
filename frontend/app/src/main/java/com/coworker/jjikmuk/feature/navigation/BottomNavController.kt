@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentManager
 import com.coworker.jjikmuk.R
 import com.coworker.jjikmuk.feature.history.HistoryFragment
 import com.coworker.jjikmuk.feature.home.HomeFragment
+import com.coworker.jjikmuk.feature.scanner.BarcodeScannerActivity
 
 object BottomNavController {
 
@@ -27,7 +28,9 @@ object BottomNavController {
         }
 
         rootView.findViewById<View?>(R.id.navCamera)?.setOnClickListener {
-            showComingSoon(context)
+            context.startActivity(
+                android.content.Intent(context, BarcodeScannerActivity::class.java)
+            )
         }
 
         rootView.findViewById<View?>(R.id.navHistory)?.setOnClickListener {

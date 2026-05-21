@@ -25,8 +25,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.coworker.jjikmuk.R
 import com.coworker.jjikmuk.feature.chat.ChatFragment
 import com.coworker.jjikmuk.feature.navigation.BottomNavController
-import kotlinx.coroutines.launch
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class HomeFragment : Fragment(R.layout.fragment_home) {
@@ -41,7 +41,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onViewCreated(view, savedInstanceState)
 
         layoutSelectedProfiles = view.findViewById(R.id.layoutSelectedProfiles)
-
         etHomeMessage = view.findViewById(R.id.etHomeMessage)
         val btnSend = view.findViewById<ImageButton>(R.id.btnSend)
 
@@ -173,12 +172,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val myProfile = displayProfiles.firstOrNull { profile -> profile.id == "me" }
         val otherProfiles = displayProfiles.filterNot { profile -> profile.id == "me" }
 
-        // FrameLayout은 나중에 addView 된 View가 더 위에 그려집니다.
-        // 따라서 다른 가족 프로필을 먼저 그리고, 마지막에 '나' 프로필을 추가해서
-        // 코워커가 항상 가장 위층에 보이도록 합니다.
-        //
-        // rightMargin이 작을수록 오른쪽에 붙고, 클수록 왼쪽으로 밀립니다.
-        // 다른 가족들은 오른쪽에 쌓고, '나' 프로필은 가장 왼쪽/상단에 오도록 배치합니다.
         otherProfiles.asReversed().forEachIndexed { index, profile ->
             addSelectedProfileImage(
                 profile = profile,
