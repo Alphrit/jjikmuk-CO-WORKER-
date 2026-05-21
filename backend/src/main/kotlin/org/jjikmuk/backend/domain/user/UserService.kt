@@ -12,17 +12,6 @@ class UserService(
         return userRepository.findAll()
     }
 
-    @Transactional
-    fun createUserProfile(request: UserProfileRequest): User {
-        val user = User(
-            email = request.email,
-            nickname = request.nickname,
-            allergies = request.allergies,
-            diseases = request.diseases
-        )
-        return userRepository.save(user)
-    }
-
     @Transactional(readOnly = true)
     fun getUserProfile(id: Long): User? {
         return userRepository.findById(id).orElse(null)
