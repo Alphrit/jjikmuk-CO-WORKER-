@@ -399,7 +399,7 @@ class SQLiteProductRepository(ProductRepository):
             conn.row_factory = sqlite3.Row
             report_column = self._find_existing_column(
                 conn,
-                ["report_number", "품목제조보고번호", "품목보고번호", "PRDLST_REPORT_NO"],
+                ["report_number", "report_no", "품목제조보고번호", "품목보고번호", "PRDLST_REPORT_NO"],
             )
             if report_column is None:
                 return None
@@ -476,7 +476,7 @@ class SQLiteProductRepository(ProductRepository):
             barcode_column = self._find_existing_column(conn, ["barcode", "바코드", "BAR_CD"])
             report_column = self._find_existing_column(
                 conn,
-                ["report_number", "품목제조보고번호", "품목보고번호", "PRDLST_REPORT_NO"],
+                ["report_number", "report_no", "품목제조보고번호", "품목보고번호", "PRDLST_REPORT_NO"],
             )
 
             where_parts = []

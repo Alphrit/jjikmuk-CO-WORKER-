@@ -51,6 +51,22 @@ def _to_float(value: Any) -> Optional[float]:
         return None
 
 
+def _to_bool(value: Any) -> Optional[bool]:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+
+    text = str(value).strip().lower()
+    if text in {"true", "t", "yes", "y", "1", "on"}:
+        return True
+    if text in {"false", "f", "no", "n", "0", "off"}:
+        return False
+    return None
+
+
 def _normalize_nutrition(payload: Dict[str, Any]) -> Dict[str, float]:
     nutrition_aliases = {
         "kcal": ["kcal", "energy", "energy_kcal", "energyKcal", "에너지", "열량"],
@@ -96,6 +112,7 @@ def normalize_product_payload(raw_product: Optional[Dict[str, Any]]) -> Optional
     ingredients = _split_to_list(_pick_first(payload, ["ingredients", "원재료리스트"]))
     rawmtrl_nm = _clean_string(_pick_first(payload, ["rawmtrl_nm", "raw_materials", "rawMaterials", "rawMaterialName", "RAWMTRL_NM", "원재료명"]))
     allergies = _split_to_list(_pick_first(payload, ["allergy", "allergy_info", "allergy_warning", "allergyWarning", "알레르기", "allergy_list"]))
+    product_found = _to_bool(_pick_first(payload, ["product_found", "found"]))
 
     return Product(
         product_id=_pick_first(payload, ["product_id", "id"]),
@@ -125,7 +142,7 @@ def normalize_product_payload(raw_product: Optional[Dict[str, Any]]) -> Optional
         allergy_info=allergies,
         nutrition=_normalize_nutrition(payload),
         match_confidence=_to_float(_pick_first(payload, ["match_confidence", "similarity_score"])),
-        product_found=bool(_pick_first(payload, ["product_found", "found"])) if "product_found" in payload or "found" in payload else True,
+        product_found=product_found if product_found is not None else True,
     )
 
 

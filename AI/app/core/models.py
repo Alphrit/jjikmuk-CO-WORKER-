@@ -48,6 +48,22 @@ def _to_float(value: Any) -> Optional[float]:
         return None
 
 
+def _to_bool(value: Any) -> Optional[bool]:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+
+    text = str(value).strip().lower()
+    if text in {"true", "t", "yes", "y", "1", "on"}:
+        return True
+    if text in {"false", "f", "no", "n", "0", "off"}:
+        return False
+    return None
+
+
 class Profile(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -238,7 +254,9 @@ class Product(BaseModel):
                 nutrition[field_name] = parsed
         payload["nutrition"] = nutrition
         if "found" in payload and "product_found" not in payload:
-            payload["product_found"] = bool(payload.get("found"))
+            product_found = _to_bool(payload.get("found"))
+            if product_found is not None:
+                payload["product_found"] = product_found
         return payload
 
     def resolved_allergies(self) -> List[str]:

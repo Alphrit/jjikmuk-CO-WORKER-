@@ -808,6 +808,26 @@ def test_raw_db_payload_is_normalized_before_chat():
     assert "대두" in result.answer
 
 
+def test_string_false_found_marks_product_not_found():
+    product = Product.model_validate({
+        "productName": "미등록 제품",
+        "found": "false",
+    })
+    assert product.product_found is False
+
+    req = ChatRequest(
+        raw_product={
+            "productName": "미등록 제품",
+            "found": "false",
+        },
+        message="이거 먹어도 돼?",
+    )
+
+    _, normalized_product, _, _ = normalize_chat_request(req)
+    assert normalized_product is not None
+    assert normalized_product.product_found is False
+
+
 def test_spec_style_profile_payload_is_accepted():
     profile = Profile.model_validate({
         "id": 101,
@@ -902,6 +922,36 @@ def test_chat_request_accepts_api_spec_style_profile_and_product_keys():
     assert product.nutrition["sodium"] == 420.0
     assert barcode == "8801234567890"
     assert report_number == "202400000001"
+
+
+def test_chat_accepts_backend_product_dto_shape():
+    backend_product_dto = {
+        "reportNo": "202400000777",
+        "barcode": "8801111222233",
+        "productName": "백엔드 DTO 두유스낵",
+        "allergy": "대두",
+        "rawMaterialName": "분리대두단백, 현미, 정제소금",
+        "energy": "195kcal",
+        "sodium": "430mg",
+    }
+
+    response = chat(
+        ChatRequest(
+            profile=build_base_profile(),
+            product=backend_product_dto,
+            message="이거 먹어도 돼?",
+        )
+    )
+
+    assert response.task_type == "product_chat"
+    assert response.intent == "can_i_eat"
+    assert response.current_product is not None
+    assert response.current_product["product_name"] == "백엔드 DTO 두유스낵"
+    assert response.current_product["report_number"] == "202400000777"
+    assert response.current_product["barcode"] == "8801111222233"
+    assert response.current_product["nutrition"]["kcal"] == 195.0
+    assert response.current_product["nutrition"]["sodium"] == 430.0
+    assert any("대두" in reason for reason in response.reasons)
 
 
 def test_only_active_profiles_are_used_from_profile_list():
@@ -1735,6 +1785,10 @@ def test_sqlite_product_repository_and_activity_history():
         assert product.product_name == "DB 저염 스낵"
         assert product.nutrition["sodium"] == 410.0
         assert product.report_number == "202400009999"
+
+        product_by_report = find_product_by_report_number("202400009999")
+        assert product_by_report is not None
+        assert product_by_report.barcode == "8807777777777"
 
         profile = Profile(
             profile_id=21,

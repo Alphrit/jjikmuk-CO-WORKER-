@@ -35,6 +35,16 @@ cp .env.example .env
 
 Then add the API key for the provider you want to use in `.env`.
 
+### Product DB
+
+If the API receives only a barcode or report number, it looks up product details through the configured repository. Set `FOOD_CHATBOT_DB_PATH` in `.env` to the real SQLite product DB used by the backend:
+
+```env
+FOOD_CHATBOT_DB_PATH=/absolute/path/to/products.sqlite3
+```
+
+When `FOOD_CHATBOT_DB_PATH` is empty, the app falls back to the in-memory seed products in `app/infrastructure/repository.py`. In that mode, barcode-only requests only work for the built-in sample data.
+
 ## Run
 
 ```bash
