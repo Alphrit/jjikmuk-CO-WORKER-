@@ -14,3 +14,14 @@ data class LoginRequest(
     val email: String,
     val password: String
 )
+
+data class GoogleLoginRequest(
+    val idToken: String
+)
+
+data class FindPasswordRequest(
+    val email: String
+)
+
+data class EmailSendRequest(val email: String)
+data class EmailVerifyRequest(val email: String, val code: String)
