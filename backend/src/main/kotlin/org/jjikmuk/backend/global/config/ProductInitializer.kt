@@ -62,6 +62,13 @@ class ProductInitializer(
                 val sodiumMgIdx = headers.indexOf("sodium_mg")
                 val cholesterolMgIdx = headers.indexOf("cholesterol_mg")
                 val allergyWarningIdx = headers.indexOf("allergy_warning")
+                val cleanProductNameIdx = headers.indexOf("clean_product_name")
+                val totalWeightIdx = headers.indexOf("total_weight")
+                val carbsPercentIdx = headers.indexOf("carbs_percent(%)")
+                val proteinPercentIdx = headers.indexOf("protein_percent(%)")
+                val fatPercentIdx = headers.indexOf("fat_percent(%)")
+                val sodiumGIdx = headers.indexOf("sodium_g")
+                val cholesterolGIdx = headers.indexOf("cholesterol_g")
 
                 println("헤더 파싱 완료! 바코드 열의 위치는: $barcodeIdx 번 칸입니다.")
 
@@ -103,7 +110,14 @@ class ProductInitializer(
                             sugarG = getDouble(sugarGIdx),
                             sodiumMg = getDouble(sodiumMgIdx),
                             cholesterolMg = getDouble(cholesterolMgIdx),
-                            allergyWarning = getString(allergyWarningIdx)
+                            allergyWarning = getString(allergyWarningIdx),
+                            cleanProductName = getString(cleanProductNameIdx),
+                            totalWeight = getString(totalWeightIdx),
+                            carbsPercent = getDouble(carbsPercentIdx),
+                            proteinPercent = getDouble(proteinPercentIdx),
+                            fatPercent = getDouble(fatPercentIdx),
+                            sodiumG = getDouble(sodiumGIdx),
+                            cholesterolG = getDouble(cholesterolGIdx)
                         )
 
                         productList.add(product)
