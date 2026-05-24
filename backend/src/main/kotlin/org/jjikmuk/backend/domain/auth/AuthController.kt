@@ -38,9 +38,9 @@ class AuthController(
         return ResponseEntity.ok(mapOf("message" to "이메일 인증이 완료되었습니다."))
     }
 
-    @PostMapping("/password/find")
-    fun findPassword(@RequestBody request: FindPasswordRequest): ResponseEntity<*> {
-        authService.issueTemporaryPassword(request)
-        return ResponseEntity.ok(mapOf("message" to "임시 비밀번호가 이메일로 발송되었습니다."))
+    @PostMapping("/password/reset")
+    fun resetPassword(@RequestBody request: PasswordResetRequest): ResponseEntity<*> {
+        authService.resetPassword(request)
+        return ResponseEntity.ok(mapOf("message" to "비밀번호가 성공적으로 재설정되었습니다."))
     }
 }
