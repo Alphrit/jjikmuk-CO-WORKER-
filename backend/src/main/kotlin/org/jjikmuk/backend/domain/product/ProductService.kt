@@ -68,7 +68,11 @@ class ProductService(
             "fatPercent" to (product.fatG?.let { Math.round((it / 54.0) * 100) } ?: 0),
             "sugarPercent" to (product.sugarG?.let { Math.round((it / 100.0) * 100) } ?: 0),
             "sodiumPercent" to (product.sodiumMg?.let { Math.round((it / 2000.0) * 100) } ?: 0),
-            "cholesterolPercent" to (product.cholesterolMg?.let { Math.round((it / 300.0) * 100) } ?: 0)
+            "cholesterolPercent" to (product.cholesterolMg?.let { Math.round((it / 300.0) * 100) } ?: 0),
+            // 🚀 프론트엔드 탄단지 원그래프용 (전체 칼로리 중 해당 영양소의 퍼센트)
+            "carbsMacroPercent" to (product.carbsPercent ?: 0.0),
+            "proteinMacroPercent" to (product.proteinPercent ?: 0.0),
+            "fatMacroPercent" to (product.fatPercent ?: 0.0)
         )
 
         return mapOf(

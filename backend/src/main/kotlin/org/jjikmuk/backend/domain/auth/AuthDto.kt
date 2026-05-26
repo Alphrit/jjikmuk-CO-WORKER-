@@ -23,5 +23,11 @@ data class FindPasswordRequest(
     val email: String
 )
 
+data class PasswordResetRequest(
+    val email: String,
+    val code: String,
+    val newPassword: String
+)
+
 data class EmailSendRequest(val email: String)
 data class EmailVerifyRequest(val email: String, val code: String)

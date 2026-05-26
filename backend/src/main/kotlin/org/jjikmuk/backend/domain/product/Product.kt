@@ -58,5 +58,27 @@ class Product(
     val cholesterolMg: Double?,
 
     @Column(name = "allergy_warning", length = 1000)
-    val allergyWarning: String? // 기원 불명 경고 성분
+    val allergyWarning: String?, // 기원 불명 경고 성분
+
+    @Column(name = "clean_product_name", length = 1000)
+    val cleanProductName: String?,
+
+    @Column(name = "total_weight")
+    val totalWeight: String?,
+
+    @Column(name = "carbs_percent")
+    val carbsPercent: Double?,
+
+    @Column(name = "protein_percent")
+    val proteinPercent: Double?,
+
+    @Column(name = "fat_percent")
+    val fatPercent: Double?,
+
+    @Column(name = "sodium_g")
+    val sodiumG: Double?,
+
+    @Column(name = "cholesterol_g")
+    val cholesterolG: Double?
+
 )
