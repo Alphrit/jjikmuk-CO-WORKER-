@@ -228,6 +228,13 @@ def is_contextual_eatability_followup(
     return False
 
 
+def is_alternative_product_request(text: str, product: Optional[Product]) -> bool:
+    if not has_product_context(product):
+        return False
+
+    return contains_any(text, ["비슷한 제품", "대체 제품", "대체품", "더 나은", "나은 것도", "추천"])
+
+
 def is_contextual_product_summary_followup(
     text: str,
     product: Optional[Product],
@@ -407,6 +414,9 @@ def rule_based_classify_intent(
             if is_health_question(text):
                 return "health_risk_check"
             return AMBIGUOUS_INTENT
+        return "can_i_eat"
+
+    if is_alternative_product_request(text, product):
         return "can_i_eat"
 
     if is_contextual_product_summary_followup(text, product, chat_history):

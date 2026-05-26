@@ -178,6 +178,8 @@ def find_explicit_product_override(message: str, current_product: Optional[Produ
     current_product_is_candidate = any(same_product(current_product, candidate) for candidate in candidates)
     top_candidate = candidates[0]
     top_score = top_candidate.match_confidence or 0
+    if is_attribute_followup_for_current_product(message) and not explicitly_mentions_product(message, top_candidate):
+        return None, None
 
     if current_product_is_candidate:
         current_score = product_match_score(current_product, candidates)
@@ -200,6 +202,17 @@ def find_explicit_product_override(message: str, current_product: Optional[Produ
     return None, None
 
 
+def is_attribute_followup_for_current_product(message: str) -> bool:
+    text = normalize_message(message)
+    return (
+        (
+            detect_ingredient_keyword(text) is not None
+            and contains_any(text, INCLUSION_KEYWORDS + ["없어", "있어"])
+        )
+        or detect_nutrition_keyword(text) is not None
+    )
+
+
 def find_recent_history_product_for_followup(
     message: str,
     current_product: Optional[Product],
@@ -209,6 +222,9 @@ def find_recent_history_product_for_followup(
         return None
 
     if not has_product_reference(message, current_product, chat_history):
+        return None
+
+    if is_attribute_followup_for_current_product(message):
         return None
 
     # If the user explicitly names a product in this turn, explicit override/confirmation owns the decision.

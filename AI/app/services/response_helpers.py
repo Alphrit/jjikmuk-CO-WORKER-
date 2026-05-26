@@ -17,6 +17,18 @@ def get_profile_prefix(profile: Optional[Profile]) -> str:
     return "지금 보이는 정보로는"
 
 
+def topic_particle(text: str) -> str:
+    if not text:
+        return "은"
+
+    last_char = text[-1]
+    if not ("가" <= last_char <= "힣"):
+        return "은"
+
+    has_final_consonant = (ord(last_char) - ord("가")) % 28 != 0
+    return "은" if has_final_consonant else "는"
+
+
 def normalize_items(product: Product) -> List[str]:
     items = []
     items.extend(product.ingredient_text_sources())

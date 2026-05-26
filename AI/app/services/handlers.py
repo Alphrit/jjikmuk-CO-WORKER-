@@ -53,6 +53,7 @@ from app.services.response_helpers import (
     has_meaningful_product_data,
     message_mentions_other_target,
     scan_disliked_ingredients,
+    topic_particle,
 )
 
 
@@ -172,11 +173,12 @@ def build_can_i_eat_result(profile: Optional[Profile], product: Product, message
         next_steps.append("민감한 알레르기나 질환이 있다면 섭취 전 원재료명과 영양성분표를 함께 확인해 주세요.")
 
     product_name = product.product_name or "이 제품"
+    product_topic = f"{product_name}{topic_particle(product_name)}"
     conclusion_map = {
-        "low": f"{prefix} {product_name}은 크게 걱정할 만한 부분은 두드러지지 않아요.",
-        "medium": f"{prefix} {product_name}은 먹을 수는 있지만 몇 가지만 조심해서 보면 좋아요.",
-        "high": f"{prefix} {product_name}은 피하는 편이 더 안전해 보여요.",
-        "unknown": f"{prefix} {product_name}은 아직은 확실하게 판단하기 어려워요.",
+        "low": f"{prefix} {product_topic} 크게 걱정할 만한 부분은 두드러지지 않아요.",
+        "medium": f"{prefix} {product_topic} 먹을 수는 있지만 몇 가지만 조심해서 보면 좋아요.",
+        "high": f"{prefix} {product_topic} 피하는 편이 더 안전해 보여요.",
+        "unknown": f"{prefix} {product_topic} 아직은 확실하게 판단하기 어려워요.",
     }
 
     if any(keyword in message for keyword in DETAIL_REQUEST_KEYWORDS):
@@ -474,8 +476,8 @@ def handle_nutrition_explain(profile: Optional[Profile], product: Product, messa
             risk = "low"
 
     elif nutrient == "나트륨":
-        if value >= 500:
-            answer = "나트륨이 높은 편이라 자주 먹는 음식으로는 주의가 필요해요."
+        if value >= 400:
+            answer = "나트륨이 높은 편이라 저염식 기준이나 자주 먹는 음식으로는 주의가 필요해요."
             risk = "medium"
         else:
             answer = "나트륨이 특별히 높은 편으로 보이진 않아요."

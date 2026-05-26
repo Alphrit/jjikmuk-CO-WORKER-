@@ -4,6 +4,7 @@ from app.intent.classifier import classify_intent_result
 from app.services.hybrid import enhance_rule_response, try_general_llm_fallback
 from app.core.models import ChatHistoryItem, ChatResponse, Product, Profile
 from app.services.product import recommend_alternative_products
+from app.services.response_helpers import find_triggered_allergies
 from app.services.profile_context import (
     active_profile_names,
     active_profiles_from_inputs,
@@ -170,6 +171,11 @@ def generate_final_response(
         product=product,
         profile=effective_profile,
     )
+    final_response = attach_profile_allergy_alert(
+        final_response,
+        product=product,
+        profile=effective_profile,
+    )
 
     if final_response.answer_source == "rules":
         return final_response.model_copy(update={"pipeline_stage": "rules"})
@@ -200,6 +206,47 @@ def attach_product_recommendations(
         return response
 
     return response.model_copy(update={"recommended_products": recommendations})
+
+
+def attach_profile_allergy_alert(
+    response: ChatResponse,
+    product: Optional[Product],
+    profile: Optional[Profile],
+) -> ChatResponse:
+    if response.task_type != "product_chat":
+        return response
+    if product is None or product.product_found is False or profile is None:
+        return response
+
+    triggered = find_triggered_allergies(profile, product)
+    if not triggered:
+        return response
+
+    reason_parts = []
+    for allergy, matched_aliases in triggered:
+        alias_preview = ", ".join(matched_aliases[:3])
+        reason_parts.append(f"프로필 알러지 반응: {allergy} -> {alias_preview}")
+
+    reasons = list(dict.fromkeys([*response.reasons, *reason_parts]))
+    if response.intent in {"can_i_eat", "health_risk_check"}:
+        return response.model_copy(update={"reasons": reasons})
+
+    alert_parts = []
+    for allergy, matched_aliases in triggered:
+        alias_preview = ", ".join(matched_aliases[:3])
+        alert_parts.append(f"{allergy} -> {alias_preview}")
+
+    alert = (
+        "프로필 알러지 확인: 사전에 입력한 알러지 중 "
+        f"{'; '.join(alert_parts)} 성분이 이 제품에서 확인돼요."
+    )
+    if alert in response.answer:
+        return response
+
+    return response.model_copy(update={
+        "answer": f"{alert}\n{response.answer}",
+        "reasons": reasons,
+    })
 
 
 def generate_chat_response(

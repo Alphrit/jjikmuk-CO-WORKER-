@@ -111,6 +111,51 @@ def test_can_i_eat_aggregates_multiple_risks():
     assert any("혈당" in reason or "탄수화물" in reason or "당류" in reason for reason in result.reasons)
 
 
+def test_profile_allergy_alert_identifies_reacting_allergy_in_product_responses():
+    result = generate_chat_response(
+        profile=build_base_profile(),
+        product=build_base_product(),
+        message="나트륨 알려줘",
+    )
+
+    assert result.task_type == "product_chat"
+    assert "프로필 알러지 확인" in result.answer
+    assert "사전에 입력한 알러지 중 대두" in result.answer
+    assert "분리대두단백" in result.answer or "대두" in result.answer
+    assert any("프로필 알러지 반응: 대두" in reason for reason in result.reasons)
+
+
+def test_can_i_eat_does_not_repeat_profile_allergy_alert_in_answer():
+    result = generate_chat_response(
+        profile=build_base_profile(),
+        product=build_base_product(),
+        message="이거 먹어도 돼?",
+    )
+
+    assert result.intent == "can_i_eat"
+    assert "프로필 알러지 확인" not in result.answer
+    assert "대두 관련 성분" in result.answer
+    assert any("프로필 알러지 반응: 대두" in reason for reason in result.reasons)
+
+
+def test_profile_allergy_alert_is_not_added_without_matching_allergy():
+    profile = Profile(
+        profile_id=2,
+        profile_name="우유 알러지 사용자",
+        user_allergies=["우유"],
+    )
+
+    result = generate_chat_response(
+        profile=profile,
+        product=build_base_product(),
+        message="나트륨 알려줘",
+    )
+
+    assert result.task_type == "product_chat"
+    assert "프로필 알러지 확인" not in result.answer
+    assert not any("프로필 알러지 반응" in reason for reason in result.reasons)
+
+
 def test_profile_based_recheck_is_not_lost():
     result = generate_chat_response(
         profile=build_base_profile(),
@@ -502,6 +547,8 @@ def test_product_followup_with_specific_nutrient_uses_product_context():
     assert result.intent == "nutrition_explain"
     assert result.task_type == "product_chat"
     assert "나트륨" in result.answer
+    assert result.risk_level == "medium"
+    assert "주의" in result.answer
 
 
 def test_product_followup_with_specific_ingredient_uses_product_context():
@@ -520,6 +567,27 @@ def test_product_followup_with_specific_ingredient_uses_product_context():
     assert result.intent == "ingredient_check"
     assert result.task_type == "product_chat"
     assert "대두" in result.answer
+
+
+def test_ingredient_followup_does_not_switch_to_product_name_candidate():
+    response = chat(
+        ChatRequest(
+            profile=None,
+            product=build_base_product(),
+            message="우유도 들어 있어?",
+            chat_history=[
+                ChatHistoryItem(role="user", content="이거 먹어도 돼?"),
+                ChatHistoryItem(role="assistant", content="고단백 두유바는 대두 때문에 주의가 필요해요."),
+            ],
+        )
+    )
+
+    assert response.intent == "ingredient_check"
+    assert response.task_type == "product_chat"
+    assert response.current_product is not None
+    assert response.current_product["product_name"] == "고단백 두유바"
+    assert "서울우유" not in response.answer
+    assert "우유 관련 성분이 보이지 않아요" in response.answer
 
 
 def test_product_followup_with_vague_other_uses_previous_ingredient_axis():
@@ -555,6 +623,24 @@ def test_product_followup_with_eatability_phrase_stays_product_chat():
 
     assert result.intent == "can_i_eat"
     assert result.task_type == "product_chat"
+
+
+def test_alternative_product_followup_returns_recommendations():
+    set_llm_client(None)
+
+    result = generate_chat_response(
+        profile=build_base_profile(),
+        product=build_base_product(),
+        message="비슷한 제품 중 더 나은 것도 알려줘",
+        chat_history=[
+            ChatHistoryItem(role="user", content="이거 먹어도 돼?"),
+            ChatHistoryItem(role="assistant", content="고단백 두유바는 대두 때문에 주의가 필요해요."),
+        ],
+    )
+
+    assert result.intent == "can_i_eat"
+    assert result.task_type == "product_chat"
+    assert result.recommended_products
 
 
 def test_clear_product_eatability_question_stays_rule_based():
