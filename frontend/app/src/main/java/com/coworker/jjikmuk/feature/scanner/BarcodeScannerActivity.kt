@@ -26,11 +26,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.TorchState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -63,6 +65,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
     private lateinit var galleryBarcodeOverlay: GalleryBarcodeOverlayView
     private lateinit var galleryReselectButton: TextView
     private lateinit var gallerySelectBarcodeButton: TextView
+    private lateinit var flashButton: ImageButton
     private lateinit var scanGuideView: ScanGuideView
     private lateinit var scanCaptureButton: View
     private lateinit var previousScansButton: View
@@ -80,11 +83,13 @@ class BarcodeScannerActivity : AppCompatActivity() {
     private lateinit var resultPrimaryButton: TextView
     private lateinit var retakeButton: TextView
     private lateinit var cameraExecutor: ExecutorService
+    private var camera: Camera? = null
     private var scanTimeoutJob: Job? = null
     private var lastScanResult: ScannerResult? = null
     private var renderedResultSequence = 0
     private var selectedGalleryBarcode: String? = null
     private var galleryImageSequence = 0
+    private var isFlashEnabled = false
 
     @Volatile private var isScanAttemptActive = false
     @Volatile private var isBarcodeLookupInFlight = false
@@ -124,6 +129,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
         galleryBarcodeOverlay = findViewById(R.id.galleryBarcodeOverlay)
         galleryReselectButton = findViewById(R.id.btnGalleryReselect)
         gallerySelectBarcodeButton = findViewById(R.id.btnGallerySelectBarcode)
+        flashButton = findViewById(R.id.btnScannerFlash)
         scanGuideView = findViewById(R.id.scanGuideView)
         scanCaptureButton = findViewById(R.id.btnScanCapture)
         previousScansButton = findViewById(R.id.layoutPreviousScans)
@@ -145,6 +151,10 @@ class BarcodeScannerActivity : AppCompatActivity() {
             setResult(Activity.RESULT_CANCELED)
             finish()
         }
+        flashButton.setOnClickListener {
+            toggleFlash()
+        }
+        updateFlashButtonTint()
         scanCaptureButton.setOnClickListener {
             startScanAttempt()
         }
@@ -469,13 +479,33 @@ class BarcodeScannerActivity : AppCompatActivity() {
                 }
 
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
+            val boundCamera = cameraProvider.bindToLifecycle(
                 this,
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 preview,
                 imageAnalyzer
             )
+            camera = boundCamera
+            flashButton.isEnabled = boundCamera.cameraInfo.hasFlashUnit()
+            boundCamera.cameraInfo.torchState.observe(this) { torchState ->
+                isFlashEnabled = torchState == TorchState.ON
+                updateFlashButtonTint()
+            }
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun toggleFlash() {
+        val boundCamera = camera ?: return
+        if (!boundCamera.cameraInfo.hasFlashUnit()) return
+
+        isFlashEnabled = !isFlashEnabled
+        updateFlashButtonTint()
+        boundCamera.cameraControl.enableTorch(isFlashEnabled)
+    }
+
+    private fun updateFlashButtonTint() {
+        val tintColor = if (isFlashEnabled) FLASH_ON_COLOR else Color.WHITE
+        flashButton.setColorFilter(tintColor)
     }
 
     @OptIn(ExperimentalGetImage::class)
@@ -689,6 +719,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
         super.onDestroy()
         scanTimeoutJob?.cancel()
         scanGuideView.stopScanAnimation()
+        camera?.cameraControl?.enableTorch(false)
         cameraExecutor.shutdown()
     }
 
@@ -700,6 +731,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
         const val SHEET_DISMISS_THRESHOLD = 0.18f
         const val DISABLED_BUTTON_ALPHA = 0.45f
         const val MAX_GALLERY_IMAGE_SIZE_PX = 2048
+        val FLASH_ON_COLOR: Int = Color.parseColor("#FFDD4A")
         const val TAG = "BarcodeScanner"
     }
 }

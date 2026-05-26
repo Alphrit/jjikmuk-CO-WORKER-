@@ -70,77 +70,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <LinearLayout
-        android:id="@+id/layoutScanModes"
-        android:layout_width="232dp"
-        android:layout_height="20dp"
-        android:layout_marginTop="96dp"
-        android:gravity="center"
-        android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/scanGuideView">
-
-        <TextView
-            android:id="@+id/tvNormalScan"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:includeFontPadding="false"
-            android:text="일반 스캔"
-            android:textColor="#E6FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvCompareScan"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:includeFontPadding="false"
-            android:text="상품 비교"
-            android:textColor="#C2C1C8"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
     <FrameLayout
         android:id="@+id/btnScanGallery"
         android:layout_width="52dp"
         android:layout_height="52dp"
         android:layout_marginStart="36dp"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="164dp"
         android:background="@drawable/bg_scan_side_button"
         android:clickable="true"
         android:contentDescription="갤러리"
         android:focusable="true"
         android:foreground="?attr/selectableItemBackgroundBorderless"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutScanModes">
-
-        <ImageView
-            android:layout_width="31dp"
-            android:layout_height="31dp"
-            android:layout_gravity="center"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_scan_gallery" />
-    </FrameLayout>
-
-    <FrameLayout
-        android:id="@+id/btnScanCompare"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="36dp"
-        android:background="@drawable/bg_scan_side_button"
-        android:clickable="true"
-        android:contentDescription="상품 비교"
-        android:focusable="true"
-        android:foreground="?attr/selectableItemBackgroundBorderless"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutScanModes">
+        app:layout_constraintTop_toBottomOf="@id/scanGuideView">
 
         <ImageView
             android:layout_width="31dp"
@@ -154,7 +96,7 @@
         android:id="@+id/btnScanCapture"
         android:layout_width="90dp"
         android:layout_height="90dp"
-        android:layout_marginTop="29dp"
+        android:layout_marginTop="145dp"
         android:background="@drawable/bg_scan_capture_outer"
         android:clickable="true"
         android:contentDescription="스캔"
@@ -163,7 +105,7 @@
         android:padding="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutScanModes">
+        app:layout_constraintTop_toBottomOf="@id/scanGuideView">
 
         <FrameLayout
             android:layout_width="66dp"
