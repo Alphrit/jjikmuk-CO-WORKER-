@@ -88,20 +88,29 @@ class AuthService(
         return jwtProvider.createToken(user.id!!, user.email, user.role.name)
     }
     @Transactional
-    fun issueTemporaryPassword(request: FindPasswordRequest) {
-        // 1. 우리 DB에 가입된 이메일인지 확인
+    fun resetPassword(request: PasswordResetRequest) {
+        // 1. 해당 이메일로 가입된 유저가 있는지 확인
         val user = userRepository.findByEmail(request.email)
             ?: throw CustomException(HttpStatus.NOT_FOUND, "가입되지 않은 이메일입니다.")
 
-        // 2. 8자리 랜덤 임시 비밀번호 생성 (예: a1b2c3d4)
-        val tempPassword = UUID.randomUUID().toString().replace("-", "").substring(0, 8)
+        // 2. 인증 테이블에서 번호 확인
+        val verification = emailVerificationRepository.findByEmail(request.email)
+            ?: throw CustomException(HttpStatus.BAD_REQUEST, "인증 요청 내역이 없습니다.")
 
-        // 3. 비밀번호를 안전하게 암호화해서 DB에 덮어쓰기
-        user.password = passwordEncoder.encode(tempPassword)!!
+        if (verification.expiredAt.isBefore(LocalDateTime.now())) {
+            throw CustomException(HttpStatus.BAD_REQUEST, "인증 시간이 만료되었습니다.")
+        }
+
+        if (verification.code != request.code) {
+            throw CustomException(HttpStatus.BAD_REQUEST, "인증번호가 일치하지 않습니다.")
+        }
+
+        // 3. 인증이 완벽하게 성공했으니 새 비밀번호로 암호화하여 덮어쓰기
+        user.password = passwordEncoder.encode(request.newPassword)!!
         userRepository.save(user)
 
-        // 4. 암호화되지 않은 진짜 임시 비밀번호를 이메일로 전송
-        emailService.sendTemporaryPassword(user.email, tempPassword)
+        // 4. 사용한 인증번호는 파기
+        emailVerificationRepository.delete(verification)
     }
 
     fun verifyEmailCode(request: EmailVerifyRequest) {
