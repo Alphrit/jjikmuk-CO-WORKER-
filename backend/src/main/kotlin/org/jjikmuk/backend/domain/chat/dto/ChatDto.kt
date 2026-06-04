@@ -2,8 +2,9 @@ package org.jjikmuk.backend.domain.chat.dto
 
 // 💡 프론트엔드가 성민님 서버로 보낼 요청
 data class ChatRequestDto(
-    val userId: Long?, // 멀티 프로필 확장 시 List<Long>으로 변경 가능
-    val barcode: String?,
+    val userId: Long? = null, // 멀티 프로필 확장 시 List<Long>으로 변경 가능
+    val barcode: String? = null,
+    val profiles: List<ProfileDto> = emptyList(),
     val message: String,
     val chatHistory: List<ChatHistoryDto> = emptyList()
 )
@@ -38,7 +39,7 @@ data class ProductDto(
     val barcode: String?,
     val productName: String?,
     val allergy: String?,
-    val rawMaterialName: String?,
+    val rawMaterials: String?,
     val energy: String?,
     val sodium: String?
     // ... 필요한 영양성분 추가

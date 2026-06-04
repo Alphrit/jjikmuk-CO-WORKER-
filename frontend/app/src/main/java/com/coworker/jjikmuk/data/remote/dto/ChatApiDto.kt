@@ -3,18 +3,25 @@ package com.coworker.jjikmuk.data.remote.dto
 import com.google.gson.JsonElement
 
 data class ChatApiRequest(
-    val profiles: List<ChatApiProfile>,
+    val barcode: String? = null,
+    val profiles: List<ChatApiProfile> = emptyList(),
     val product: ChatApiProduct? = null,
     val message: String,
     val chat_history: List<ChatApiHistoryMessage> = emptyList()
 )
 
 data class ChatApiProfile(
-    val id: Int,
+    val id: Long?,
     val nickname: String,
-    val allergies: List<String>,
-    val targetType: String,
-    val isActive: Boolean
+    val allergies: String?,
+    val diseases: String? = null,
+    val specialDiet: String? = null,
+    val dislikedIngredients: String? = null
+)
+
+data class ChatApiHistoryMessage(
+    val role: String,
+    val content: String
 )
 
 data class ChatApiProduct(
@@ -22,11 +29,6 @@ data class ChatApiProduct(
     val barcode: String,
     val allergy: List<String>,
     val rawMaterials: String
-)
-
-data class ChatApiHistoryMessage(
-    val role: String,
-    val content: String
 )
 
 data class ChatApiResponse(
@@ -40,7 +42,14 @@ data class ChatApiResponse(
     val profile_name: String? = null,
     val active_profile_names: List<String> = emptyList(),
     val recommended_questions: List<String> = emptyList(),
+    val current_product: ChatApiCurrentProduct? = null,
     val recommended_products: List<ChatApiRecommendedProduct> = emptyList()
+)
+
+data class ChatApiCurrentProduct(
+    val barcode: String? = null,
+    val product_name: String? = null,
+    val productName: String? = null
 )
 
 data class ChatApiRecommendedProduct(

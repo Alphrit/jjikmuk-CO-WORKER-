@@ -22,6 +22,7 @@ import com.coworker.jjikmuk.domain.model.ChatProductCandidate
 import com.coworker.jjikmuk.domain.model.UploadOption
 import com.coworker.jjikmuk.feature.chat.adapter.ChatMessageAdapter
 import com.coworker.jjikmuk.feature.product.model.ProductUiModel
+import com.coworker.jjikmuk.feature.product.detail.ProductDetailFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -144,6 +145,22 @@ class ChatFragment : Fragment() {
                 launch {
                     viewModel.uploadOptionEvent.collect { option ->
                         handleUploadOption(option)
+                    }
+                }
+
+                launch {
+                    viewModel.productDetailEvent.collect { event ->
+                        parentFragmentManager.beginTransaction()
+                            .replace(
+                                R.id.mainContainer,
+                                ProductDetailFragment.newInstance(
+                                    productId = event.barcode,
+                                    safetyAnswer = event.answer,
+                                    riskLevel = event.riskLevel
+                                )
+                            )
+                            .addToBackStack(null)
+                            .commit()
                     }
                 }
             }

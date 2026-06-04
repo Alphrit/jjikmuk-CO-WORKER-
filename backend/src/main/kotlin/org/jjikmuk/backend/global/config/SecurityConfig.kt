@@ -29,6 +29,7 @@ class SecurityConfig {
                 auth
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/products/**").permitAll()
+                    .requestMatchers("/api/chat/**").permitAll()
                     .anyRequest().authenticated()
             }
             // 💡 문지기(jwtFilter)를 시큐리티 기본 인증 과정보다 앞서 배치!

@@ -2,6 +2,8 @@ package com.coworker.jjikmuk.domain.model
 
 data class ChatResponse(
     val answer: String,
+    val riskLevel: String? = null,
+    val currentProductBarcode: String? = null,
     val productCandidates: List<ChatProductCandidate> = emptyList()
 )
 

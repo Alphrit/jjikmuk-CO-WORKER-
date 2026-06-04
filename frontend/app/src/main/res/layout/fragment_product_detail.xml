@@ -176,13 +176,15 @@
             <LinearLayout
                 android:id="@+id/layoutSafetyWarning"
                 android:layout_width="match_parent"
-                android:layout_height="80dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
                 android:background="@drawable/bg_product_detail_warning_box"
                 android:gravity="center_vertical"
                 android:orientation="vertical"
                 android:paddingStart="20dp"
+                android:paddingTop="14dp"
                 android:paddingEnd="16dp"
+                android:paddingBottom="14dp"
                 tools:visibility="visible">
 
                 <TextView
@@ -199,6 +201,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
+                    android:singleLine="false"
                     android:text="이 제품은 사용자에게 제외될 수 있는 땅콩, 우유 성분을 포함하고 있습니다. 섭취에 각별히 주의하세요."
                     android:textColor="#9F3F3D"
                     android:textSize="11sp" />
@@ -251,48 +254,40 @@
 
             <TextView
                 android:id="@+id/tvNutritionTitle"
+                style="@style/Text.Pretendard.Bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
                 android:text="영양 밸런스"
                 android:textColor="#111111"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textSize="20sp" />
 
-            <!-- TODO: 빌드 확인용 임시 배경색입니다. 추후 @drawable/bg_product_detail_nutrition_box를 만들어서 교체하세요. -->
             <LinearLayout
                 android:id="@+id/layoutNutritionBalance"
                 android:layout_width="match_parent"
-                android:layout_height="116dp"
-                android:layout_marginTop="12dp"
-                android:background="#FAFAFA"
+                android:layout_height="150dp"
+                android:layout_marginTop="52dp"
+                android:background="@drawable/bg_product_detail_nutrition_box"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingStart="18dp"
-                android:paddingEnd="18dp">
+                android:paddingStart="26dp"
+                android:paddingEnd="28dp">
 
                 <FrameLayout
                     android:id="@+id/layoutNutritionChart"
-                    android:layout_width="82dp"
-                    android:layout_height="82dp">
+                    android:layout_width="104dp"
+                    android:layout_height="104dp">
 
-                    <!-- TODO: 빌드 확인용 임시 색상 박스입니다. 추후 @drawable/bg_product_detail_chart_ring을 만들어서 교체하세요. -->
-                    <View
-                        android:layout_width="82dp"
-                        android:layout_height="82dp"
-                        android:background="#5A78FF" />
-
-                    <View
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_gravity="center"
-                        android:background="#FFFFFF" />
+                    <com.coworker.jjikmuk.feature.product.detail.NutritionDonutChartView
+                        android:id="@+id/viewNutritionDonutChart"
+                        android:layout_width="104dp"
+                        android:layout_height="104dp" />
                 </FrameLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="22dp"
+                    android:layout_marginStart="36dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
 
@@ -303,27 +298,28 @@
                         android:orientation="horizontal">
 
                         <View
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="#5A78FF" />
+                            android:layout_width="13dp"
+                            android:layout_height="13dp"
+                            android:background="#E25143" />
 
                         <TextView
+                            style="@style/Text.Pretendard.Bold"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
                             android:text="탄수화물"
                             android:textColor="#111111"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
+                            android:textSize="15sp" />
 
                         <TextView
                             android:id="@+id/tvCarbohydratePercent"
+                            style="@style/Text.Pretendard.Bold"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="55%"
                             android:textColor="#111111"
-                            android:textSize="11sp" />
+                            android:textSize="15sp" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -334,27 +330,28 @@
                         android:orientation="horizontal">
 
                         <View
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="#E25143" />
+                            android:layout_width="13dp"
+                            android:layout_height="13dp"
+                            android:background="#5A78FF" />
 
                         <TextView
+                            style="@style/Text.Pretendard.Bold"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
                             android:text="단백질"
                             android:textColor="#111111"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
+                            android:textSize="15sp" />
 
                         <TextView
                             android:id="@+id/tvProteinPercent"
+                            style="@style/Text.Pretendard.Bold"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="15%"
                             android:textColor="#111111"
-                            android:textSize="11sp" />
+                            android:textSize="15sp" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -365,27 +362,28 @@
                         android:orientation="horizontal">
 
                         <View
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
+                            android:layout_width="13dp"
+                            android:layout_height="13dp"
                             android:background="#E4B328" />
 
                         <TextView
+                            style="@style/Text.Pretendard.Bold"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
                             android:text="지방"
                             android:textColor="#111111"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
+                            android:textSize="15sp" />
 
                         <TextView
                             android:id="@+id/tvFatPercent"
+                            style="@style/Text.Pretendard.Bold"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="30%"
                             android:textColor="#111111"
-                            android:textSize="11sp" />
+                            android:textSize="15sp" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -394,116 +392,139 @@
                 android:id="@+id/layoutNutritionValues"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="52dp"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="32dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_nutrition_divider"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/tvTotalCaloriesLabel"
+                        style="@style/Text.Pretendard.SemiBold"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:gravity="center_vertical"
                         android:text="총 칼로리"
-                        android:textColor="#111111"
-                        android:textSize="14sp" />
+                        android:textColor="#161A33"
+                        android:textSize="18sp" />
 
                     <TextView
                         android:id="@+id/tvTotalCalories"
+                        style="@style/Text.Pretendard.SemiBold"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:gravity="center_vertical|end"
                         android:text="229.8 kcal"
-                        android:textColor="#111111"
-                        android:textSize="14sp" />
+                        android:textColor="#161A33"
+                        android:textSize="18sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="32dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_nutrition_divider"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/tvProteinLabel"
+                        style="@style/Text.Pretendard.SemiBold"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:gravity="center_vertical"
                         android:text="단백질"
-                        android:textColor="#111111"
-                        android:textSize="14sp" />
+                        android:textColor="#161A33"
+                        android:textSize="18sp" />
 
                     <TextView
                         android:id="@+id/tvProtein"
+                        style="@style/Text.Pretendard.SemiBold"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:gravity="center_vertical|end"
                         android:text="12.7 g"
-                        android:textColor="#111111"
-                        android:textSize="14sp" />
+                        android:textColor="#161A33"
+                        android:textSize="18sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="32dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_nutrition_divider"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/tvFatLabel"
+                        style="@style/Text.Pretendard.SemiBold"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:gravity="center_vertical"
                         android:text="지방"
-                        android:textColor="#111111"
-                        android:textSize="14sp" />
+                        android:textColor="#161A33"
+                        android:textSize="18sp" />
 
                     <TextView
                         android:id="@+id/tvFat"
+                        style="@style/Text.Pretendard.SemiBold"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:gravity="center_vertical|end"
                         android:text="6.3 g"
-                        android:textColor="#111111"
-                        android:textSize="14sp" />
+                        android:textColor="#161A33"
+                        android:textSize="18sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="32dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_nutrition_divider"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/tvCarbohydrateLabel"
+                        style="@style/Text.Pretendard.SemiBold"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:gravity="center_vertical"
                         android:text="탄수화물"
-                        android:textColor="#111111"
-                        android:textSize="14sp" />
+                        android:textColor="#161A33"
+                        android:textSize="18sp" />
 
                     <TextView
                         android:id="@+id/tvCarbohydrate"
+                        style="@style/Text.Pretendard.SemiBold"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:gravity="center_vertical|end"
                         android:text="26.7 g"
-                        android:textColor="#111111"
-                        android:textSize="14sp" />
+                        android:textColor="#161A33"
+                        android:textSize="18sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvNutritionReferenceDescription"
+                    style="@style/Text.Pretendard.SemiBold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:lineSpacingExtra="5dp"
+                    android:text="1일 영양성분 기준치에 대한 비율(%)은 2,000kcal 기준이므로 개인의 필요열량에 따라 다를 수 있습니다"
+                    android:textColor="#222222"
+                    android:textSize="15sp" />
             </LinearLayout>
 
             <!-- TODO: 빌드 확인용 임시 배경색입니다. 추후 @drawable/bg_product_detail_ingredient_box를 만들어서 교체하세요. -->

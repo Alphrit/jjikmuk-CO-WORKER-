@@ -2,7 +2,9 @@ package com.coworker.jjikmuk.feature.product.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.coworker.jjikmuk.domain.model.Product
 import com.coworker.jjikmuk.domain.repository.FavoriteRepository
+import com.coworker.jjikmuk.domain.repository.MealContextRepository
 import com.coworker.jjikmuk.domain.repository.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -15,7 +17,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class ProductDetailViewModel @Inject constructor(
     private val productRepository: ProductRepository,
-    private val favoriteRepository: FavoriteRepository
+    private val favoriteRepository: FavoriteRepository,
+    private val mealContextRepository: MealContextRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductDetailUiState())
@@ -30,31 +33,40 @@ class ProductDetailViewModel @Inject constructor(
             state.copy(isLoading = true, errorMessage = null)
         }
 
-        val product = productRepository.findProductById(productId)
-
-        if (product == null) {
-            _uiState.update { state ->
-                state.copy(
-                    product = null,
-                    isFavorite = false,
-                    isLoading = false,
-                    errorMessage = "상품을 찾을 수 없습니다."
-                )
-            }
-            return
-        }
-
         viewModelScope.launch {
+            val product = productRepository.findProductDetailByBarcode(productId)
+
+            if (product == null) {
+                _uiState.update { state ->
+                    state.copy(
+                        product = null,
+                        isFavorite = false,
+                        isLoading = false,
+                        errorMessage = "상품을 찾을 수 없습니다."
+                    )
+                }
+                return@launch
+            }
+
             val isFavorite = favoriteRepository.isFavorite(productId)
 
             _uiState.update { state ->
                 state.copy(
-                    product = product,
+                    product = product.withMatchedAllergies(),
                     isFavorite = isFavorite,
                     isLoading = false,
                     errorMessage = null
                 )
             }
+        }
+    }
+
+    fun setSafetyResult(answer: String?, riskLevel: String?) {
+        _uiState.update { state ->
+            state.copy(
+                safetyAnswer = answer?.takeIf { it.isNotBlank() },
+                riskLevel = riskLevel?.takeIf { it.isNotBlank() }
+            )
         }
     }
 
@@ -69,5 +81,22 @@ class ProductDetailViewModel @Inject constructor(
                 state.copy(isFavorite = isNowFavorite)
             }
         }
+    }
+
+    private fun Product.withMatchedAllergies(): Product {
+        if (matchedAllergyTags.isNotEmpty()) return this
+
+        val userAllergies = mealContextRepository.mealContext.value.allergyNames
+        if (userAllergies.isEmpty()) return this
+
+        val productAllergyText = (allergyTags + rawMaterials.orEmpty())
+            .joinToString(" ")
+            .lowercase()
+
+        val matchedAllergies = userAllergies.filter { allergy ->
+            productAllergyText.contains(allergy.lowercase())
+        }.distinct()
+
+        return copy(matchedAllergyTags = matchedAllergies)
     }
 }

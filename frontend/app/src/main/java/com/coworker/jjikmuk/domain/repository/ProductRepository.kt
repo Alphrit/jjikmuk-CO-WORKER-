@@ -10,4 +10,6 @@ interface ProductRepository {
     fun getRecommendProducts(limit: Int): List<Product>
 
     fun findProductById(productId: String): Product?
+
+    suspend fun findProductDetailByBarcode(barcode: String): Product?
 }

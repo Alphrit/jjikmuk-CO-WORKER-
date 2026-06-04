@@ -26,6 +26,7 @@ class ChatRepositoryImpl @Inject constructor(
     ): ChatResponse {
         return runCatching {
             val request = ChatApiRequest(
+                barcode = selectedProduct?.barcode?.takeIf { barcode -> barcode.isNotBlank() },
                 profiles = mealContext.toChatApiProfiles(),
                 product = selectedProduct?.toChatApiProduct(),
                 message = userMessage,
@@ -36,6 +37,8 @@ class ChatRepositoryImpl @Inject constructor(
 
             ChatResponse(
                 answer = response.answer,
+                riskLevel = response.risk_level,
+                currentProductBarcode = response.current_product?.barcode,
                 productCandidates = response.recommended_products
                     .filter { product ->
                         product.selection_type == PRODUCT_CANDIDATE_SELECTION_TYPE
@@ -56,11 +59,9 @@ class ChatRepositoryImpl @Inject constructor(
     private fun MealContext.toChatApiProfiles(): List<ChatApiProfile> {
         return selectedProfiles.mapIndexed { index, profile ->
             ChatApiProfile(
-                id = index + 1,
+                id = index + 1L,
                 nickname = profile.name,
-                allergies = profile.allergies,
-                targetType = if (profile.id == "me") "self" else "family",
-                isActive = true
+                allergies = profile.allergies.joinToString(",")
             )
         }
     }

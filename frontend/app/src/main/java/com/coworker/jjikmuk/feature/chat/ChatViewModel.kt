@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.coworker.jjikmuk.domain.model.ChatMessage
 import com.coworker.jjikmuk.domain.model.ChatProductCandidate
+import com.coworker.jjikmuk.domain.model.ChatResponse
 import com.coworker.jjikmuk.domain.model.UploadOption
 import com.coworker.jjikmuk.domain.repository.ChatHistoryRepository
 import com.coworker.jjikmuk.domain.repository.ChatRepository
@@ -33,6 +34,9 @@ class ChatViewModel @Inject constructor(
 
     private val _uploadOptionEvent = MutableSharedFlow<UploadOption>()
     val uploadOptionEvent: SharedFlow<UploadOption> = _uploadOptionEvent
+
+    private val _productDetailEvent = MutableSharedFlow<ProductDetailEvent>()
+    val productDetailEvent: SharedFlow<ProductDetailEvent> = _productDetailEvent
 
     private var nextMessageId: Long = 0L
     private var currentChatHistoryId: Long? = null
@@ -78,6 +82,7 @@ class ChatViewModel @Inject constructor(
                     errorMessage = null
                 )
             }
+            emitProductDetailIfResolved(chatResponse)
         }
     }
 
@@ -120,6 +125,7 @@ class ChatViewModel @Inject constructor(
                     errorMessage = null
                 )
             }
+            emitProductDetailIfResolved(chatResponse)
         }
     }
 
@@ -167,7 +173,32 @@ class ChatViewModel @Inject constructor(
                     errorMessage = null
                 )
             }
+
+            emitProductDetailIfResolved(
+                chatResponse = chatResponse,
+                fallbackBarcode = productCandidate.barcode
+            )
         }
+    }
+
+    private suspend fun emitProductDetailIfResolved(
+        chatResponse: ChatResponse,
+        fallbackBarcode: String? = null
+    ) {
+        if (chatResponse.productCandidates.isNotEmpty()) return
+
+        val barcode = chatResponse.currentProductBarcode
+            ?.takeIf { it.isNotBlank() }
+            ?: fallbackBarcode?.takeIf { it.isNotBlank() }
+            ?: return
+
+        _productDetailEvent.emit(
+            ProductDetailEvent(
+                barcode = barcode,
+                answer = chatResponse.answer,
+                riskLevel = chatResponse.riskLevel
+            )
+        )
     }
 
     fun loadChatHistory(historyId: Long) {
@@ -281,3 +312,9 @@ class ChatViewModel @Inject constructor(
         private const val HISTORY_SUBTITLE_MAX_LENGTH = 48
     }
 }
+
+data class ProductDetailEvent(
+    val barcode: String,
+    val answer: String,
+    val riskLevel: String?
+)
