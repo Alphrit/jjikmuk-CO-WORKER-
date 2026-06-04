@@ -24,4 +24,4 @@ captures/
 
 # Keystore / signing files
 *.jks
-*.keystore
+*.keystore.gradle-codex/
