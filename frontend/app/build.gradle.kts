@@ -9,10 +9,20 @@ val apiBaseUrl = providers.gradleProperty("API_BASE_URL")
     .orElse("http://10.0.2.2:8080/")
     .get()
 val useMockScan = providers.gradleProperty("USE_MOCK_SCAN")
-    .orElse("false")
+    .orElse("true")
     .get()
 val scanUserId = providers.gradleProperty("SCAN_USER_ID")
     .orElse("")
+    .get()
+val aiBaseUrl = providers.gradleProperty("AI_BASE_URL")
+    .orElse("http://10.0.2.2:8000/")
+    .get()
+val geminiApiKey = providers.gradleProperty("GEMINI_API_KEY")
+    .orElse(providers.environmentVariable("GEMINI_API_KEY"))
+    .orElse("")
+    .get()
+val geminiModel = providers.gradleProperty("GEMINI_MODEL")
+    .orElse("gemini-2.5-flash-lite")
     .get()
 
 android {
@@ -28,6 +38,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "AI_BASE_URL", "\"$aiBaseUrl\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "GEMINI_MODEL", "\"$geminiModel\"")
         buildConfigField("Boolean", "USE_MOCK_SCAN", useMockScan)
         buildConfigField("String", "SCAN_USER_ID", "\"$scanUserId\"")
     }
@@ -80,6 +93,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("org.opencv:opencv:4.10.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

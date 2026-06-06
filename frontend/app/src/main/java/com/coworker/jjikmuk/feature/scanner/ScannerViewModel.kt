@@ -3,11 +3,10 @@ package com.coworker.jjikmuk.feature.scanner
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.coworker.jjikmuk.BuildConfig
-import com.coworker.jjikmuk.core.common.ApiResult
+import com.coworker.jjikmuk.data.local.dummy.ProductDummyData
+import com.coworker.jjikmuk.domain.model.NutrientPercents
 import com.coworker.jjikmuk.domain.model.ProductAnalysis
 import com.coworker.jjikmuk.domain.model.ScannedProduct
-import com.coworker.jjikmuk.domain.repository.ProductScanRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -21,9 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class ScannerViewModel @Inject constructor(
-    private val productScanRepository: ProductScanRepository
-) : ViewModel() {
+class ScannerViewModel @Inject constructor() : ViewModel() {
     private val _uiState = MutableStateFlow(ScannerUiState())
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
 
@@ -32,7 +29,7 @@ class ScannerViewModel @Inject constructor(
 
     fun submitBarcode(barcode: String) {
         viewModelScope.launch {
-            Log.d(TAG, "Product lookup started: $barcode")
+            Log.d(TAG, "Demo product lookup started: $barcode")
             _uiState.update {
                 it.copy(
                     isLoading = true,
@@ -41,128 +38,62 @@ class ScannerViewModel @Inject constructor(
                 )
             }
 
-            if (BuildConfig.USE_MOCK_SCAN) {
-                Log.d(TAG, "Using mock scan result")
-                delay(MOCK_LOOKUP_DELAY_MS)
-                val mockResult = createMockResult(barcode)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        scannedBarcode = barcode,
-                        scanResult = mockResult,
-                        resultSequence = it.resultSequence + 1
-                    )
-                }
-                return@launch
-            }
-
-            when (val result = productScanRepository.scanProduct(barcode, scanUserId())) {
-                is ApiResult.Success -> {
-                    val product = result.data.product
-                    Log.d(
-                        TAG,
-                        "Product lookup success: barcode=${result.data.barcode}, hasProduct=${product != null}"
-                    )
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            scannedBarcode = result.data.barcode,
-                            scanResult = ScannerResult(
-                                barcode = result.data.barcode,
-                                product = product,
-                                nutrientPercents = result.data.nutrientPercents,
-                                analysis = result.data.analysis,
-                                requiresRegistration = product == null
-                            ),
-                            resultSequence = it.resultSequence + 1
-                        )
-                    }
-                }
-
-                is ApiResult.Error -> {
-                    Log.d(TAG, "Product lookup error: ${result.message}", result.throwable)
-                    if (result.statusCode != HTTP_NOT_FOUND) {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                scannedBarcode = barcode,
-                                scanResult = null
-                            )
-                        }
-                        _effect.emit(ScannerUiEffect.ShowToast(result.message))
-                        return@launch
-                    }
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            scannedBarcode = barcode,
-                            scanResult = ScannerResult(
-                                barcode = barcode,
-                                product = null,
-                                nutrientPercents = null,
-                                analysis = null,
-                                requiresRegistration = true
-                            ),
-                            resultSequence = it.resultSequence + 1
-                        )
-                    }
-                }
+            delay(DEMO_LOOKUP_DELAY_MS)
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    scannedBarcode = barcode,
+                    scanResult = createDemoShrimpCrackerResult(scannedBarcode = barcode),
+                    resultSequence = it.resultSequence + 1
+                )
             }
         }
     }
 
-    private fun createMockResult(barcode: String): ScannerResult {
-        val shouldShowRegistrationSheet = barcode.endsWith(MOCK_UNREGISTERED_SUFFIX)
-        if (shouldShowRegistrationSheet) {
-            return ScannerResult(
-                barcode = barcode,
-                product = null,
-                nutrientPercents = null,
-                analysis = null,
-                requiresRegistration = true
-            )
-        }
+    private fun createDemoShrimpCrackerResult(scannedBarcode: String): ScannerResult {
+        val product = ProductDummyData.demoShrimpCracker
 
         return ScannerResult(
-            barcode = barcode,
+            barcode = scannedBarcode,
             product = ScannedProduct(
-                reportNo = "mock-report",
-                barcode = barcode,
-                productName = "농심 새우깡",
-                manufacturer = "농심",
-                allergy = null,
+                reportNo = "demo-shrimp-cracker",
+                barcode = ProductDummyData.DEMO_SHRIMP_CRACKER_BARCODE,
+                productName = product.name,
+                manufacturer = product.category,
+                allergy = product.allergyTags.joinToString(", "),
                 nutrientText = null,
                 imageUrl = null,
-                source = "mock",
-                rawMaterials = null,
-                calories = 220.0,
-                carbs = null,
-                protein = null,
-                fat = 7.0,
-                sugar = 25.0,
-                sodium = 180.0,
+                source = "demo",
+                rawMaterials = product.rawMaterials,
+                calories = product.caloriesKcal,
+                carbs = product.carbohydrateG,
+                protein = product.proteinG,
+                fat = product.fatG,
+                sugar = 0.0,
+                sodium = 230.0,
                 cholesterol = null,
-                allergyWarning = null
+                allergyWarning = product.allergyTags.joinToString(", ")
             ),
-            nutrientPercents = null,
+            nutrientPercents = NutrientPercents(
+                energyPercent = product.energyPercent?.toInt(),
+                carbsPercent = product.carbohydratePercent?.toInt(),
+                proteinPercent = product.proteinPercent?.toInt(),
+                fatPercent = product.fatPercent?.toInt(),
+                sugarPercent = 0,
+                sodiumPercent = 12,
+                cholesterolPercent = null
+            ),
             analysis = ProductAnalysis(
-                isDangerous = false,
-                dangerousIngredients = emptyList(),
-                message = "Mock safe product"
+                isDangerous = true,
+                dangerousIngredients = product.matchedAllergyTags,
+                message = ProductDummyData.DEMO_SAFETY_ANSWER
             ),
             requiresRegistration = false
         )
     }
 
-    private fun scanUserId(): Long? {
-        return BuildConfig.SCAN_USER_ID.toLongOrNull()
-    }
-
     private companion object {
         const val TAG = "ScannerViewModel"
-        const val HTTP_NOT_FOUND = 404
-        const val MOCK_LOOKUP_DELAY_MS = 500L
-        const val MOCK_UNREGISTERED_SUFFIX = "0"
+        const val DEMO_LOOKUP_DELAY_MS = 500L
     }
 }

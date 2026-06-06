@@ -34,6 +34,15 @@
         <activity
             android:name=".feature.scanner.BarcodeScannerActivity"
             android:exported="false" />
+        <activity
+            android:name=".feature.scanner.ProductPhotoCaptureActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.scanner.ProductNameSearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.scanner.ProductGrabCutActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

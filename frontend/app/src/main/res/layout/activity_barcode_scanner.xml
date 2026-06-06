@@ -396,7 +396,7 @@
                     android:layout_height="32dp"
                     android:background="@drawable/bg_scan_nutrient_icon_yellow"
                     android:gravity="center"
-                    android:text="S"
+                    android:text="P"
                     android:textColor="#E0B72E"
                     android:textSize="14sp" />
 
@@ -405,7 +405,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:includeFontPadding="false"
-                    android:text="당류"
+                    android:text="단백질"
                     android:textColor="#727681"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -472,16 +472,16 @@
                     android:layout_height="32dp"
                     android:background="@drawable/bg_scan_nutrient_icon_red"
                     android:gravity="center"
-                    android:text="Na"
+                    android:text="C"
                     android:textColor="#E07064"
-                    android:textSize="12sp" />
+                    android:textSize="14sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:includeFontPadding="false"
-                    android:text="나트륨"
+                    android:text="탄수화물"
                     android:textColor="#727681"
                     android:textSize="11sp"
                     android:textStyle="bold" />

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Text" />
+
+    <style name="Text.Pretendard" />
+
+    <style name="Text.Pretendard.SemiBold">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Text.Pretendard.Bold">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+</resources>

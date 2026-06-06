@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/productPhotoRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/productPhotoContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/productPhotoPreviewView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@android:color/black"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:scaleType="fillCenter"
+            tools:background="#5A554C" />
+
+        <ImageButton
+            android:id="@+id/btnProductPhotoClose"
+            android:layout_width="41dp"
+            android:layout_height="41dp"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="56dp"
+            android:background="@drawable/bg_scan_top_button"
+            android:contentDescription="닫기"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="10dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_scan_back_chevron"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageButton
+            android:id="@+id/btnProductPhotoFlash"
+            android:layout_width="41dp"
+            android:layout_height="41dp"
+            android:layout_marginTop="56dp"
+            android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_scan_top_button"
+            android:contentDescription="플래시"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="10dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_scan_flash"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvProductPhotoGuide"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="112dp"
+            android:layout_marginEnd="28dp"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:lineSpacingExtra="3dp"
+            android:text="상품이 안내선 안에 꽉 차도록 촬영해 주세요.\n상품 전체가 잘리지 않게 화면 안에 넣어 주세요."
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.coworker.jjikmuk.feature.scanner.ScanGuideView
+            android:id="@+id/productPhotoGuideView"
+            android:layout_width="340dp"
+            android:layout_height="430dp"
+            android:layout_marginTop="154dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <FrameLayout
+            android:id="@+id/btnProductPhotoGallery"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="36dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_scan_side_button"
+            android:clickable="true"
+            android:contentDescription="갤러리"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/productPhotoGuideView">
+
+            <ImageView
+                android:layout_width="31dp"
+                android:layout_height="31dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_scan_gallery" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/btnProductPhotoCapture"
+            android:layout_width="90dp"
+            android:layout_height="90dp"
+            android:layout_marginBottom="42dp"
+            android:background="@drawable/bg_scan_capture_outer"
+            android:clickable="true"
+            android:contentDescription="상품 사진 촬영"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:padding="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <FrameLayout
+                android:layout_width="66dp"
+                android:layout_height="66dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_scan_capture_inner">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_scan_camera" />
+            </FrameLayout>
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/tvProductPhotoStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="28dp"
+            android:layout_marginEnd="28dp"
+            android:layout_marginBottom="18dp"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:text="흔들리지 않게 카메라를 고정한 뒤 촬영해 주세요."
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            app:layout_constraintBottom_toTopOf="@id/btnProductPhotoCapture"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <View
+            android:id="@+id/productPhotoResultScrim"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="#4D000000"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:id="@+id/productPhotoResultSheet"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
+            android:layout_marginEnd="18dp"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/bg_scan_result_sheet"
+            android:elevation="16dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="20dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="20dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:visibility="visible">
+
+            <View
+                android:layout_width="37dp"
+                android:layout_height="5dp"
+                android:background="@drawable/bg_scan_sheet_handle" />
+
+            <TextView
+                android:id="@+id/tvProductPhotoDecision"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:textColor="#111111"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                tools:text="PASS" />
+
+            <TextView
+                android:id="@+id/tvProductPhotoReason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#727681"
+                android:textSize="14sp"
+                tools:text="상품이 보이고 기본 촬영 품질 기준을 통과했습니다." />
+
+            <TextView
+                android:id="@+id/tvProductPhotoMetrics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_scan_result_info_card"
+                android:gravity="center"
+                android:padding="12dp"
+                android:textColor="#111111"
+                android:textSize="12sp"
+                tools:text="blur 210.0 · brightness 120.0 · contrast 42.0" />
+
+            <TextView
+                android:id="@+id/btnProductPhotoConfirm"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_scan_result_primary_button"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="다음 단계로 이동"
+                android:textColor="#3B3128"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnProductPhotoRetake"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_scan_result_secondary_button"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="다시 촬영하기"
+                android:textColor="#000000"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

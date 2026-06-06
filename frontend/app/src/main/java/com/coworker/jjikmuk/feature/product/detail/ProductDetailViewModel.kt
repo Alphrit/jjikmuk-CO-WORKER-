@@ -61,6 +61,15 @@ class ProductDetailViewModel(
         }
     }
 
+    fun setSafetyResult(answer: String?, riskLevel: String?) {
+        _uiState.update { state ->
+            state.copy(
+                safetyAnswer = answer?.takeIf { it.isNotBlank() },
+                riskLevel = riskLevel?.takeIf { it.isNotBlank() }
+            )
+        }
+    }
+
     fun toggleFavorite() {
         val productId = currentProductId
         if (productId.isBlank()) return

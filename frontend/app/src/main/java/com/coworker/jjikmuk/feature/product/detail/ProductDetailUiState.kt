@@ -6,5 +6,7 @@ data class ProductDetailUiState(
     val product: Product? = null,
     val isFavorite: Boolean = false,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val safetyAnswer: String? = null,
+    val riskLevel: String? = null
 )

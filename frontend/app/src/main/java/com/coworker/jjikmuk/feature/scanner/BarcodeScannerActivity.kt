@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -43,7 +44,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.coworker.jjikmuk.MainActivity
 import com.coworker.jjikmuk.R
+import com.coworker.jjikmuk.data.local.dummy.ProductDummyData
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
@@ -168,6 +171,17 @@ class BarcodeScannerActivity : AppCompatActivity() {
         }
         retakeButton.setOnClickListener {
             hideResultSheet(showPreviousScans = true)
+        }
+        resultPrimaryButton.setOnClickListener {
+            val result = lastScanResult ?: return@setOnClickListener
+            if (result.requiresRegistration || result.product == null) {
+                val intent = Intent(this, ProductNameSearchActivity::class.java).apply {
+                    putExtra(ProductNameSearchActivity.EXTRA_BARCODE, result.barcode)
+                }
+                startActivity(intent)
+            } else {
+                openDemoProductDetail()
+            }
         }
         galleryReselectButton.setOnClickListener {
             openGalleryPicker()
@@ -573,7 +587,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
             resultProductNameText.visibility = View.INVISIBLE
             resultAnalysisText.visibility = View.INVISIBLE
             nutritionLayout.visibility = View.INVISIBLE
-            resultPrimaryButton.text = "제품 등록하기"
+            resultPrimaryButton.text = "등록하고 50P 받기"
             return
         }
 
@@ -586,7 +600,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
         resultPrimaryButton.text = "MORE →"
 
         val isDangerous = result.analysis?.isDangerous == true
-        resultSafetyText.text = if (isDangerous) "Caution" else "Safe"
+        resultSafetyText.text = if (isDangerous) "Danger" else "Safe"
         resultSafetyText.setTextColor(
             Color.parseColor(if (isDangerous) "#D96B5F" else "#16A635")
         )
@@ -598,9 +612,9 @@ class BarcodeScannerActivity : AppCompatActivity() {
             percent = result.nutrientPercents?.energyPercent
         )
         sugarText.text = formatNutrition(
-            value = product.sugar,
+            value = product.protein,
             unit = "g",
-            percent = result.nutrientPercents?.sugarPercent
+            percent = result.nutrientPercents?.proteinPercent
         )
         fatText.text = formatNutrition(
             value = product.fat,
@@ -608,10 +622,25 @@ class BarcodeScannerActivity : AppCompatActivity() {
             percent = result.nutrientPercents?.fatPercent
         )
         sodiumText.text = formatNutrition(
-            value = product.sodium,
-            unit = "mg",
-            percent = result.nutrientPercents?.sodiumPercent
+            value = product.carbs,
+            unit = "g",
+            percent = result.nutrientPercents?.carbsPercent
         )
+    }
+
+    private fun openDemoProductDetail() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(MainActivity.EXTRA_SHOW_PRODUCT_DETAIL, true)
+            putExtra(MainActivity.EXTRA_PRODUCT_ID, ProductDummyData.DEMO_SHRIMP_CRACKER_ID)
+            putExtra(
+                MainActivity.EXTRA_SAFETY_ANSWER,
+                ProductDummyData.DEMO_SAFETY_ANSWER
+            )
+            putExtra(MainActivity.EXTRA_RISK_LEVEL, "high")
+        }
+        startActivity(intent)
+        finish()
     }
 
     private fun hideResultSheet(showPreviousScans: Boolean) {
