@@ -35,7 +35,7 @@ def detect_nutrition_keyword(message: str) -> Optional[str]:
     for nutrient, aliases in NUTRITION_KEYWORDS.items():
         for alias in aliases:
             if len(alias) <= 1:
-                pattern = rf"{re.escape(alias)}(?:은|는|이|가|\s|[?!.]|$|함량|수치|어때|높|많|적)"
+                pattern = rf"{re.escape(alias)}(?:은|는|이|가|\s|[?!.]|$|함량|수치|어때|높|많|적|얼마|얼마나|몇)"
                 if re.search(pattern, message):
                     return nutrient
                 continue
@@ -168,6 +168,5 @@ def profile_context_summary(profile: Optional[Profile]) -> str:
         f"현재 프로필 별칭: {', '.join(profile_identifiers(profile)) or '없음'}",
         f"알레르기: {', '.join(profile.resolved_allergies()) or '없음'}",
         f"식이습관: {', '.join(profile.resolved_special_diets()) or '없음'}",
-        f"질환/건강 상태: {', '.join(profile.conditions) or '없음'}",
     ]
     return "\n".join(parts)

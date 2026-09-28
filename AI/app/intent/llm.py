@@ -29,13 +29,13 @@ def build_llm_intent_prompt(
 - can_i_eat: 특정 제품을 먹어도 되는지, 안전한지, 괜찮은지 묻는 경우
 - ingredient_check: 특정 성분, 원재료, 알레르기 성분 포함 여부를 묻는 경우
 - nutrition_explain: 칼로리, 당류, 단백질, 지방, 탄수화물, 나트륨 등 영양성분 설명을 원하는 경우
-- health_risk_check: 당뇨, 혈당, 고혈압, 다이어트, 질환, 건강 상태 기준으로 제품 위험을 묻는 경우
 - product_summary: 제품 정보를 전반적으로 요약해달라는 경우
 - missing_product: 제품 정보가 없거나 DB 미등록 제품에 대한 경우
 - general_allergy_guide: 특정 제품 없이 알레르기 일반 정보를 묻는 경우
-- general_diet_guide: 특정 제품 없이 다이어트, 비건, 식단 일반 정보를 묻는 경우
+- general_diet_guide: 특정 제품 없이 채식, 저당, 저염, 글루텐프리, 저칼로리, 저지방, 고단백 식이 조건을 묻는 경우
 - general_nutrition_guide: 특정 제품 없이 영양성분 일반 정보를 묻는 경우
-- general_food_health: 특정 제품 없이 식품과 건강 관련 일반 질문을 하는 경우
+- alternative_food_recommend: 알레르기, 식단 조건, 영양 조건에 맞는 대체 식품이나 대체 제품 추천을 원하는 경우
+- food_compare: 두 개 이상의 음식/제품을 칼로리, 단백질, 나트륨, 당류 등 기준으로 비교하려는 경우
 - profile_based_recheck: 이미 본 제품을 다른 사람이나 다른 프로필 기준으로 다시 봐달라는 경우
 - unknown: 위에 해당하지 않거나 판단이 어려운 경우
 

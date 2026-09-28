@@ -1,6 +1,9 @@
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.core.models import ChatRequest, Product, Profile
+from app.core.models import ChatRequest, Product, ProductLabelProvenance, Profile
+from app.core.numeric import parse_non_negative_number
+from app.services.profile_context import dedupe_profiles
 
 
 def _clean_string(value: Any) -> Optional[str]:
@@ -33,22 +36,12 @@ def _pick_first(payload: Dict[str, Any], keys: List[str]) -> Any:
     return None
 
 
-def _to_float(value: Any) -> Optional[float]:
-    if value is None or value == "":
-        return None
-
-    if isinstance(value, (int, float)):
-        return float(value)
-
-    text = str(value).strip().lower()
-    filtered = "".join(char for char in text if char.isdigit() or char in ".-")
-    if filtered in ("", "-", ".", "-."):
-        return None
-
-    try:
-        return float(filtered)
-    except ValueError:
-        return None
+def _to_float(
+    value: Any,
+    *,
+    expected_unit: Optional[str] = None,
+) -> Optional[float]:
+    return parse_non_negative_number(value, expected_unit=expected_unit)
 
 
 def _to_bool(value: Any) -> Optional[bool]:
@@ -78,6 +71,16 @@ def _normalize_nutrition(payload: Dict[str, Any]) -> Dict[str, float]:
         "saturated_fat": ["saturated_fat", "saturatedFat", "포화지방"],
         "cholesterol": ["cholesterol", "cholesterol_mg", "cholesterolMg", "콜레스테롤"],
     }
+    nutrition_units = {
+        "kcal": "kcal",
+        "protein": "g",
+        "fat": "g",
+        "carbohydrate": "g",
+        "sugars": "g",
+        "sodium": "mg",
+        "saturated_fat": "g",
+        "cholesterol": "mg",
+    }
 
     normalized: Dict[str, float] = {}
     nutrition_payload = payload.get("nutrition")
@@ -87,27 +90,204 @@ def _normalize_nutrition(payload: Dict[str, Any]) -> Dict[str, float]:
         source_dicts = [payload]
 
     for field_name, aliases in nutrition_aliases.items():
-        value = None
+        parsed = None
         for source in source_dicts:
             value = _pick_first(source, aliases)
-            if value is not None:
+            parsed = _to_float(
+                value,
+                expected_unit=nutrition_units[field_name],
+            )
+            if parsed is not None:
                 break
-        parsed = _to_float(value)
         if parsed is not None:
             normalized[field_name] = parsed
 
     return normalized
 
 
-def normalize_product_payload(raw_product: Optional[Dict[str, Any]]) -> Optional[Product]:
+def _normalize_explicit_nutrition_basis(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Keep only basis metadata explicitly supplied by the data source.
+
+    ``SERVING_SIZE`` describes a nutrition denominator, not generic product
+    weight.  A size alone also does not prove that every nutrient is reported
+    per serving, so this adapter deliberately leaves ``basis_type`` unknown
+    unless the source declares it.
+    """
+
+    nested = _pick_first(payload, ["nutrition_basis", "nutritionBasis"])
+    basis = dict(nested) if isinstance(nested, dict) else {}
+    flat_fields = {
+        "basis_type": _pick_first(
+            payload,
+            [
+                "nutrition_basis_type",
+                "nutritionBasisType",
+                "measurement_basis",
+                "measurementBasis",
+                "NUTRITION_BASIS_TYPE",
+            ],
+        ),
+        "serving_size": _pick_first(
+            payload,
+            ["serving_size", "servingSize", "SERVING_SIZE"],
+        ),
+        "serving_size_value": _pick_first(
+            payload,
+            ["serving_size_value", "servingSizeValue"],
+        ),
+        "serving_size_unit": _pick_first(
+            payload,
+            ["serving_size_unit", "servingSizeUnit"],
+        ),
+        "package_size": _pick_first(
+            payload,
+            ["package_size", "packageSize"],
+        ),
+        "package_size_value": _pick_first(
+            payload,
+            ["package_size_value", "packageSizeValue"],
+        ),
+        "package_size_unit": _pick_first(
+            payload,
+            ["package_size_unit", "packageSizeUnit"],
+        ),
+        "servings_per_package": _pick_first(
+            payload,
+            [
+                "servings_per_package",
+                "servingsPerPackage",
+                "servings_per_container",
+                "servingsPerContainer",
+            ],
+        ),
+        "basis_source": _pick_first(
+            payload,
+            ["nutrition_basis_source", "nutritionBasisSource"],
+        ),
+    }
+    for key, value in flat_fields.items():
+        if value is not None and key not in basis:
+            basis[key] = value
+    return basis
+
+
+def _normalize_label_provenance(
+    payload: Dict[str, Any],
+    *,
+    assume_database_utc: bool = False,
+) -> Dict[str, Any]:
+    """Preserve only explicitly supplied source observations and revisions.
+
+    The legacy free-form ``source`` column is intentionally not promoted into
+    this contract, and no request/lookup timestamp is generated here.
+    """
+
+    nested = _pick_first(
+        payload,
+        [
+            "label_provenance",
+            "product_label_provenance",
+            "productLabelProvenance",
+        ],
+    )
+    provenance = dict(nested) if isinstance(nested, dict) else {}
+    flat_fields = {
+        "source_type": _pick_first(
+            payload,
+            ["label_source_type", "labelSourceType"],
+        ),
+        "source_id": _pick_first(
+            payload,
+            ["label_source_id", "labelSourceId"],
+        ),
+        "source_record_id": _pick_first(
+            payload,
+            ["label_source_record_id", "labelSourceRecordId"],
+        ),
+        "label_observed_at": _pick_first(
+            payload,
+            ["label_observed_at", "labelObservedAt"],
+        ),
+        "upstream_updated_at": _pick_first(
+            payload,
+            ["upstream_updated_at", "upstreamUpdatedAt"],
+        ),
+        "upstream_revision": _pick_first(
+            payload,
+            ["upstream_revision", "upstreamRevision", "source_revision"],
+        ),
+        "ingested_content_revision_sha256": _pick_first(
+            payload,
+            [
+                "ingested_content_revision_sha256",
+                "ingestedContentRevisionSha256",
+                "label_ingested_content_revision_sha256",
+            ],
+        ),
+        "covered_fact_groups": _pick_first(
+            payload,
+            ["label_covered_fact_groups", "coveredFactGroups"],
+        ),
+        "lineage_status": _pick_first(
+            payload,
+            ["label_lineage_status", "lineageStatus"],
+        ),
+    }
+    for key, value in flat_fields.items():
+        if value is not None and key not in provenance:
+            provenance[key] = value
+    if assume_database_utc:
+        for field_name in ("label_observed_at", "upstream_updated_at"):
+            value = provenance.get(field_name)
+            # MySQL DATETIME values are returned without tzinfo. The migration
+            # contract stores these particular columns as UTC; attach that
+            # declared storage timezone without generating or changing an
+            # observation instant. Raw API strings remain strict and must carry
+            # their own offset.
+            if isinstance(value, datetime) and value.tzinfo is None:
+                provenance[field_name] = value.replace(tzinfo=timezone.utc)
+        try:
+            # Corrupt legacy/catalog metadata must not turn a product lookup
+            # into a 500. Preserve the product facts but remove all authority
+            # from malformed provenance; Product will expose it unavailable.
+            ProductLabelProvenance.model_validate(provenance)
+        except (TypeError, ValueError):
+            return {}
+    return provenance
+
+
+def normalize_product_payload(
+    raw_product: Optional[Dict[str, Any]],
+    *,
+    repository_record: bool = False,
+) -> Optional[Product]:
     if not raw_product:
         return None
 
     payload = dict(raw_product)
+    envelopes = [payload]
     if isinstance(payload.get("data"), dict):
         payload = dict(payload["data"])
+        envelopes.append(payload)
     if isinstance(payload.get("product"), dict):
         payload = dict(payload["product"])
+        envelopes.append(payload)
+
+    # Some upstream APIs put provenance beside a ``data``/``product`` wrapper.
+    # Copy only that typed metadata across the envelope boundary; never let an
+    # outer client payload override inner product facts.
+    if not _normalize_label_provenance(
+        payload,
+        assume_database_utc=repository_record,
+    ):
+        for envelope in reversed(envelopes[:-1]):
+            outer_provenance = _normalize_label_provenance(
+                envelope,
+                assume_database_utc=repository_record,
+            )
+            if outer_provenance:
+                payload["label_provenance"] = outer_provenance
+                break
 
     ingredients = _split_to_list(_pick_first(payload, ["ingredients", "원재료리스트"]))
     rawmtrl_nm = _clean_string(_pick_first(payload, ["rawmtrl_nm", "raw_materials", "rawMaterials", "rawMaterialName", "RAWMTRL_NM", "원재료명"]))
@@ -125,8 +305,10 @@ def normalize_product_payload(raw_product: Optional[Dict[str, Any]]) -> Optional
             _pick_first(payload, ["manufacturer_name", "manufacturer", "manufacturerName", "제조사명", "BSSH_NM"])
         ),
         company_name=_clean_string(_pick_first(payload, ["company_name", "companyName", "업체명", "company"])),
-        weight=_clean_string(_pick_first(payload, ["weight", "식품중량", "SERVING_SIZE"])),
+        weight=_clean_string(_pick_first(payload, ["weight", "total_weight", "totalWeight", "식품중량"])),
         image_url=_clean_string(_pick_first(payload, ["image_url", "imageUrl", "img_url", "이미지URL"])),
+        clean_product_name=_clean_string(_pick_first(payload, ["clean_product_name", "cleanProductName"])),
+        total_weight=_clean_string(_pick_first(payload, ["total_weight", "totalWeight", "식품중량"])),
         category_large=_clean_string(_pick_first(payload, ["category_large", "categoryLarge", "식품대분류"])),
         category_medium=_clean_string(_pick_first(payload, ["category_medium", "categoryMedium", "식품중분류"])),
         category_small=_clean_string(_pick_first(payload, ["category_small", "categorySmall", "식품소분류"])),
@@ -141,6 +323,31 @@ def normalize_product_payload(raw_product: Optional[Dict[str, Any]]) -> Optional
         ingredients=ingredients,
         allergy_info=allergies,
         nutrition=_normalize_nutrition(payload),
+        nutrition_basis=_normalize_explicit_nutrition_basis(payload),
+        label_provenance=_normalize_label_provenance(
+            payload,
+            assume_database_utc=repository_record,
+        ),
+        nutrition_percent={
+            key: value
+            for key, value in {
+                "carbohydrate": _to_float(_pick_first(payload, ["carbs_percent", "carbsPercent"]), expected_unit="%"),
+                "protein": _to_float(_pick_first(payload, ["protein_percent", "proteinPercent"]), expected_unit="%"),
+                "fat": _to_float(_pick_first(payload, ["fat_percent", "fatPercent"]), expected_unit="%"),
+                "sodium": _to_float(_pick_first(payload, ["sodium_g", "sodiumG"]), expected_unit="%"),
+                "cholesterol": _to_float(_pick_first(payload, ["cholesterol_g", "cholesterolG"]), expected_unit="%"),
+            }.items()
+            if value is not None
+        },
+        macro_percent={
+            key: value
+            for key, value in {
+                "carbohydrate": _to_float(_pick_first(payload, ["carbs_percent", "carbsPercent"]), expected_unit="%"),
+                "protein": _to_float(_pick_first(payload, ["protein_percent", "proteinPercent"]), expected_unit="%"),
+                "fat": _to_float(_pick_first(payload, ["fat_percent", "fatPercent"]), expected_unit="%"),
+            }.items()
+            if value is not None
+        },
         match_confidence=_to_float(_pick_first(payload, ["match_confidence", "similarity_score"])),
         product_found=product_found if product_found is not None else True,
     )
@@ -149,31 +356,7 @@ def normalize_product_payload(raw_product: Optional[Dict[str, Any]]) -> Optional
 def normalize_profile_payload(raw_profile: Optional[Dict[str, Any]]) -> Optional[Profile]:
     if not raw_profile:
         return None
-
-    payload = dict(raw_profile)
-    if isinstance(payload.get("data"), dict):
-        payload = dict(payload["data"])
-
-    profile_id = _pick_first(payload, ["profile_id", "id", "user_id", "userId"])
-    nickname = _clean_string(_pick_first(payload, ["nickname", "profile_name", "name"]))
-
-    return Profile(
-        profile_id=int(profile_id) if profile_id is not None else 0,
-        profile_name=nickname or "기본 프로필",
-        user_id=_pick_first(payload, ["user_id", "userId", "id"]),
-        email=_clean_string(_pick_first(payload, ["email"])),
-        nickname=nickname,
-        allergies=_split_to_list(_pick_first(payload, ["allergies"])),
-        user_allergies=_split_to_list(_pick_first(payload, ["user_allergies", "userAllergies", "allergies", "알레르기리스트"])),
-        conditions=_split_to_list(_pick_first(payload, ["conditions", "diseases", "질환정보"])),
-        special_diets=_split_to_list(_pick_first(payload, ["special_diets", "specialDiet"])),
-        special_diet=_split_to_list(_pick_first(payload, ["special_diet", "specialDiet", "식이습관"])),
-        disliked_ingredients=_split_to_list(
-            _pick_first(payload, ["disliked_ingredients", "dislikedIngredients", "비선호성분"])
-        ),
-        target_type=_clean_string(_pick_first(payload, ["target_type", "targetType"])) or "self",
-        is_active=bool(_pick_first(payload, ["is_active", "isActive", "active"])) if any(key in payload for key in ["is_active", "isActive", "active"]) else True,
-    )
+    return Profile.model_validate(raw_profile)
 
 
 def normalize_profiles_payload(raw_profiles: Optional[List[Dict[str, Any]]]) -> List[Profile]:
@@ -188,30 +371,28 @@ def normalize_profiles_payload(raw_profiles: Optional[List[Dict[str, Any]]]) -> 
     return profiles
 
 
+def normalize_known_profiles(req: ChatRequest) -> List[Profile]:
+    profiles: List[Profile] = []
+    if req.profile:
+        profiles.append(req.profile)
+    raw_primary_profile = normalize_profile_payload(req.raw_profile)
+    if raw_primary_profile:
+        profiles.append(raw_primary_profile)
+    profiles.extend(req.profiles)
+    profiles.extend(normalize_profiles_payload(req.raw_profiles))
+
+    return profiles
+
+
 def normalize_active_profiles(req: ChatRequest) -> List[Profile]:
-    profiles = list(req.profiles or normalize_profiles_payload(req.raw_profiles))
-    primary_profile = req.profile or normalize_profile_payload(req.raw_profile)
-
-    if primary_profile:
-        profiles.insert(0, primary_profile)
-
-    active_profiles = []
-    seen = set()
-    for profile in profiles:
-        key = (profile.profile_id, profile.user_id, profile.profile_name)
-        if key in seen or not profile.is_active:
-            continue
-        seen.add(key)
-        active_profiles.append(profile)
-
-    return active_profiles
+    return dedupe_profiles(normalize_known_profiles(req))
 
 
 def normalize_chat_request(
     req: ChatRequest,
 ) -> Tuple[Optional[Profile], Optional[Product], Optional[str], Optional[str]]:
     active_profiles = normalize_active_profiles(req)
-    profile = active_profiles[0] if active_profiles else (req.profile or normalize_profile_payload(req.raw_profile))
+    profile = active_profiles[0] if active_profiles else None
     product = req.product or normalize_product_payload(req.raw_product)
     barcode = req.barcode or (product.barcode if product else None)
     report_number = req.report_number or (product.report_number if product else None)

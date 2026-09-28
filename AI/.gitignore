@@ -1,20 +1,72 @@
+# Local secrets (only the shared template is versioned).
 .env
+.env.*
 app/.env
 *.env
 !.env.example
+
+# Virtual environments and interpreter caches.
 venv/
 .venv/
+.venv-*/
+.direnv/
 __pycache__/
 .pycache_local/
-.pytest_cache/
 *.pyc
 *.pyo
 *.pyd
-.coverage
+
+# Developer caches and generated test reports, not test source code.
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage*
 htmlcov/
+coverage.xml
+/junit*.xml
+/test-results/
+/test-reports/
+
+# Private scratch scripts, manual experiments, and local notebooks.
+# Shared regression tests and evaluation tools remain versioned.
+/.local/
+/scratch/
+/tests/local/
+/evaluation/local/
+.ipynb_checkpoints/
+
+# Generated RAG indexes and evaluation output (including historical archives).
 app/chroma_db/
+app/.chroma_db.build-*/
+app/.chroma_db.backup-*/
+**/.*.rebuild.lock
+evaluation/results/
+
+# Local databases, write-ahead logs, and journal files.
+*.sqlite
 *.sqlite3
 *.db
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+*.db-wal
+*.db-shm
+*.db-journal
+
+# Build output and local process logs.
+build/
+dist/
+*.egg-info/
 logs/
+*.log
+*.pid
+
+# OS metadata.
 .DS_Store
 __MACOSX/

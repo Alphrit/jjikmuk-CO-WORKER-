@@ -1,33 +1,137 @@
-ALLERGY_MAP = {
-    "우유": ["우유", "탈지분유", "전지분유", "유청", "카제인", "유단백", "농축우유단백"],
-    "계란": ["계란", "난백", "난황", "전란액"],
-    "땅콩": ["땅콩", "땅콩버터", "볶음땅콩", "땅콩분태"],
-    "대두": ["대두", "콩", "분리대두단백", "대두단백"],
-    "밀": ["밀", "소맥분", "밀가루"],
-    "새우": ["새우", "새우분말", "새우엑기스"],
-    "게": ["게", "게맛살", "크랩"],
-    "견과류": ["아몬드", "호두", "캐슈넛", "피스타치오", "헤이즐넛"],
+from types import MappingProxyType
+from typing import Mapping
+
+
+_ALLERGEN_DIRECT_ALIAS_DATA = {
+    "우유": [
+        "우유", "원유", "분유", "탈지분유", "전지분유", "유청",
+        "카제인", "유단백", "농축우유단백", "버터", "치즈", "생크림",
+        "유제품", "milk", "dairy", "whey", "casein",
+    ],
+    "계란": [
+        "계란", "달걀", "난류", "난백", "난황", "전란액", "전란",
+        "계란흰자", "달걀흰자", "egg",
+    ],
+    "땅콩": ["땅콩", "땅콩버터", "볶음땅콩", "땅콩분태", "peanut"],
+    "대두": [
+        "대두", "분리대두단백", "대두단백", "콩단백", "콩가루",
+        "콩기름", "콩유", "두유", "두부", "간장", "검은콩", "검정콩", "서리태", "흑태",
+        "soy", "soybean", "콩",
+    ],
+    "밀": ["밀", "통밀", "소맥분", "소맥", "밀가루", "밀전분", "밀단백", "wheat"],
+    "메밀": ["메밀", "메밀가루"],
+    "새우": ["새우", "새우분말", "새우엑기스", "shrimp", "prawn"],
+    "게": ["게", "게살", "꽃게", "대게", "홍게", "게맛살", "크랩", "crab"],
+    "견과류": ["견과류", "tree nut", "tree nuts"],
+    "아몬드": ["아몬드", "almond"],
+    "캐슈넛": ["캐슈넛", "캐슈", "캐시우넛", "cashew"],
+    "피스타치오": ["피스타치오", "pistachio"],
+    "헤이즐넛": ["헤이즐넛", "헤즐넛", "hazelnut"],
+    "피칸": ["피칸", "pecan"],
+    "마카다미아": ["마카다미아", "마카다미아넛", "마카다미아너트", "macadamia"],
+    "브라질너트": ["브라질너트", "브라질넛", "brazil nut", "brazil nuts"],
+    "고등어": ["고등어"],
+    "돼지고기": ["돼지고기", "돈육", "돈지", "돼지지방", "돼지껍데기"],
+    "복숭아": ["복숭아", "피치"],
+    "토마토": ["토마토"],
+    "아황산류": ["아황산류", "이산화황", "메타중아황산"],
+    "호두": ["호두", "월넛", "walnut"],
+    "닭고기": ["닭고기", "계육"],
+    "쇠고기": ["쇠고기", "소고기", "우육"],
+    "오징어": ["오징어"],
+    "조개류": ["조개류", "조개", "조갯살", "clam", "clams"],
+    "굴": ["굴", "석화", "oyster", "oysters"],
+    "전복": ["전복", "abalone"],
+    "홍합": ["홍합", "mussel", "mussels"],
+    "가리비": ["가리비", "scallop", "scallops"],
+    "바지락": ["바지락"],
+    "꼬막": ["꼬막", "cockle", "cockles"],
+    "잣": ["잣", "국산잣", "잣가루", "잣분태", "pine nut", "pine nuts"],
+    "갑각류": ["갑각류", "crustacean", "crustaceans"],
+    "랍스터": ["랍스터", "로브스터", "바닷가재", "lobster"],
+    "가재": ["가재", "민물가재", "crayfish", "crawfish"],
 }
 
+# Broad profile concepts expand through explicit canonical children. Keeping
+# this relationship separate prevents a specific profile term such as
+# ``피칸`` from being canonicalized as every tree nut.
+ALLERGEN_CHILDREN: Mapping[str, tuple[str, ...]] = MappingProxyType({
+    "견과류": (
+        "아몬드", "호두", "캐슈넛", "피스타치오", "헤이즐넛",
+        "피칸", "마카다미아", "브라질너트", "잣",
+    ),
+    "갑각류": ("새우", "게", "랍스터", "가재"),
+    "조개류": ("굴", "전복", "홍합", "가리비", "바지락", "꼬막"),
+})
+
+# Capture direct synonyms before replacing the legacy dictionary with a
+# parent-expanded, deeply immutable compatibility view.
+ALLERGEN_CANONICAL_ALIASES: Mapping[str, tuple[str, ...]] = MappingProxyType({
+    canonical: tuple(aliases)
+    for canonical, aliases in _ALLERGEN_DIRECT_ALIAS_DATA.items()
+})
+del _ALLERGEN_DIRECT_ALIAS_DATA
+
+
+def _expanded_allergen_aliases(canonical: str) -> tuple[str, ...]:
+    aliases = list(ALLERGEN_CANONICAL_ALIASES[canonical])
+    for child in ALLERGEN_CHILDREN.get(canonical, ()):
+        aliases.extend(ALLERGEN_CANONICAL_ALIASES[child])
+    return tuple(dict.fromkeys(aliases))
+
+
+ALLERGY_MAP: Mapping[str, tuple[str, ...]] = MappingProxyType({
+    canonical: _expanded_allergen_aliases(canonical)
+    for canonical in ALLERGEN_CANONICAL_ALIASES
+})
+
 INGREDIENT_KEYWORDS = [
-    "우유", "계란", "땅콩", "대두", "밀", "카페인", "견과류", "새우", "게"
+    "우유", "유제품", "계란", "달걀", "난류", "땅콩", "대두", "콩", "메밀", "밀",
+    "카페인", "견과류", "새우", "게", "고등어", "돼지고기", "복숭아",
+    "토마토", "아황산류", "호두", "닭고기", "쇠고기", "오징어", "조개류",
+    "잣", "갑각류", "아몬드", "캐슈넛", "캐슈", "피스타치오", "헤이즐넛",
+    "피칸", "마카다미아", "브라질너트", "랍스터", "가재", "굴", "전복", "홍합",
+    "가리비", "바지락", "꼬막", "소맥분", "설탕", "감자", "원유", "소금"
 ]
 
-HEALTH_KEYWORDS = [
-    "당뇨", "혈당", "고혈압", "다이어트", "체중관리", "건강", "질환",
-    "임산부", "아기", "부모님"
-]
+# Broad health advice is outside the service. These words are retained only
+# as supported food-label/diet context cues.
+HEALTH_KEYWORDS = ["식이", "식단", "영양"]
 
 EATABILITY_KEYWORDS = [
     "먹어도 돼",
+    "먹어도 됨",
     "먹어도 되나",
+    "먹어도 되나요",
+    "먹어도 될까",
+    "먹어도 될까요",
+    "먹을 수 있어",
+    "먹을수 있어",
+    "섭취해도 돼",
+    "섭취해도 되",
+    "섭취해도 될까",
+    "섭취해도 될까요",
     "괜찮아",
+    "괜찮을까",
     "섭취 가능",
+    "섭취가능",
     "안전해",
+    "위험해",
+    "위험한가",
+    "위험할까",
+    "안심하고 먹",
     "먹여도 돼",
     "먹어도 문제 없어",
+    "먹어도 문제 없을까",
+    "먹어도 문제 없나요",
+    "먹어도 문제 없나",
     "문제 없어",
+    "문제 없을까",
+    "문제 없나요",
+    "문제 없나",
     "먹어도 괜찮아",
+    "먹어도 괜찮을까",
+    "먹어도 괜찮나요",
     "드셔도 괜찮아",
 ]
 
@@ -37,21 +141,23 @@ INCLUSION_KEYWORDS = [
     "함유",
     "포함",
     "있어?",
+    "있는지",
+    "없는지",
     "들어갔어",
     "있나",
     "들어가",
     "있어",
 ]
 
-NUTRITION_KEYWORDS = {
-    "당류": ["당류", "당", "설탕"],
-    "탄수화물": ["탄수화물"],
-    "단백질": ["단백질"],
-    "지방": ["지방"],
-    "포화지방": ["포화지방"],
-    "나트륨": ["나트륨", "소금"],
-    "칼로리": ["칼로리", "열량", "kcal"],
-}
+NUTRITION_KEYWORDS: Mapping[str, tuple[str, ...]] = MappingProxyType({
+    "당류": ("당류", "당", "설탕"),
+    "탄수화물": ("탄수화물",),
+    "단백질": ("단백질",),
+    "지방": ("지방",),
+    "포화지방": ("포화지방",),
+    "나트륨": ("나트륨", "소금"),
+    "칼로리": ("칼로리", "열량", "kcal"),
+})
 
 NUTRITION_EVAL_KEYWORDS = [
     "높아", "많아", "적어", "어때", "높은 편", "많은 편", "괜찮아", "괜찮을까"
@@ -70,51 +176,100 @@ GENERAL_ALLERGY_GUIDE_KEYWORDS = [
 ]
 
 GENERAL_DIET_GUIDE_KEYWORDS = [
-    "비건", "저염", "저당", "다이어트", "체중관리", "식단", "식이", "고단백"
+    "채식", "저염", "저당", "글루텐프리", "글루텐 프리",
+    "저칼로리", "저열량", "저지방", "고단백", "식단", "식이"
 ]
 
 GENERAL_NUTRITION_GUIDE_KEYWORDS = [
     "영양", "나트륨", "당류", "탄수화물", "단백질", "칼로리", "열량", "지방", "포화지방"
 ]
 
-SPECIAL_DIET_KEYWORDS = {
-    "비건": ["비건", "vegan"],
-    "저염식": ["저염", "저염식", "나트륨 조절"],
-    "저당식": ["저당", "저당식", "당 조절", "혈당 관리"],
-    "고단백": ["고단백", "단백질 위주"],
-    "체중관리": ["다이어트", "체중관리", "식단관리"],
-}
+ALTERNATIVE_FOOD_KEYWORDS = [
+    "대체 식품", "대체식품", "대신 먹", "대신먹", "대체할", "대체 음식", "대체음식",
+    "비슷한 제품", "비슷한 거", "대체 제품", "대체품", "대안", "추천", "대신 뭐", "대체 뭐", "뭐 먹지", "다른 거"
+]
 
-SPECIAL_DIET_RESTRICTIONS = {
-    "비건": {
-        "blocked_ingredients": [
-            "우유", "유청", "카제인", "치즈", "버터", "크림",
-            "계란", "난백", "난황", "벌꿀", "꿀", "젤라틴",
-        ],
-        "blocked_allergens": ["우유", "계란"],
-    },
-}
+FOOD_COMPARISON_KEYWORDS = [
+    "비교", "더 낮", "더 높", "더 많", "더 적", "뭐가 더", "어느 게", "어떤 게",
+    "a와 b", "a랑 b", "둘 중", "중에 뭐"
+]
 
-NUTRITION_RISK_RULES = {
-    "저염식": {
-        "key": "sodium",
-        "threshold": 400,
-        "reason": "나트륨이 높은 편이에요.",
-    },
-    "저당식": {
-        "key": "sugars",
-        "threshold": 12,
-        "reason": "당류가 높은 편이에요.",
-    },
-    "체중관리": {
-        "key": "kcal",
-        "threshold": 300,
-        "reason": "열량이 높은 편이에요.",
-    },
-    "고단백": {
-        "key": "protein",
-        "threshold": 10,
-        "comparison": "min",
-        "reason": "단백질 함량이 기대보다 낮을 수 있어요.",
-    },
-}
+ALTERNATIVE_CATEGORY_MAP: Mapping[str, tuple[str, ...]] = MappingProxyType({
+    "우유": ("두유", "식물성음료", "음료", "기타음료"),
+    "유제품": ("두유", "식물성음료", "음료", "기타음료"),
+    "유가공품": ("두유", "식물성음료", "음료", "기타음료"),
+    "발효유": ("두유", "식물성음료", "음료", "기타음료"),
+    "밀가루면": ("쌀면", "곤약면", "면류"),
+    "면류": ("쌀면", "곤약면", "면류"),
+    "과자": ("과자", "스낵", "저당간식"),
+    "스낵": ("과자", "스낵", "저당간식"),
+    "에너지바": ("에너지바", "과자", "고단백간식"),
+    "빵": ("글루텐프리빵", "비건빵", "빵"),
+    "디저트": ("비건디저트", "저당디저트", "디저트"),
+    "음료": ("무가당음료", "제로음료", "차류", "음료"),
+})
+
+
+def normalize_category_name(category: str | None) -> str:
+    if not category:
+        return ""
+    return "".join(char for char in category.strip().lower() if char.isalnum())
+
+
+def alternative_categories_for(category: str | None) -> list[str]:
+    normalized = normalize_category_name(category)
+    if not normalized:
+        return []
+
+    categories = [category.strip()]
+    for source, alternatives in ALTERNATIVE_CATEGORY_MAP.items():
+        source_normalized = normalize_category_name(source)
+        if source_normalized and (source_normalized in normalized or normalized in source_normalized):
+            categories.extend(alternatives)
+
+    return list(dict.fromkeys(item for item in categories if item))
+
+
+SPECIAL_DIET_KEYWORDS: Mapping[str, tuple[str, ...]] = MappingProxyType({
+    "채식": ("채식", "채식주의", "베지테리언", "vegetarian"),
+    "저염식": ("저염", "저염식", "나트륨 조절", "나트륨 적은", "나트륨 낮은"),
+    "저당식": ("저당", "저당식", "당 조절", "혈당 관리"),
+    "글루텐프리": ("글루텐프리", "글루텐 프리", "gluten free", "gluten-free"),
+    "저칼로리": ("저칼로리", "저열량", "낮은 칼로리"),
+    "저지방": ("저지방", "낮은 지방"),
+    "고단백": ("고단백", "단백질 위주", "단백질 많은"),
+})
+
+
+def canonical_special_diet_name(value: str) -> str | None:
+    """Resolve a structured diet value through the registered alias table."""
+
+    normalized = "".join(value.strip().lower().split())
+    for canonical, aliases in SPECIAL_DIET_KEYWORDS.items():
+        if normalized in {
+            "".join(candidate.strip().lower().split())
+            for candidate in (canonical, *aliases)
+        }:
+            return canonical
+    return None
+
+
+SPECIAL_DIET_RESTRICTIONS: Mapping[
+    str,
+    Mapping[str, tuple[str, ...]],
+] = MappingProxyType({
+    "채식": MappingProxyType({
+        "blocked_ingredients": (
+            "소고기", "쇠고기", "돼지고기", "닭고기", "오리고기",
+            "햄", "베이컨", "젤라틴", "생선", "참치", "멸치",
+            "새우", "게", "오징어", "조개",
+        ),
+        "blocked_allergens": ("새우", "게", "오징어", "조개류"),
+    }),
+    "글루텐프리": MappingProxyType({
+        "blocked_ingredients": (
+            "밀", "밀가루", "소맥", "소맥분", "보리", "호밀",
+        ),
+        "blocked_allergens": ("밀",),
+    }),
+})

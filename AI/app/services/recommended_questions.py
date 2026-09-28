@@ -16,7 +16,7 @@ def pick_recommended_questions(intent: str, risk_level: str, product: Optional[P
         if risk_level == "medium":
             return [
                 "어떤 성분이나 수치 때문에 조심해야 하는지 자세히 알려줘",
-                "당류나 나트륨 같은 건강 기준으로도 설명해줘",
+                "당류나 나트륨 같은 표시 수치도 설명해줘",
                 "비슷한 제품이랑 비교해서 설명해줘",
             ]
         return [
@@ -39,18 +39,25 @@ def pick_recommended_questions(intent: str, risk_level: str, product: Optional[P
             "다른 프로필 기준으로 보면 어떻게 달라지는지 알려줘",
         ]
 
-    if intent == "health_risk_check":
-        return [
-            "어떤 영양성분을 먼저 보면 되는지 쉽게 정리해줘",
-            "먹어도 되는지 관점으로 짧게 정리해줘",
-            "비슷한 제품이 있다면 뭐가 더 나은지 비교해줘",
-        ]
-
     if intent == "product_summary":
         return [
             "이 제품 먹어도 되는지도 확인해줘",
             "알레르기 유발 성분만 따로 정리해줘",
-            "영양성분은 어떤 편인지 설명해줘",
+            "영양성분을 표시 기준량과 같이 설명해줘",
+        ]
+
+    if intent == "alternative_food_recommend":
+        return [
+            "알레르기 기준으로 대체 식품을 추천해줘",
+            "당류나 나트륨이 낮은 대체 제품을 찾아줘",
+            "비슷한 제품이랑 영양성분을 비교해줘",
+        ]
+
+    if intent == "food_compare":
+        return [
+            "칼로리 기준으로 비교해줘",
+            "단백질과 나트륨 기준으로 비교해줘",
+            "알레르기 성분까지 포함해서 비교해줘",
         ]
 
     if intent.startswith("general_"):

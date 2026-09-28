@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "policy_version": "2026.09.10.1",
+  "sources": [
+    {
+      "source_id": "official.kdca.anaphylaxis",
+      "source_type": "official_primary",
+      "title": "아나필락시스",
+      "publisher": "질병관리청 국가건강정보포털",
+      "canonical_url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6684",
+      "reviewed_at": "2026-08-28",
+      "effective_from": "2026-08-28",
+      "review_due": "2027-08-28",
+      "reviewer_role": "engineering_policy_owner",
+      "status": "active"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "emergency.anaphylaxis.routing.v1",
+      "rule_kind": "service_safety_routing",
+      "exact_claim_scope": "현재성 있는 중증 알레르기 증상 표현을 고정 응급 안내로 라우팅",
+      "source_ids": [],
+      "support_level": "internal_heuristic",
+      "effective_from": "2026-09-10",
+      "review_due": "2027-03-10",
+      "reviewer_role": "engineering_policy_owner"
+    },
+    {
+      "rule_id": "emergency.anaphylaxis.action.v1",
+      "rule_kind": "official_guidance",
+      "exact_claim_scope": "의심되는 아나필락시스 상황의 119 연락과 처방·교육에 따른 에피네프린 사용 안내",
+      "source_ids": ["official.kdca.anaphylaxis"],
+      "support_level": "direct",
+      "effective_from": "2026-09-10",
+      "review_due": "2027-08-28",
+      "reviewer_role": "engineering_policy_owner"
+    }
+  ]
+}

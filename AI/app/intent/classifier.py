@@ -32,11 +32,6 @@ def _infer_followup_intent_from_assistant_answer(chat_history: List[ChatHistoryI
         return "ingredient_check"
 
     if any(
-        token in text for token in ["혈당", "당뇨", "다이어트", "체중 관리", "건강 기준", "주의가 필요", "조절하는 편이 좋아요"]
-    ):
-        return "health_risk_check"
-
-    if any(
         token in text for token in ["제품 정보를 먼저", "스캔이 완료됐어요", "핵심 정보", "주요 원재료"]
     ):
         return "product_summary"

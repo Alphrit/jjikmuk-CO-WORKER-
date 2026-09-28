@@ -4,21 +4,46 @@ from app.core.models import ChatResponse, Profile
 
 
 RISK_PRIORITY = {
-    "unknown": 0,
-    "low": 1,
+    "low": 0,
+    "unknown": 1,
     "medium": 2,
     "high": 3,
 }
 
 
+def _stable_profile_id(profile: Profile) -> Optional[int]:
+    if (
+        isinstance(profile.profile_id, int)
+        and not isinstance(profile.profile_id, bool)
+        and profile.profile_id > 0
+    ):
+        return profile.profile_id
+    return None
+
+
 def dedupe_profiles(profiles: List[Profile]) -> List[Profile]:
+    inactive_profile_ids = {
+        stable_profile_id
+        for profile in profiles
+        if not profile.is_active
+        and (stable_profile_id := _stable_profile_id(profile)) is not None
+    }
     seen = set()
     result = []
     for profile in profiles:
+        stable_profile_id = _stable_profile_id(profile)
+        if not profile.is_active:
+            continue
+        if stable_profile_id is not None and stable_profile_id in inactive_profile_ids:
+            continue
         key = (
-            profile.profile_id,
-            profile.user_id,
-            profile.profile_name,
+            (
+                "profile_id",
+                stable_profile_id,
+                profile.model_dump_json(exclude_none=False),
+            )
+            if stable_profile_id is not None
+            else ("anonymous_profile", profile.model_dump_json(exclude_none=False))
         )
         if key in seen:
             continue
@@ -32,14 +57,15 @@ def active_profiles_from_inputs(
     profiles: Optional[List[Profile]] = None,
 ) -> List[Profile]:
     collected: List[Profile] = []
-    if primary_profile and primary_profile.is_active and (
-        not profiles or primary_profile.target_type != "group"
+    if primary_profile and (
+        not profiles
+        or primary_profile.target_type != "group"
+        or not primary_profile.is_active
     ):
         collected.append(primary_profile)
 
     for profile in profiles or []:
-        if profile.is_active:
-            collected.append(profile)
+        collected.append(profile)
 
     return dedupe_profiles(collected)
 
@@ -72,18 +98,35 @@ def merge_profiles(profiles: List[Profile]) -> Optional[Profile]:
     for profile in profiles:
         merged_profile.allergies.extend(profile.allergies)
         merged_profile.user_allergies.extend(profile.user_allergies)
-        merged_profile.conditions.extend(profile.conditions)
         merged_profile.special_diets.extend(profile.special_diets)
         merged_profile.special_diet.extend(profile.special_diet)
         merged_profile.disliked_ingredients.extend(profile.disliked_ingredients)
 
     merged_profile.allergies = list(dict.fromkeys(merged_profile.allergies))
     merged_profile.user_allergies = list(dict.fromkeys(merged_profile.user_allergies))
-    merged_profile.conditions = list(dict.fromkeys(merged_profile.conditions))
     merged_profile.special_diets = list(dict.fromkeys(merged_profile.special_diets))
     merged_profile.special_diet = list(dict.fromkeys(merged_profile.special_diet))
     merged_profile.disliked_ingredients = list(dict.fromkeys(merged_profile.disliked_ingredients))
-    return merged_profile
+    merged_profile._conversation_exclusions = tuple(dict.fromkeys(
+        field for profile in profiles for field in profile._conversation_exclusions
+    ))
+    # Positive facts from every selected profile must still be retained for
+    # conservative conflict detection. Completeness is different: one complete
+    # profile cannot prove that another person's omitted allergy/diet
+    # section was checked. Profile construction above sees the aggregate lists
+    # and would otherwise turn every flag into True, so restore their actual
+    # all-members provenance explicitly after merging.
+    return merged_profile.model_copy(update={
+        "allergy_context_provided": all(
+            profile.allergy_context_provided for profile in profiles
+        ),
+        # Accepted for input compatibility only; medical conditions are outside
+        # this chatbot's decision scope and are never merged.
+        "condition_context_provided": True,
+        "diet_context_provided": all(
+            profile.diet_context_provided for profile in profiles
+        ),
+    })
 
 
 def active_profile_names(profiles: List[Profile]) -> List[str]:
@@ -105,12 +148,12 @@ def summarize_profile_response(profile: Profile, response: ChatResponse) -> str:
 
 
 def summarize_profile_outcome(profile: Profile, response: ChatResponse) -> str:
-    if response.risk_level == "high":
+    if response.overall_decision == "avoid":
         status = "피하는 편이 좋아요"
-    elif response.risk_level == "medium":
+    elif response.overall_decision == "caution":
         status = "주의가 필요해요"
-    elif response.risk_level == "low":
-        status = "현재 기준으로는 큰 문제는 없어 보여요"
+    elif response.overall_decision == "no_known_conflict":
+        status = "현재 확인된 표시에서는 등록 알레르기 충돌을 찾지 못했어요"
     else:
         status = "정보가 더 필요해요"
     return f"{profile.profile_name}: {status}"
