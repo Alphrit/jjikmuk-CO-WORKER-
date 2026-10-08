@@ -39,6 +39,8 @@ coverage.xml
 .ipynb_checkpoints/
 
 # Generated RAG indexes and evaluation output (including historical archives).
+# Downloaded originals stay local until redistribution/usage rights are reviewed.
+app/knowledge/raw/
 app/chroma_db/
 app/.chroma_db.build-*/
 app/.chroma_db.backup-*/

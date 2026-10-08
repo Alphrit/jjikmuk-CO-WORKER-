@@ -1,0 +1,13 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "allergy-purchase-check",
+  "source_id": "kca-allergy-purchase-2018",
+  "source_sha256": "cf2ddd0f7e00992ad485dee33bcbb313a74cf7d54ea0b4320bdcbd6b8239ebca",
+  "page": null,
+  "section": "구매 전 알레르기 유발 식품 확인 안내 (요약·재구성)",
+  "text": "식품을 구입하기 전에는 자신에게 알레르기를 일으키는 식품이 포함되어 있는지 확인하는 것이 중요합니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-01",
+  "review_due": "2027-04-01"
+}

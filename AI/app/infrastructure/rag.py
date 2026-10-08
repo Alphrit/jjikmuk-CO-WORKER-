@@ -53,6 +53,7 @@ from app.infrastructure.external_endpoint_policy import (
     validate_external_ai_url,
 )
 from app.infrastructure.llm import external_ai_processing_enabled
+from app.infrastructure.knowledge_review import parse_released_excerpt, excerpt_reference
 
 
 logger = logging.getLogger(__name__)
@@ -323,8 +324,13 @@ def _list_knowledge_documents(knowledge_dir: Optional[Path] = None) -> List[Path
                         "RAG knowledge directory contains an invalid directory entry."
                     )
 
+            # Downloads are unreviewed source material, not internal policies.
+            # Even an accidentally placed .md must not enter the live corpus.
+            if directory_path == root:
+                directory_names[:] = [name for name in directory_names if name != "raw"]
+
             for file_name in file_names:
-                if not file_name.endswith(".md"):
+                if not file_name.endswith((".md", ".source.json")):
                     continue
                 path = directory_path / file_name
                 file_stat = path.lstat()
@@ -455,7 +461,9 @@ def _build_document_manifest(
     manifest: List[Dict[str, str]] = []
     total_read_bytes = 0
     for path in _list_knowledge_documents(root):
-        content, _text = _read_knowledge_document(path, root)
+        content, document_text = _read_knowledge_document(path, root)
+        if path.name.endswith(".source.json"):
+            parse_released_excerpt(document_text)
         total_read_bytes += len(content)
         if total_read_bytes > MAX_RAG_KNOWLEDGE_TOTAL_BYTES:
             raise ValueError("RAG knowledge documents exceed the total size limit.")
@@ -621,10 +629,15 @@ def _load_documents(
         ).as_posix()
         digest = hashlib.sha256(content).hexdigest()
         loaded_manifest.append({"path": relative_path, "sha256": digest})
+        metadata = {"source": relative_path, "source_sha256": digest}
+        if path.name.endswith(".source.json"):
+            excerpt = parse_released_excerpt(text)
+            text = excerpt.text
+            metadata["source_kind"] = "official_excerpt"
         docs.append(
             Document(
                 page_content=text,
-                metadata={"source": relative_path, "source_sha256": digest},
+                metadata=metadata,
             )
         )
 
@@ -647,12 +660,24 @@ def _build_rag_splitter(settings: Optional[Dict[str, object]] = None):
     )
 
 
+def _split_rag_documents(documents, settings=None):
+    """Reviewed excerpts are bounded semantic units: never split off exceptions."""
+    splitter = _build_rag_splitter(settings)
+    chunks = []
+    for document in documents:
+        if getattr(document, "metadata", {}).get("source_kind") == "official_excerpt":
+            chunks.append(document)
+        else:
+            chunks.extend(splitter.split_documents([document]))
+    return chunks
+
+
 def _verified_rag_chunk_keys() -> set[tuple[str, str, str]]:
     """Return chunk identities reproducible from the current trusted documents."""
     manifest = _build_document_manifest()
     settings = _get_index_settings()
     documents = _load_documents(expected_manifest=manifest)
-    chunks = _build_rag_splitter(settings).split_documents(documents)
+    chunks = _split_rag_documents(documents, settings)
     return {
         (
             str(chunk.metadata["source"]),
@@ -957,11 +982,10 @@ def _build_vectorstore_impl(force_rebuild: bool = False) -> Chroma:
         documents = _load_documents(expected_manifest=document_manifest)
         if not documents or not document_manifest:
             raise RuntimeError(
-                "RAG 문서가 없습니다. app/knowledge 폴더에 .md 파일을 넣어야 합니다."
+                "RAG 문서가 없습니다. 내부 .md 또는 승인된 .source.json 문서가 필요합니다."
             )
 
-        splitter = _build_rag_splitter(settings)
-        chunks = splitter.split_documents(documents)
+        chunks = _split_rag_documents(documents, settings)
         if not chunks:
             raise RuntimeError("RAG chunk 생성 실패")
         if len(chunks) > MAX_RAG_INDEX_CHUNKS:
@@ -1233,6 +1257,42 @@ def _internal_policy_source_identifier(value: object) -> Optional[str]:
     return f"internal-policy:{value}"
 
 
+def _official_reference_from_file(raw_source: str, digest: str) -> dict[str, str]:
+    """Never trust a vector provider's citation/page/URL metadata."""
+    relative = PurePosixPath(raw_source)
+    if (
+        relative.is_absolute() or ".." in relative.parts
+        or relative.as_posix() != raw_source
+        or len(raw_source) > MAX_RAG_KNOWLEDGE_RELATIVE_PATH_LENGTH
+        or any(ord(char) < 32 or ord(char) == 127 for char in raw_source)
+    ):
+        raise ValueError("Official source relative path is invalid.")
+    root = _validated_knowledge_root(get_knowledge_dir())
+    path = root / raw_source
+    _validated_relative_knowledge_path(path, root)
+    if not raw_source.endswith(".source.json"):
+        raise ValueError("Official source extension is invalid.")
+    content, text = _read_knowledge_document(path, root)
+    if hashlib.sha256(content).hexdigest() != digest:
+        raise ValueError("Official source changed after retrieval verification.")
+    excerpt = parse_released_excerpt(text)
+    return {**excerpt_reference(excerpt), "excerpt_content": excerpt.text}
+
+
+def official_citation_from_entry(entry: dict[str, str]) -> Optional[str]:
+    """Recheck local approval at final response assembly, not just retrieval."""
+    try:
+        reference = _official_reference_from_file(entry["source_file"], entry["source_sha256"])
+        if (
+            entry.get("source") != reference["source"]
+            or entry.get("content") != " ".join(reference["excerpt_content"].split())
+        ):
+            return None
+        return reference["citation"]
+    except (KeyError, TypeError, ValueError, OSError):
+        return None
+
+
 def get_rag_context_entries(
     message: str,
     profile: Optional[Profile] = None,
@@ -1269,6 +1329,13 @@ def get_rag_context_entries(
     failure_stage = "index"
     try:
         with _index_swap_lock:
+            # A question consents to query processing, not bulk document upload.
+            # Provisioning/rebuild remains an explicit administrative action.
+            try:
+                _require_current_index(get_chroma_dir())
+            except Exception:
+                reset_rag_cache()
+                raise
             vectorstore = build_vectorstore()
             failure_stage = "search"
             query = _build_query(message=message, profile=profile, product=product)
@@ -1287,8 +1354,9 @@ def get_rag_context_entries(
                     break
                 raw_source = metadata.get("source")
                 source = _internal_policy_source_identifier(raw_source)
+                official = isinstance(raw_source, str) and raw_source.endswith(".source.json")
                 page_content = getattr(doc, "page_content", None)
-                if source is None or not isinstance(page_content, str):
+                if (source is None and not official) or not isinstance(page_content, str):
                     retrieval_integrity_failed = True
                     break
                 text = " ".join(page_content.split())
@@ -1304,6 +1372,17 @@ def get_rag_context_entries(
                 if chunk_key not in verified_chunk_keys:
                     retrieval_integrity_failed = True
                     break
+                if official:
+                    reference = _official_reference_from_file(raw_source, str(source_sha256))
+                    if page_content != reference["excerpt_content"]:
+                        retrieval_integrity_failed = True
+                        break
+                    results.append({
+                        "source": reference["source"], "content": text,
+                        "source_file": raw_source, "source_sha256": str(source_sha256),
+                        "text": f"[{reference['citation']}] {text}",
+                    })
+                    continue
                 results.append({
                     "source": source,
                     "content": text,

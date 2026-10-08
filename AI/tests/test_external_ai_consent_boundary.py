@@ -364,6 +364,7 @@ def test_user_query_rag_cannot_search_without_request_consent(monkeypatch):
 
     vectorstore = TrackingVectorstore()
     monkeypatch.setattr(rag, "build_vectorstore", lambda: vectorstore)
+    monkeypatch.setattr(rag, "_require_current_index", lambda _path: {})
     monkeypatch.setattr(
         rag,
         "_verified_rag_chunk_keys",

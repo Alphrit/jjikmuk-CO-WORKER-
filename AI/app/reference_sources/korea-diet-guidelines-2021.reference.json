@@ -1,0 +1,17 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "korea-diet-guidelines-2021",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148886239",
+  "title": "“덜 짜게, 덜 달게, 덜 기름지게”…한국인을 위한 식생활지침",
+  "publisher": "보건복지부·농림축산식품부·식품의약품안전처 / 대한민국 정책브리핑",
+  "published_at": "2021-04-14",
+  "checked_at": "2026-10-01",
+  "section": "식품 및 영양섭취(1~3번) 설명 문단",
+  "selected_quote": "나트륨·당류·포화지방산 섭취 줄이기 등을 강조한다.",
+  "rights": "KOGL-1-text-only",
+  "rights_evidence": "해당 기사 하단에 텍스트에 한한 공공누리 제1유형(출처표시) 이용 조건이 명시돼 있음을 확인했습니다.",
+  "review_scope": "나트륨·당류·포화지방산 줄이기의 일반적 방향만 사용합니다. 개인별 섭취 목표·제품 저염/저당 판정·법정 영양표시 기준으로 사용하지 않습니다.",
+  "excluded": ["이미지와 카드뉴스", "질병 예방 효과", "개인별 섭취량", "과거 통계와 정책 시행 계획"],
+  "limitations": "이 기록은 확인한 웹 문단의 선택적 전사이며 전체 웹페이지 원본이나 전문가 검토 증명이 아닙니다. 원문을 바탕으로 설명용 문장을 재구성했습니다."
+}

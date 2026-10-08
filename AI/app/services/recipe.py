@@ -22,6 +22,9 @@ from app.services.recipe_validation import (
 )
 from app.services.recipe_templates import _general_recipe_variants, _product_recipe_variants
 from app.services.recipe_composition import composition_issues, product_method_conflict
+from app.services.reviewed_recipes import (
+    reviewed_recipe_variants, reviewed_recipe_condition_conflicts, finalize_reviewed_recipe,
+)
 from app.services.product import (
     recommend_catalog_product_records,
     recommend_catalog_products,
@@ -567,7 +570,7 @@ def build_recipe_response(
     chat_history: Optional[Sequence[ChatHistoryItem]] = None,
     conversation_state: Optional[dict] = None,
 ) -> ChatResponse:
-    active_profiles = list(profiles or ([profile] if profile else []))
+    active_profiles = [item for item in (profiles or ([profile] if profile else [])) if item.is_active]
     from app.services.product_search import recipe_source_query
     if (product is None and recipe_source_query(message)) or (product is not None and product.product_found is False):
         from app.services.recipe_request_context import missing_recipe_source_response
@@ -711,7 +714,7 @@ def build_recipe_response(
     variants = (
         _product_recipe_variants(selected_product)
         if selected_product is not None
-        else _general_recipe_variants(requested_diets)
+        else [*_general_recipe_variants(requested_diets), *reviewed_recipe_variants(requested_diets)]
     )
     selected_variant = None
     rejected_conflicts: list[str] = []
@@ -724,7 +727,7 @@ def build_recipe_response(
         if candidate_variant["title"] in history_text:
             continue
         candidate_recipe = RecipeResult(
-            title=candidate_variant["title"], servings="1인분",
+            title=candidate_variant["title"], servings=candidate_variant.get("servings", "1인분"),
             product_name=product_name,
             product_barcode=selected_product.barcode if selected_product else None,
             ingredients=candidate_variant["ingredients"],
@@ -742,7 +745,9 @@ def build_recipe_response(
             candidate_ingredients,
             selected_product,
         )
-        candidate_diet_conflicts = _diet_conflicts(
+        if candidate_variant.get("source_recipe_id"):
+            candidate_conflicts.extend(reviewed_recipe_condition_conflicts(candidate_variant, active_profiles))
+        candidate_diet_conflicts, candidate_diet_cautions, _ = _diet_findings(
             active_profiles,
             Product(
                 product_name="레시피 기본 재료",
@@ -758,6 +763,8 @@ def build_recipe_response(
         candidate_dislikes = _plain_ingredient_dislikes(
             active_profiles, candidate_ingredients, selected_product,
         )
+        if candidate_variant.get("source_recipe_id"):
+            candidate_diet_conflicts.extend(candidate_diet_cautions)
         if candidate_conflicts or candidate_diet_conflicts or candidate_dislikes:
             rejected_conflicts.extend([
                 *candidate_conflicts,
@@ -786,6 +793,7 @@ def build_recipe_response(
         )
 
     title = selected_variant["title"]
+    servings = selected_variant.get("servings", "1인분")
     ingredients = selected_variant["ingredients"]
     steps = [
         *selected_variant["steps"],
@@ -816,7 +824,7 @@ def build_recipe_response(
 
     recipe = RecipeResult(
         title=title,
-        servings="1인분",
+        servings=servings,
         product_name=product_name,
         product_barcode=selected_product.barcode if selected_product else None,
         source_product_blocked=source_blocked,
@@ -887,7 +895,7 @@ def build_recipe_response(
     response = build_response(
         intent="recipe_recommend",
         answer=(
-            f"{headline}\n1인분 기준이며, 아래 재료와 순서를 확인해 주세요. "
+            f"{headline}\n{servings} 기준이며, 아래 재료와 순서를 확인해 주세요. "
             "'충돌 없음'은 현재 DB 표시와 등록된 알레르기 기준의 결과이지 "
             f"절대적인 안전 보장은 아니에요.{diet_limitation}"
         ),
@@ -919,6 +927,12 @@ def build_recipe_response(
             else None
         ),
     })
+    if selected_variant.get("source_recipe_id"):
+        return _with_recipe_history(
+            finalize_reviewed_recipe(response, selected_variant, requested_diets), prior_fingerprints,
+        )
+    # Source portions must never enter the LLM's single-serving amount pool.
+    variants = [variant for variant in variants if not variant.get("source_recipe_id")]
     allowed_general_ingredients = {
         item["name"]
         for variant in _general_recipe_variants(requested_diets)
@@ -942,7 +956,9 @@ def build_recipe_response(
         "substitutions는 빈 배열로 두세요.\n검토된 재료·양: "
         + json.dumps([v["ingredients"] for v in draft_variants], ensure_ascii=False)
     )
-    raw_draft = generate_text(prompt)
+    from app.infrastructure.llm_trace import llm_purpose
+    with llm_purpose("recipe_draft"):
+        raw_draft = generate_text(prompt)
     if raw_draft is None:
         return _with_recipe_history(response, prior_fingerprints)
     draft = _parse_recipe_draft(raw_draft)

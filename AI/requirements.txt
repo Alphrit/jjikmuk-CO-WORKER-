@@ -1,7 +1,8 @@
 # Runtime dependencies for the food chatbot (Python 3.11+).
 # Self-contained: no separate requirements or constraints file is needed.
 # Direct and transitive versions are preserved from the validated environment
-# (macOS / CPython 3.13.5, 2026-09-28), not upgraded to newer releases.
+# (macOS / CPython 3.13.5, 2026-09-28), except the offline PDF parser added below.
+# Existing packages have not been upgraded.
 # This is not a cross-platform lockfile; platform-only dependencies may differ.
 # Test-only dependencies belong in requirements-dev.txt.
 
@@ -22,6 +23,9 @@ langchain-chroma==1.1.0
 langchain-core==1.3.2
 langchain-openai==1.2.1
 langchain-text-splitters==1.1.2
+
+# Offline PDF source preparation (no OCR, no external service).
+pypdf==6.19.0
 
 # Runtime transitive dependencies (including Chroma and the OpenAI SDK).
 # Keep these pins aligned with the direct dependencies above when updating.

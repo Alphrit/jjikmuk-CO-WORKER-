@@ -1,0 +1,19 @@
+{
+  "format": "food-source-rights-review-v1",
+  "source_id": "foodsafety-cookrcp01",
+  "source_sha256": "aa9eb1507d65dd03bd696a977d94442ddc0ba0e0d95558f70edef19f9225b2b9",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.data.go.kr/data/15060073/openapi.do",
+  "dataset_url": "https://www.foodsafetykorea.go.kr/api/newDatasetDetail.do?svc_no=COOKRCP01",
+  "title": "식품의약품안전처_조리식품의 레시피 DB",
+  "publisher": "식품의약품안전처 / 공공데이터포털",
+  "portal_modified_at": "2025-08-27",
+  "checked_at": "2026-10-01",
+  "section": "이용 조건 및 라이선스 정보",
+  "selected_quote": "이용허락범위 제한 없음",
+  "rights": "unrestricted-as-listed",
+  "api_approval": "개발단계 자동승인 / 운영단계 심의승인. 오프라인 자료 검토와 API 운영 승인은 별개입니다.",
+  "review_scope": "제공된 COOKRCP01 CSV의 재료·조리 텍스트 이용 조건 확인. 링크된 외부 이미지·별도 레시피 책의 이용 조건으로 확대하지 않습니다.",
+  "excluded": ["외부 이미지", "별도 발행 레시피 책", "영양값 기준 자동 확정", "개별 레시피 추천 승인"],
+  "limitations": "공식 목록의 이용 조건 확인 기록이며 법률 자문이나 전체 페이지 원본은 아닙니다. 출처를 표시하며 개별 레시피의 분량·재료·조리법 및 프로필별 검수는 별도로 수행합니다."
+}

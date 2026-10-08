@@ -1,0 +1,13 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "sodium-practical-choices",
+  "source_id": "korea-sodium-practice-2011",
+  "source_sha256": "ee1109cc59dc3ad0a5c58f188b9926d35b059381a9ebefcdd04c6a6f5a866f64",
+  "page": null,
+  "section": "나트륨 적게 먹기 실천 요령: 구매·조리·외식 (요약·재구성)",
+  "text": "나트륨을 줄이는 식사를 원한다면 식품을 살 때 영양표시를 확인합니다. 조리할 때는 양념을 적게 넣고 마지막에 간하는 방법을 활용할 수 있습니다. 외식할 때는 짜지 않게 조리해 달라고 요청할 수 있습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-01",
+  "review_due": "2027-04-01"
+}

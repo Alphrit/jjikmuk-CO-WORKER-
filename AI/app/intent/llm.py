@@ -9,6 +9,7 @@ from app.intent.text import (
     recent_history_summary,
 )
 from app.infrastructure.llm import generate_text, is_llm_enabled
+from app.infrastructure.llm_trace import llm_purpose
 from app.core.models import ChatHistoryItem, Product, Profile
 
 
@@ -98,6 +99,7 @@ def llm_fallback_classify_intent(
         profile=profile,
         chat_history=chat_history,
     )
-    raw = generate_text(prompt)
+    with llm_purpose("intent"):
+        raw = generate_text(prompt)
 
     return parse_llm_intent(raw or "")

@@ -16,6 +16,7 @@ from typing import Callable, Optional
 from urllib import error, request as urllib_request
 
 from dotenv import load_dotenv
+from app.infrastructure.llm_trace import observe_llm_call
 
 from app.infrastructure.external_ai_consent import (
     external_ai_request_allowed,
@@ -313,7 +314,7 @@ def generate_text(prompt: str) -> Optional[str]:
         return None
     if _override_client is not None:
         try:
-            result = _override_client(prompt)
+            result = observe_llm_call(lambda: _override_client(prompt), provider="test")
         except Exception as exc:
             logger.warning(
                 "Injected LLM client failed: error_type=%s", type(exc).__name__
@@ -323,7 +324,7 @@ def generate_text(prompt: str) -> Optional[str]:
     if not is_llm_enabled():
         return None
     mark_external_ai_used("llm")
-    return _generate_openai(prompt)
+    return observe_llm_call(lambda: _generate_openai(prompt), provider="openai")
 
 
 __all__ = [

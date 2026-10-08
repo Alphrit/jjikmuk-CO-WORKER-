@@ -1,0 +1,17 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "kca-allergy-purchase-2018",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1002741894",
+  "title": "커피전문점 알레르기 유발 식품 주의 필요",
+  "publisher": "한국소비자원",
+  "published_at": "2018-12-07",
+  "checked_at": "2026-10-01",
+  "section": "본문의 식품 알레르기 사고 예방 안내 문단",
+  "selected_quote": "알레르기 유발 식품 포함 여부를 확인한 후 구매하고",
+  "rights": "KOGL-1",
+  "rights_evidence": "해당 게시물 하단에 공공누리 제1유형(출처표시) 이용 조건이 명시돼 있음을 확인했습니다.",
+  "review_scope": "인용 부분의 구매 전 성분 확인 원칙만 설명 근거로 사용합니다. 오래된 표시 의무·업체별 조사·가족력·진료 설명은 제외합니다.",
+  "excluded": ["첨부파일과 이미지", "당시 법령과 업체별 표시 현황", "의료적 진단·치료 안내"],
+  "limitations": "이 기록은 확인한 웹 문단의 선택적 전사이며 전체 웹페이지 원본이나 전문가 검토 증명이 아닙니다. 원문을 바탕으로 설명용 문장을 재구성했습니다."
+}

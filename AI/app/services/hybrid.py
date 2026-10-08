@@ -11,7 +11,7 @@ from app.data.dictionaries import ALLERGY_MAP, INGREDIENT_KEYWORDS
 from app.prompts.builder import (
     build_general_fallback_prompt,
 )
-from app.infrastructure.rag import get_rag_context_entries
+from app.infrastructure.rag import get_rag_context_entries, official_citation_from_entry
 
 
 _UNSUPPORTED_CLAIM_PATTERNS = [
@@ -282,10 +282,6 @@ def _requires_rag_context_for_general_llm() -> bool:
     return _env_flag("REQUIRE_RAG_CONTEXT_FOR_GENERAL_LLM", "true")
 
 
-def _rag_text_from_entries(entries: List[dict[str, str]]) -> List[str]:
-    return [entry["text"] for entry in entries if entry.get("text")]
-
-
 def _sources_from_entries(entries: List[dict[str, str]]) -> List[str]:
     # These identifiers are intentionally explicit about their authority:
     # source-controlled Markdown is useful traceability, but it is not an
@@ -294,6 +290,13 @@ def _sources_from_entries(entries: List[dict[str, str]]) -> List[str]:
     prefix = "internal-policy:"
     for entry in entries:
         source = entry.get("source")
+        if isinstance(source, str) and source.startswith("official-source:"):
+            citation = official_citation_from_entry(entry)
+            if citation and citation not in sources:
+                sources.append(citation)
+            if len(sources) >= 5:
+                break
+            continue
         if not isinstance(source, str) or not source.startswith(prefix):
             continue
         relative_value = source.removeprefix(prefix)
@@ -1029,7 +1032,24 @@ def try_general_llm_fallback(
         return base_response
 
     rag_entries = get_rag_context_entries(message=message, profile=profile, product=product)
-    rag_context = _rag_text_from_entries(rag_entries)
+    if any(
+        entry.get("source", "").startswith("official-source:")
+        and official_citation_from_entry(entry) is None
+        for entry in rag_entries
+    ):
+        return base_response.model_copy(update={"fallback_reason": "rag_source_approval_changed"})
+    # Internal Markdown describes application policy, not independent food
+    # evidence. Keep it out of factual grounding, including mixed retrievals.
+    # Use the verified body, not provider-supplied `text` or citation titles:
+    # a historical title's numbers must not become approved nutrition claims.
+    rag_entries = [
+        entry for entry in rag_entries
+        if entry.get("source", "").startswith("official-source:")
+    ]
+    rag_context = [
+        " ".join(entry["content"].split())
+        for entry in rag_entries
+    ]
 
     if _requires_rag_context_for_general_llm() and not rag_context:
         return base_response.model_copy(update={
@@ -1044,13 +1064,24 @@ def try_general_llm_fallback(
         rag_context=rag_context,
     )
 
-    llm_answer = generate_text(prompt)
+    from app.infrastructure.llm_trace import llm_purpose
+    with llm_purpose("general_answer"):
+        llm_answer = generate_text(prompt)
 
     if not llm_answer:
         return base_response.model_copy(update={
             "fallback_reason": "llm_empty_response",
             "validation_failure_types": ["llm_empty_response"],
         })
+
+    if any(
+        entry.get("source", "").startswith("official-source:")
+        and official_citation_from_entry(entry) is None
+        for entry in rag_entries
+    ):
+        return _fallback_with_grounding_reason(
+            base_response, validation_failure_types=["rag_source_approval_changed"],
+        )
 
     answer, recommended_questions = _split_answer_and_questions(llm_answer)
 

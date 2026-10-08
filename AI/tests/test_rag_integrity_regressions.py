@@ -70,6 +70,7 @@ def test_rag_provider_failure_does_not_log_or_retain_sensitive_query(
             raise RuntimeError(f"provider echoed query={query}; k={k}")
 
     monkeypatch.setattr(rag, "build_vectorstore", lambda: BrokenVectorStore())
+    monkeypatch.setattr(rag, "_require_current_index", lambda _path: {})
     caplog.set_level(logging.WARNING, logger="app.infrastructure.rag")
 
     assert rag.get_rag_context_entries(private_query) == []
@@ -108,6 +109,8 @@ def _retrieval_key(source, source_sha256, page_content):
 
 
 def _configure_retrieval_fixture(monkeypatch, documents, verified_keys):
+    # This fixture represents a provisioned index; index lifecycle is tested separately.
+    monkeypatch.setattr(rag, "_require_current_index", lambda _path: {})
     monkeypatch.setattr(
         rag,
         "build_vectorstore",

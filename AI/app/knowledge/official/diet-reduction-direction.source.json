@@ -1,0 +1,13 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "diet-reduction-direction",
+  "source_id": "korea-diet-guidelines-2021",
+  "source_sha256": "506f985c54a4e78df82b769811569e74fadcab6c0c6c1811538602d588812942",
+  "page": null,
+  "section": "식품 및 영양섭취 설명 문단 (요약·재구성)",
+  "text": "2021년 한국인을 위한 식생활지침은 일반적인 식생활 방향으로 나트륨, 당류, 포화지방산의 섭취를 줄이는 것을 제시합니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-01",
+  "review_due": "2027-04-01"
+}

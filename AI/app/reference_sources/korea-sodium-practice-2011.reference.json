@@ -1,0 +1,17 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "korea-sodium-practice-2011",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.korea.kr/briefing/policyBriefingView.do?newsId=148715048",
+  "title": "“소금, 하루 5g 미만 섭취 바람직”",
+  "publisher": "식품의약품안전청 / 대한민국 정책브리핑",
+  "published_at": "2011-07-13",
+  "checked_at": "2026-10-01",
+  "section": "나트륨 적게 먹기 실천 요령: 구매·조리·외식",
+  "selected_quote": "영양표시 확인하고, 저염 제품 구매하기 / 양념은 적게 넣고, 마지막에 간하기 / ‘짜지않게’ 조리해 달라고 요청하기",
+  "rights": "KOGL-1-text-only",
+  "rights_evidence": "기사 하단에 텍스트에 한한 공공누리 출처표시 조건의 자유이용이 명시돼 있음을 확인했습니다. 사진·이미지 등은 포함하지 않습니다.",
+  "review_scope": "오래된 기사에서 구매·조리·외식의 일반적 실천 요령만 요약합니다. 현재 법령·최신 섭취기준 또는 저염 표시 인증 기준으로 사용하지 않습니다.",
+  "excluded": ["제목과 본문의 섭취량 수치", "질병 발생·생리 작용 설명", "소금 종류별 수치", "이미지", "개인별 섭취 처방"],
+  "limitations": "선택적 웹 전사 기록으로 전체 HTML 원본이나 전문가 검토 증명이 아닙니다. 일반적인 식사 요령이며 특정 제품의 알레르기 적합성이나 저염 판정을 보증하지 않습니다."
+}
