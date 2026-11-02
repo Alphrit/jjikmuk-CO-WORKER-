@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "sodium-and-salt",
+  "source_id": "fda-sodium-basics",
+  "source_sha256": "de19a12581597bed1a005345f2286c1db66dbeeb4274465f0219c907c8f6e327",
+  "page": null,
+  "section": "나트륨과 소금의 차이 (사실 요약·재구성)",
+  "text": "소금과 나트륨은 같은 물질을 가리키는 말이 아닙니다. 소금의 화학적 이름은 염화나트륨이고, 나트륨은 이를 구성하는 원소 중 하나입니다. 식품의 나트륨에는 소금뿐 아니라 다른 나트륨 함유 원료에서 온 양도 포함될 수 있습니다. 원재료에 소금을 따로 넣지 않았다는 정보만으로 나트륨이 없다고 판단하지 말고 영양성분표의 나트륨 양을 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "sodium_salt"
+  ]
+}

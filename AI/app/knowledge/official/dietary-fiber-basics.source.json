@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "dietary-fiber-basics",
+  "source_id": "fda-carbohydrate-basics",
+  "source_sha256": "e1cc84a9fd13a510ce3d43b5e00e5cb36933f7f796ba405166f2e2f788adfe05",
+  "page": null,
+  "section": "식이섬유의 개념 (사실 요약·재구성)",
+  "text": "식이섬유는 탄수화물의 한 종류로, 소장에서 쉽게 소화되지 않는 구조를 갖습니다. 콩류·과일·채소·견과류·씨앗·통곡물 등에서 찾을 수 있습니다. 탄수화물과 식이섬유는 서로 완전히 별개인 성분이라는 뜻이 아니므로 표시의 항목 관계를 함께 읽으세요. 이 설명은 식이섬유의 일반 개념이며 개인에게 맞는 섭취량이나 특정 제품의 효과를 정하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "fiber_basics"
+  ]
+}

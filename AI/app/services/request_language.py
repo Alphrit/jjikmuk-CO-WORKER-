@@ -14,7 +14,7 @@ class RequestLifecycle:
 
 
 _CANCEL_ACTION = r"(?:취소|그만)(?:\s*해\s*(?:줘|주세요|요)?|할게(?:요)?|하(?:고|자))?"
-_FOOD_TASK = r"레시피|요리|먹어도|원재료|영양|나트륨|당류|단백질|(?:식|채식).*뭐|비교"
+_FOOD_TASK = r"레시피|요리|먹어도|마셔도|섭취해도|원재료|영양|나트륨|당류|단백질|(?:식|채식).*뭐|비교"
 
 
 def request_lifecycle(message: str) -> RequestLifecycle:
@@ -63,7 +63,8 @@ def request_lifecycle(message: str) -> RequestLifecycle:
         suffix = text[actions[-1].end():].strip() if actions else ""
         # Only an explicit new food question replaces the cancelled task.
         # A dietary clarification or '계속해' is not a new recipe instruction.
-        if re.search(_FOOD_TASK, suffix):
+        from app.intent.common import OUT_OF_DOMAIN_KEYWORDS
+        if re.search(_FOOD_TASK, suffix) or any(word in suffix for word in OUT_OF_DOMAIN_KEYWORDS):
             remaining = suffix
     elif partial_search and re.search(_FOOD_TASK, search_suffix):
         remaining = search_suffix
@@ -85,7 +86,7 @@ def requests_continuation(message: str) -> bool:
 def cleared_request_state(state):
     from app.core.conversation_context_fields import json_state, carry_task_context
     context = json_state(state or {})
-    for key in ("pending_allergy", "pending_user_message", "pending_intent", "pending_product_candidates", "recipe_product", "last_confirmed_product", "recipe_requested_diets"):
+    for key in ("pending_allergy", "pending_user_message", "pending_intent", "pending_product_candidates", "recipe_product", "last_confirmed_product", "recipe_requested_diets", "recipe_receipt", "pending_target_product"):
         context.pop(key, None)
     context["recipe_goals_initialized"] = True
     context = carry_task_context(context, {

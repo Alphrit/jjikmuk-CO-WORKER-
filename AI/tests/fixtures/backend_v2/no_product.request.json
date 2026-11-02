@@ -1,0 +1,71 @@
+{
+  "message": "이 제품 먹어도 돼?",
+  "profile": null,
+  "profiles": [
+    {
+      "id": null,
+      "nickname": "엄마",
+      "allergies": "우유",
+      "diseases": null,
+      "specialDiet": null,
+      "dislikedIngredients": null,
+      "profileKey": "request:0",
+      "profileSource": "CLIENT_REQUEST",
+      "profile_id": 1,
+      "target_type": "provided"
+    },
+    {
+      "id": null,
+      "nickname": "아빠",
+      "allergies": "땅콩",
+      "diseases": null,
+      "specialDiet": null,
+      "dislikedIngredients": null,
+      "profileKey": "request:1",
+      "profileSource": "CLIENT_REQUEST",
+      "profile_id": 2,
+      "target_type": "provided"
+    }
+  ],
+  "product": null,
+  "chat_history": [],
+  "analysisContext": {
+    "contextId": "v2-example-no_product",
+    "contractVersion": "chat-analysis-v2",
+    "policyVersion": "recommendation-v2",
+    "selection": {
+      "mode": "provided",
+      "analysisApplied": true,
+      "includeSelf": false,
+      "familyProfileIds": []
+    },
+    "effectiveConditions": {
+      "allergyIds": [
+        "milk",
+        "peanut"
+      ],
+      "unknownAllergyTerms": [],
+      "requiredDietFilterIds": [],
+      "diseases": [],
+      "dislikedIngredients": []
+    },
+    "productResolution": "NOT_PROVIDED",
+    "decisionScope": "BARCODE_ROW",
+    "analysis": null,
+    "dataEvidence": null,
+    "decisionAuthority": "BACKEND",
+    "historyIsAuthoritative": false,
+    "storedDietFlagsAreAuthoritative": false,
+    "profileSource": "CLIENT_REQUEST",
+    "profileAnalyses": [
+      {
+        "profileKey": "request:0",
+        "analysis": null
+      },
+      {
+        "profileKey": "request:1",
+        "analysis": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-low-energy",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 23,
+  "section": "인쇄 42·45쪽, PDF 23~24쪽: 저열량 조건 (사실 요약·재구성)",
+  "text": "식약처 2025년 12월 안내서에서 저열량의 함량 조건은 식품 100g당 40kcal 미만 또는 100ml당 20kcal 미만입니다. 저칼로리라는 말이 열량이 없다는 뜻은 아닙니다. 저라는 강조표시에는 제조·가공으로 해당 성분의 함량을 낮추거나 제거하는 조건도 있습니다. 한 포장에 든 양이 표시 기준량보다 크면 전부 먹을 때의 열량도 달라지므로, 영양성분표의 열량 기준과 총 내용량을 함께 읽으세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "low_energy"
+  ]
+}

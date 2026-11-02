@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "allergy-label-reading",
+  "source_id": "mfds-allergy-label-reading-2022",
+  "source_sha256": "1fb3e315408e3493a0421e79e956544db25edbff586df516740598d546b08532",
+  "page": 8,
+  "section": "공식 카드 4: 원재료·별도 알레르기 표시란 (사실 요약·재구성)",
+  "text": "포장 식품을 살펴볼 때에는 원재료명과 별도로 정리된 알레르기 표시란을 함께 읽으세요. 예를 들어 우유 함유는 우유가 원재료로 사용되었다는 정보입니다. 같은 제조시설에서 제조처럼 제조과정의 혼입 가능성을 알리는 주의문구는 원재료의 함유 표시와 구분해서 읽어야 합니다. 원재료 정보와 혼입 가능성 정보를 한 가지 뜻으로 해석하지 마세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "allergy_label"
+  ]
+}

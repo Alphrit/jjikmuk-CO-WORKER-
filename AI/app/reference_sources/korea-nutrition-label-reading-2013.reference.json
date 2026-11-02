@@ -1,0 +1,28 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "korea-nutrition-label-reading-2013",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.korea.kr/briefing/policyBriefingView.do?newsId=148763339",
+  "title": "‘제로칼로리’ 음료에는 진짜 칼로리가 없을까?",
+  "publisher": "대한민국 정책브리핑 · 정책기자 우인혜",
+  "published_at": "2013-07-03",
+  "checked_at": "2026-10-15",
+  "section": "본문의 영양성분 표시 기준량·기준치 비율·강조표시 확인 설명",
+  "selected_quote": "영양성분표와 함께 확인하는 것이 좋다.",
+  "reviewed_facts": [
+    "표시 기준량과 실제 먹는 양을 함께 확인하는 원칙.",
+    "영양성분 기준치 비율은 정해진 1일 기준량과 비교한 비율이라는 설명.",
+    "강조 문구와 영양성분표를 함께 확인하는 원칙.",
+    "무가당이어도 당류가 들어 있을 수 있다는 설명."
+  ],
+  "rights": "KOGL-1-text",
+  "rights_evidence": "본문 끝에 텍스트에 한하여 공공누리 출처표시 조건으로 자유이용 가능하다는 문구를 확인. 작성자 우인혜를 출처에 함께 표시.",
+  "review_scope": "표시를 읽는 일반 원칙만 재구성. 2013년 수치·법정 표시 기준·영양소별 기준량·감미료 건강효과·이미지·제품별 판단은 제외.",
+  "excluded": [
+    "사진·이미지·표",
+    "당시 법정 표시기준과 반올림 수치",
+    "개인별 섭취량과 체중·질병·감미료 효능",
+    "무당을 절대적인 당류 부재로 설명한 문장"
+  ],
+  "limitations": "선택적 웹 전사 기록이며 전체 HTML 원본이 아님. 발행 당시 제도 설명을 현재 법정 기준으로 사용하지 않음."
+}

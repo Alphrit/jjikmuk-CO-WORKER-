@@ -1,0 +1,298 @@
+[
+  [
+    "sugar_paraphrase",
+    [
+      [
+        "설탕을 더 넣지 않았다는 표시랑 설탕 제로라는 표시는 같은 뜻인가요?",
+        [
+          "sugar-zero-vs-added"
+        ]
+      ],
+      [
+        "그러면 열량도 전혀 없다고 이해하면 돼?",
+        [
+          "sugar-sweeteners-calories"
+        ]
+      ],
+      [
+        "초등학생 말투 말고 쉬운 말로 딱 두 문장만",
+        [
+          "sugar-sweeteners-calories"
+        ]
+      ],
+      [
+        "앞 얘기는 됐고 영양표에 0g으로 표시되는 건 완전히 없다는 뜻이야?",
+        [
+          "nutrition-zero-rounding"
+        ]
+      ]
+    ]
+  ],
+  [
+    "facility_paraphrase",
+    [
+      [
+        "우유를 쓰는 제품과 제조설비를 공유했다는 표시가 뭐야?",
+        [
+          "allergy-facility-warning"
+        ]
+      ],
+      [
+        "그럼 우유를 재료에 일부러 넣은 건 아니란 말이지?",
+        [
+          "allergy-facility-warning"
+        ]
+      ],
+      [
+        "거기에 섞일 수 있는 최대량은 몇 mg야?",
+        null,
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "일반 설명에서 임의 상품 연결 금지"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "제품명이나 바코드",
+              "제품명을 입력"
+            ],
+            "description": "수치 근거 한계를 상품 선택으로 돌리지 않음"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "units_and_sugars",
+    [
+      [
+        "나트륨 단위 mg랑 g 차이 알려줘",
+        [
+          "nutrition-mass-units"
+        ]
+      ],
+      [
+        "그럼 1g이 1000mg인 거지?",
+        [
+          "nutrition-mass-units"
+        ]
+      ],
+      [
+        "이제 총당류와 첨가당 차이만 알려 주세요",
+        [
+          "total-and-added-sugars"
+        ]
+      ],
+      [
+        "그 설명을 한 문장으로 요약 부탁해",
+        [
+          "total-and-added-sugars"
+        ]
+      ]
+    ]
+  ],
+  [
+    "portion_and_fat",
+    [
+      [
+        "1회 제공량하고 한 봉지를 헷갈리지 않으려면 어떻게 읽어?",
+        [
+          "nutrition-label-basis"
+        ]
+      ],
+      [
+        "serving size는 내가 먹어야 하는 권장량이야?",
+        [
+          "serving-and-recommendation"
+        ]
+      ],
+      [
+        "앞 얘기는 됐고 포화지방과 트랜스지방이 뭔지 알려줘",
+        [
+          "fat-types-basics"
+        ]
+      ],
+      [
+        "그럼 지방을 다 없애야 한다는 뜻이야?",
+        null,
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "일반 설명에서 임의 상품 연결 금지"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "vegan_and_lactose",
+    [
+      [
+        "비건이면 알레르기 걱정은 따로 안 해도 되는 뜻이야?",
+        [
+          "vegan-and-allergens"
+        ]
+      ],
+      [
+        "비건이면서 우유 알레르기가 있다는 게 가능한 뜻이야?",
+        [
+          "vegan-and-allergens"
+        ],
+        [
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "이번 질문에 적은 알레르기",
+              "임시로 반영했어요"
+            ],
+            "description": "개념 질문을 개인 알레르기 입력으로 오인하지 않음"
+          }
+        ]
+      ],
+      [
+        "이번엔 락토프리랑 우유 알레르기는 어떻게 다른 개념인지 알려줘",
+        [
+          "lactose-free-and-milk"
+        ],
+        [
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "이번 질문에 적은 알레르기",
+              "임시로 반영했어요"
+            ],
+            "description": "개념 질문을 개인 알레르기 입력으로 오인하지 않음"
+          }
+        ]
+      ],
+      [
+        "즉 유당불내증이 우유 알레르기랑 같다는 뜻은 아닌 거지?",
+        [
+          "lactose-free-and-milk"
+        ],
+        [
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "이번 질문에 적은 알레르기",
+              "임시로 반영했어요"
+            ],
+            "description": "개념 질문을 개인 알레르기 입력으로 오인하지 않음"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "recipe",
+    [
+      [
+        "우유 없이 저염 일반 레시피 하나 추천해줘",
+        null,
+        [
+          {
+            "kind": "recipe_avoids",
+            "field": "recipe",
+            "value": [
+              "우유",
+              "땅콩"
+            ],
+            "description": "명시 제외·현재 프로필 조건 유지"
+          }
+        ]
+      ],
+      [
+        "재료 목록 다시 알려 주세요",
+        null,
+        [
+          {
+            "kind": "same_as_first",
+            "field": "recipe",
+            "value": null,
+            "description": "존댓말 재료 재조회는 기존 레시피 유지"
+          }
+        ]
+      ],
+      [
+        "당근을 빼고 다시 해 주세요",
+        null,
+        [
+          {
+            "kind": "recipe_edit_respected_or_declined",
+            "field": "recipe",
+            "value": [
+              "당근"
+            ],
+            "description": "재료 제외 또는 미지원 편집 안내"
+          }
+        ]
+      ],
+      [
+        "이걸 두 사람 분량으로 해줘",
+        null,
+        [
+          {
+            "kind": "contains_any",
+            "field": "answer",
+            "value": [
+              "지원하지",
+              "인분",
+              "분량"
+            ],
+            "description": "인분 변경 지원 범위 안내"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "scope_and_emergency",
+    [
+      [
+        "알레르기 질문은 됐고 부산 내일 날씨 알려줘",
+        null,
+        [
+          {
+            "kind": "eq",
+            "field": "intent",
+            "value": "out_of_domain",
+            "description": "식품 밖 주제로 전환"
+          }
+        ]
+      ],
+      [
+        "우유를 마셨는데 숨이 잘 안 쉬어져요",
+        null,
+        [
+          {
+            "kind": "eq",
+            "field": "intent",
+            "value": "emergency_safety",
+            "description": "마신 뒤 현재 중증 표현은 응급 경로"
+          }
+        ]
+      ],
+      [
+        "우유 먹고 호흡곤란이 전혀 없어요",
+        null,
+        [
+          {
+            "kind": "not_eq",
+            "field": "intent",
+            "value": "emergency_safety",
+            "description": "부정된 증상은 현재 응급으로 오인하지 않음"
+          }
+        ]
+      ]
+    ]
+  ]
+]

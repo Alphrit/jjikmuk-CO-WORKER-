@@ -1,0 +1,109 @@
+[
+  {
+    "id": "search_0001",
+    "query": "두유바",
+    "expected_name_contains_all": ["두유"]
+  },
+  {
+    "id": "search_0002",
+    "query": "고단백 두유",
+    "expected_name_contains_all": ["두유"]
+  },
+  {
+    "id": "search_0003",
+    "query": "저염 두부",
+    "expected_name_contains_all": ["두부"]
+  },
+  {
+    "id": "search_0004",
+    "query": "두부스낵",
+    "expected_name_contains_all": ["두부"]
+  },
+  {
+    "id": "search_0005",
+    "query": "닥터유 단백질바",
+    "expected_name_contains_all": ["닥터유", "단백질"]
+  },
+  {
+    "id": "search_0006",
+    "query": "프로 단백질바",
+    "expected_name_contains_all": ["프로", "단백질"]
+  },
+  {
+    "id": "search_0007",
+    "query": "단백질칩",
+    "expected_name_contains_all": ["단백질"]
+  },
+  {
+    "id": "search_0008",
+    "query": "새우깡",
+    "expected_name_contains_all": ["새우깡"]
+  },
+  {
+    "id": "search_0009",
+    "query": "매운 새우깡",
+    "expected_name_contains_all": ["새우깡"]
+  },
+  {
+    "id": "search_0010",
+    "query": "아몬드브리즈",
+    "expected_name_contains_all": ["아몬드"]
+  },
+  {
+    "id": "search_0011",
+    "query": "언스위트 음료",
+    "expected_name_contains_all": ["언스위트"]
+  },
+  {
+    "id": "search_0012",
+    "query": "드링크 단백질",
+    "expected_name_contains_all": ["단백질"]
+  },
+  {
+    "id": "search_0013",
+    "query": "매일우유",
+    "expected_name_contains_all": ["우유"]
+  },
+  {
+    "id": "search_0014",
+    "query": "나100 우유",
+    "expected_name_contains_all": ["우유"]
+  },
+  {
+    "id": "search_0015",
+    "query": "맛있는 우유GT",
+    "expected_top1_any": ["남양 맛있는 우유GT 200ml", "남양 맛있는우유GT"],
+    "expected_name_contains_all": ["우유"]
+  },
+  {
+    "id": "message_search_0001",
+    "mode": "message",
+    "query": "서울우유 먹으려고 하는데 이거 먹어도돼?",
+    "expected_name_contains_all": ["서울우유"],
+    "forbidden_name_contains_any": ["간키퍼"]
+  },
+  {
+    "id": "message_search_0002",
+    "mode": "message",
+    "query": "매운 새우깡 먹어보려고 하는데 괜찮아?",
+    "expected_name_contains_all": ["새우깡"]
+  },
+  {
+    "id": "message_search_0003",
+    "mode": "message",
+    "query": "닥터유 단백질바 먹으려는데 괜찮을까?",
+    "expected_name_contains_all": ["닥터유", "단백질"]
+  },
+  {
+    "id": "message_search_0004",
+    "mode": "message",
+    "query": "아몬드브리즈 마시려고 하는데 괜찮아?",
+    "expected_name_contains_all": ["아몬드"]
+  },
+  {
+    "id": "message_search_0005",
+    "mode": "message",
+    "query": "동원참치라이트스탠다드 먹으려고 하는데 괜찮아?",
+    "expected_name_contains_all": ["참치"]
+  }
+]

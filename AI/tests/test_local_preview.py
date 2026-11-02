@@ -186,14 +186,17 @@ def test_transport_returns_no_text_is_not_success(monkeypatch):
 
 
 def test_official_retrieval_and_general_llm_final_answer(packaged_sources, monkeypatch):
+    from rag_test_helpers import grounding_review
+    monkeypatch.setenv("RAG_GENERAL_RESPONSE_MODE", "generated")
     answer = "식품을 구입하기 전에는 자신에게 알레르기를 일으키는 식품이 포함되어 있는지 확인하세요."
     documents = [d for d in rag._load_documents() if d.metadata["source"] == "allergy-purchase-check.source.json"]
     class Store:
-        def similarity_search(self, _query, k):
+        def similarity_search(self, _query, k, **_kwargs):
             return documents[:k]
     monkeypatch.setattr(rag, "_require_current_index", lambda _path: {})
     monkeypatch.setattr(rag, "build_vectorstore", lambda: Store())
-    monkeypatch.setattr(llm, "_post_json", lambda *_a: {"output_text": answer})
+    responses = iter([answer, grounding_review(answer, [documents[0].page_content])])
+    monkeypatch.setattr(llm, "_post_json", lambda *_a: {"output_text": next(responses)})
     with browser(external=True) as client:
         authorize(client)
         result = ask(client, "식품 알레르기 안내", external=True)
@@ -201,6 +204,7 @@ def test_official_retrieval_and_general_llm_final_answer(packaged_sources, monke
         assert result["response"]["answer_source"] == "rag"
         assert result["diagnostics"]["llm_output_adopted"]
         assert result["diagnostics"]["calls"][0]["purpose"] == "general_answer"
+        assert result["diagnostics"]["calls"][1]["purpose"] == "grounding_review"
         assert "kca.go.kr" in result["response"]["sources"][0]
         assert set(result["diagnostics"]["external_services_attempted"]) == {"rag", "llm"}
 
@@ -214,6 +218,67 @@ def test_missing_index_general_answer_is_rule_only(monkeypatch, tmp_path):
         assert result["diagnostics"]["calls"] == []
         assert not result["diagnostics"]["llm_output_adopted"]
         assert result["diagnostics"]["fallback_reason"] == "rag_context_missing_for_general_llm"
+
+
+def test_rejected_generated_answer_is_shown_as_reviewed_text_not_adopted_llm(packaged_sources, monkeypatch):
+    monkeypatch.setenv("RAG_GENERAL_RESPONSE_MODE", "generated")
+    document = next(d for d in rag._load_documents()
+                    if d.metadata["source"] == "sugar-zero-vs-added.source.json")
+
+    class Store:
+        def similarity_search(self, _query, k, **_kwargs):
+            return [document]
+
+    monkeypatch.setattr(rag, "_require_current_index", lambda _path: {})
+    monkeypatch.setattr(rag, "build_vectorstore", lambda: Store())
+    monkeypatch.setattr(llm, "_post_json", lambda *_a: {"output_text": "무당과 무가당은 같은 뜻입니다."})
+    with browser(external=True) as client:
+        authorize(client)
+        result = ask(client, "무설탕과 무가당의 차이가 뭐야?", external=True)
+        assert result["response"]["answer"] == document.page_content
+        assert result["response"]["answer_source"] == "rag" and result["response"]["sources"]
+        assert result["diagnostics"]["calls"]
+        assert not result["diagnostics"]["llm_output_adopted"]
+        assert result["diagnostics"]["fallback_reason"] == "rag_generated_answer_rejected"
+
+
+def test_default_rag_answer_is_not_reported_as_generated_text(packaged_sources, monkeypatch):
+    monkeypatch.delenv("RAG_GENERAL_RESPONSE_MODE", raising=False)
+    documents = [d for d in rag._load_documents() if d.metadata["source"] == "allergy-purchase-check.source.json"]
+    class Store:
+        def similarity_search(self, _query, k, **_kwargs):
+            return documents[:k]
+    monkeypatch.setattr(rag, "_require_current_index", lambda _path: {})
+    monkeypatch.setattr(rag, "build_vectorstore", lambda: Store())
+    with browser(external=True) as client:
+        authorize(client)
+        result = ask(client, "식품 알레르기 안내", external=True)
+        assert result["response"]["answer"] == documents[0].page_content
+        assert result["response"]["answer_source"] == "rag"
+        assert not result["diagnostics"]["llm_output_adopted"]
+        assert result["diagnostics"]["calls"] == []
+        assert result["diagnostics"]["external_services_attempted"] == ["rag"]
+
+
+@pytest.mark.parametrize("message,filename", [
+    ("영양표시 기준량은 어떻게 확인해?", "nutrition-label-basis.source.json"),
+    ("영양표시의 기준치 퍼센트는 무슨 뜻이야?", "nutrition-label-percentage.source.json"),
+    ("영양표시에서 무가당이면 당류가 없는 거야?", "sugar-no-added-reading.source.json"),
+])
+def test_new_explanations_are_reachable_through_chat(packaged_sources, monkeypatch, message, filename):
+    monkeypatch.delenv("RAG_GENERAL_RESPONSE_MODE", raising=False)
+    documents = [d for d in rag._load_documents() if d.metadata["source"] == filename]
+    class Store:
+        def similarity_search(self, _query, k, **_kwargs):
+            return documents[:k]
+    monkeypatch.setattr(rag, "_require_current_index", lambda _path: {})
+    monkeypatch.setattr(rag, "build_vectorstore", lambda: Store())
+    with browser(external=True) as client:
+        authorize(client)
+        result = ask(client, message, external=True)
+        assert result["response"]["answer_source"] == "rag", result
+        assert result["response"]["answer"] == documents[0].page_content
+        assert result["diagnostics"]["calls"] == []
 
 
 def test_intent_only_call_does_not_count_as_final_adoption(monkeypatch):

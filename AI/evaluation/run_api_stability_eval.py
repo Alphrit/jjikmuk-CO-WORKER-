@@ -116,6 +116,15 @@ def _run_request(client: TestClient, case: Dict[str, Any], sequence: int) -> Dic
         contract_failures = _contract_failures(response.status_code, body)
         evaluation = evaluate_case(case, body, response.status_code)
         failures = [*contract_failures, *evaluation.get("failures", [])]
+        trust_findings = evaluation.get("trust_findings", [])
+        failures.extend(
+            finding["message"]
+            for finding in trust_findings
+            if finding.get("severity") in {"critical", "high"}
+        )
+        scenario_passed = evaluation.get("passed", False)
+        if not scenario_passed and not failures:
+            failures.append("scenario evaluation failed")
         return {
             "sequence": sequence,
             "case_id": case["id"],
@@ -123,8 +132,9 @@ def _run_request(client: TestClient, case: Dict[str, Any], sequence: int) -> Dic
             "status_code": response.status_code,
             "passed": not failures,
             "contract_passed": not contract_failures,
-            "scenario_passed": evaluation.get("passed", False),
+            "scenario_passed": scenario_passed,
             "failures": failures,
+            "trust_findings": trust_findings,
             "actual": {
                 "intent": body.get("intent") if isinstance(body, dict) else None,
                 "task_type": body.get("task_type") if isinstance(body, dict) else None,

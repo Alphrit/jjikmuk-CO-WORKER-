@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-low-fat",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 23,
+  "section": "인쇄 42·45쪽, PDF 23~24쪽: 저지방 조건과 예외 (사실 요약·재구성)",
+  "text": "식약처 2025년 12월 안내서의 저지방 함량 조건은 식품 100g당 지방 3g 미만 또는 100ml당 지방 1.5g 미만입니다. 지방이 전혀 없다는 뜻은 아닙니다. 저라는 강조표시는 제조·가공으로 해당 성분을 낮추거나 제거한 경우에 사용하는 것이 원칙이며, 저지방의 경우 축산물에 적용되는 식품의 기준 및 규격에 정한 기준을 적용할 수 있는 예외가 있습니다. 지방의 수치만으로 열량이나 다른 영양성분의 양을 판단하지 말고 영양성분표의 기준량과 함량을 함께 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "low_fat"
+  ]
+}

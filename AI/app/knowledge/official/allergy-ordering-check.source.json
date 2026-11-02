@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "allergy-ordering-check",
+  "source_id": "mfds-allergy-label-reading-2022",
+  "source_sha256": "1fb3e315408e3493a0421e79e956544db25edbff586df516740598d546b08532",
+  "page": 9,
+  "section": "공식 카드 5~7, PDF 9~11쪽: 매장·배달 주문 전 확인 (사실 요약·재구성)",
+  "text": "외식하거나 배달 음식을 주문할 때는 메뉴의 제품명·가격 주변, 매장의 안내 책자·포스터, 주문 홈페이지·앱의 알레르기 정보를 확인하세요. 식약처 안내는 음식을 주문하기 전에 알레르기 유발물질이 들어가는지 확인하도록 설명합니다. 이는 확인할 정보와 위치를 안내하는 내용이며, 특정 음식의 실제 성분이나 모든 매장의 표시 상태를 대신 확인한 것은 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "allergy_ordering"
+  ]
+}

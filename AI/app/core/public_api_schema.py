@@ -19,10 +19,11 @@ from pydantic import (
 )
 
 from app.core.public_product_schema import PublicPayloadModel, PublicProduct
+from app.core.backend_analysis import ProfileKey, ProfileSource, SafetyStatus, DietStatus
 
 
 MAX_PUBLIC_STATE_TEXT_LENGTH = 256
-MAX_PUBLIC_PROFILE_RESULTS = 20
+MAX_PUBLIC_PROFILE_RESULTS = 21
 MAX_PUBLIC_PROFILE_NAME_LENGTH = 128
 MAX_PUBLIC_TARGET_TYPE_LENGTH = 32
 MAX_PUBLIC_INTENT_LENGTH = 128
@@ -95,6 +96,10 @@ class PublicPerProfileResult(PublicPayloadModel):
     profile_id: int = Field(ge=0, le=9_223_372_036_854_775_807)
     profile_name: PublicProfileName
     target_type: PublicTargetType
+    profileKey: Optional[ProfileKey] = None
+    profileSource: Optional[ProfileSource] = None
+    backend_status: Optional[SafetyStatus] = None
+    backend_diet_status: Optional[DietStatus] = None
     intent: PublicIntent
     risk_level: Literal["low", "medium", "high", "unknown"]
     overall_decision: Literal[
@@ -113,6 +118,14 @@ class PublicPerProfileResult(PublicPayloadModel):
         default_factory=list,
         max_length=MAX_PUBLIC_PROFILE_REASONS,
     )
+
+    @model_serializer(mode="wrap")
+    def omit_absent_backend_fields(self, serializer):
+        payload = serializer(self)
+        for key in ("profileKey", "profileSource", "backend_status", "backend_diet_status"):
+            if payload.get(key) is None:
+                payload.pop(key, None)
+        return payload
 
 
 class PublicUiGuidance(PublicPayloadModel):
@@ -201,18 +214,22 @@ class PublicConversationState(PublicPayloadModel):
         ),
     ]] = None
     pending_intent: Optional[PublicStateText] = None
+    unresolved_product_query: Optional[PublicStateText] = None
     recipe_fingerprints: list[Annotated[
         str, StringConstraints(pattern=r"^[0-9a-f]{64}$")
     ]] = Field(default_factory=list, max_length=20)
     recipe_requested_diets: list[Literal["채식", "저염식", "저당식", "글루텐프리", "저칼로리", "저지방", "고단백"]] = Field(default_factory=list, max_length=7)
     recipe_goals_initialized: Optional[Literal[True]] = None
+    recipe_receipt: Optional[Annotated[str, StringConstraints(max_length=3072, pattern=r"^[A-Za-z0-9_=\-]+\.[0-9a-f]{64}$")]] = None
     recipe_product: Optional[PublicConversationProductReference] = None
+    pending_target_product: Optional[PublicConversationProductReference] = None
     vegetarian_allowances: list[PublicVegetarianAllowance] = Field(default_factory=list, max_length=20)
     pending_allergy: Optional[PublicPendingAllergy] = None
     comparison_products: list[Optional[PublicConversationProductReference]] = Field(default_factory=list, max_length=3)
     comparison_queries: list[PublicStateText] = Field(default_factory=list, max_length=3)
     comparison_pending_index: Optional[int] = Field(default=None, ge=0, le=2)
     comparison_status: Optional[Literal["active", "pending", "unresolved", "cleared"]] = None
+    comparison_axes: list[Literal["칼로리", "단백질", "지방", "포화지방", "탄수화물", "당류", "나트륨", "콜레스테롤", "알레르기"]] = Field(default_factory=list, max_length=9)
 
     @model_validator(mode="before")
     @classmethod
@@ -229,10 +246,13 @@ class PublicConversationState(PublicPayloadModel):
             "pending_product_candidates",
             "pending_user_message",
             "pending_intent",
+            "unresolved_product_query",
             "recipe_fingerprints",
             "recipe_requested_diets", "recipe_goals_initialized", "recipe_product", "vegetarian_allowances",
             "pending_allergy",
-            "comparison_products", "comparison_queries", "comparison_pending_index", "comparison_status",
+            "pending_target_product",
+            "recipe_receipt",
+            "comparison_products", "comparison_queries", "comparison_pending_index", "comparison_status", "comparison_axes",
         }
         has_semantic_value = any(
             payload.get(key) not in (None, "", []) for key in semantic_keys

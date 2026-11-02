@@ -12,6 +12,14 @@ from app.prompts.builder import (
     build_general_fallback_prompt,
 )
 from app.infrastructure.rag import get_rag_context_entries, official_citation_from_entry
+from app.services.rag_grounding import (
+    build_grounding_review_prompt,
+    has_opposite_reviewed_statement,
+    requested_topics,
+    reviewed_generated_entries,
+    select_reviewed_entries,
+)
+from app.intent.explanation_topics import resolve_explanation_question
 
 
 _UNSUPPORTED_CLAIM_PATTERNS = [
@@ -272,7 +280,7 @@ def _is_supported_food_domain_question(message: str, profile: Optional[Profile],
         return True
 
     normalized = message.lower()
-    return any(term in normalized for term in _FOOD_DOMAIN_TERMS)
+    return any(term in normalized for term in _FOOD_DOMAIN_TERMS) or bool(requested_topics(message))
 
 
 def _requires_rag_context_for_general_llm() -> bool:
@@ -1015,12 +1023,16 @@ def try_general_llm_fallback(
     product: Optional[Product],
     chat_history: Optional[List[ChatHistoryItem]] = None,
 ) -> ChatResponse:
+    if base_response.fallback_reason == "rag_question_outside_evidence_scope":
+        return base_response
     if not is_llm_enabled():
         return base_response
 
     if product is not None:
         return base_response
 
+    original_question = message
+    message = resolve_explanation_question(message, chat_history)
     if not _is_supported_food_domain_question(message, profile, product):
         return base_response
 
@@ -1031,7 +1043,25 @@ def try_general_llm_fallback(
     }:
         return base_response
 
-    rag_entries = get_rag_context_entries(message=message, profile=profile, product=product)
+    mode = os.getenv("RAG_GENERAL_RESPONSE_MODE", "extractive").strip().lower()
+    if mode not in {"extractive", "generated"}:
+        return base_response.model_copy(update={"fallback_reason": "rag_response_mode_invalid"})
+
+    insufficient_scope = {
+        "answer": "현재 확인한 자료만으로는 질문에 필요한 내용을 충분히 설명하기 어려워요. 확인되지 않은 수치나 적합성을 추측해서 안내하지 않아요.",
+        "fallback_reason": "rag_question_outside_evidence_scope",
+        "validation_failure_types": ["rag_evidence_insufficient"],
+    }
+    question_topics = requested_topics(message)
+    if not question_topics:
+        # Unsupported questions need no embedding of the user's context.
+        return base_response.model_copy(update=insufficient_scope)
+
+    rag_entries = get_rag_context_entries(
+        message=message, profile=profile, product=product, official_only=True,
+        source_topics=question_topics,
+        top_k=min(5, max(3, len(question_topics or ()))),
+    )
     if any(
         entry.get("source", "").startswith("official-source:")
         and official_citation_from_entry(entry) is None
@@ -1057,6 +1087,47 @@ def try_general_llm_fallback(
             "validation_failure_types": ["rag_context_missing"],
         })
 
+    reviewed_response = None
+    if rag_entries:
+        selected = select_reviewed_entries(message, rag_entries)
+        if not selected:
+            return base_response.model_copy(update=insufficient_scope)
+        # Exact reviewed bodies are already written for end users. Recheck all
+        # revisions before assembling text/citations; no generated facts enter.
+        sources = _sources_from_entries(selected)
+        if len(sources) != len(selected):
+            return base_response.model_copy(update={"fallback_reason": "rag_source_approval_changed"})
+        context = [entry["content"] for entry in selected]
+        reviewed_response = base_response.model_copy(update={
+            "answer": "\n\n".join(context), "answer_source": "rag",
+            "task_type": "general_chat", "sources": sources,
+            "grounding_context": context, "fallback_reason": "rag_reviewed_excerpt_answer",
+        })
+        if mode == "extractive":
+            return reviewed_response
+        from app.services.rag_grounding import verified_mass_conversion
+        conversion = verified_mass_conversion(original_question, selected)
+        if conversion:
+            return reviewed_response.model_copy(update={
+                "answer": conversion,
+                # This evidence is server-calculated from the verified unit
+                # relation, not a generated draft or a fabricated source body.
+                "grounding_context": [*context, conversion],
+                "fallback_reason": "rag_verified_unit_calculation",
+            })
+        rag_entries, rag_context = selected, context
+    elif mode == "extractive":
+        return base_response.model_copy(update=insufficient_scope)
+
+    def rejected_draft(reason: str, failures: list[str]) -> ChatResponse:
+        if reviewed_response is not None:
+            return reviewed_response.model_copy(update={
+                "fallback_reason": reason,
+                "validation_failure_types": failures,
+                "blocked_llm_output_stored": False,
+            })
+        return _fallback_with_grounding_reason(base_response, reason, failures)
+
     prompt = build_general_fallback_prompt(
         message=message,
         profile=profile,
@@ -1069,10 +1140,7 @@ def try_general_llm_fallback(
         llm_answer = generate_text(prompt)
 
     if not llm_answer:
-        return base_response.model_copy(update={
-            "fallback_reason": "llm_empty_response",
-            "validation_failure_types": ["llm_empty_response"],
-        })
+        return rejected_draft("rag_generated_answer_rejected", ["llm_empty_response"])
 
     if any(
         entry.get("source", "").startswith("official-source:")
@@ -1092,10 +1160,26 @@ def try_general_llm_fallback(
         rag_context=rag_context,
     )
     if failure_types:
-        return _fallback_with_grounding_reason(
-            base_response,
-            validation_failure_types=failure_types,
-        )
+        return rejected_draft("rag_generated_answer_rejected", failure_types)
+
+    if rag_entries:
+        if has_opposite_reviewed_statement(answer, rag_entries):
+            return rejected_draft("rag_generated_answer_rejected", ["rag_evidence_contradiction"])
+        if not answer.strip() or len(answer) > 2000:
+            return rejected_draft("rag_generated_answer_rejected", ["rag_generated_answer_invalid"])
+        with llm_purpose("grounding_review"):
+            review = generate_text(build_grounding_review_prompt(message, answer, rag_entries))
+        verified = reviewed_generated_entries(review, answer, message, rag_entries)
+        if not verified:
+            # No model output becomes user-visible unless all sentences have
+            # supported claims bound to complete quotes from current sources.
+            if any(official_citation_from_entry(entry) is None for entry in rag_entries):
+                return _fallback_with_grounding_reason(
+                    base_response, validation_failure_types=["rag_source_approval_changed"],
+                )
+            return rejected_draft("rag_generated_answer_rejected", ["rag_claim_review_failed"])
+        rag_entries = verified
+        rag_context = [entry["content"] for entry in verified]
 
     return base_response.model_copy(update={
         "answer": answer,
@@ -1104,4 +1188,5 @@ def try_general_llm_fallback(
         "task_type": "general_chat",
         "sources": _sources_from_entries(rag_entries) if rag_context else [],
         "grounding_context": rag_context,
+        "fallback_reason": "rag_generated_answer_verified" if rag_context else None,
     })

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import json
 import math
 import os
 import secrets
@@ -364,6 +365,27 @@ class ChatRequestGuardMiddleware:
                 break
 
         body = b"".join(chunks)
+        # Validate JSON primitives before schema/error rendering, while keeping
+        # the exact bytes for HMAC verification. Python's JSON parser accepts
+        # infinity and lone surrogates which cannot be returned as valid JSON.
+        if body:
+            try:
+                pending_values = [(json.loads(body), 0)]
+                while pending_values:
+                    value, depth = pending_values.pop()
+                    if depth > 128:
+                        raise ValueError("JSON nesting limit")
+                    if isinstance(value, str):
+                        value.encode("utf-8", errors="strict")
+                    elif isinstance(value, float) and not math.isfinite(value):
+                        raise ValueError("Non-finite number")
+                    elif isinstance(value, dict):
+                        pending_values.extend((item, depth + 1) for pair in value.items() for item in pair)
+                    elif isinstance(value, list):
+                        pending_values.extend((item, depth + 1) for item in value)
+            except (ValueError, UnicodeError, RecursionError):
+                await _send_json(send, status_code=400, detail="Request body must contain valid JSON text and finite numbers.")
+                return
         state = scope.setdefault("state", {})
         if isinstance(state, dict):
             state[EXACT_REQUEST_BODY_SCOPE_KEY] = body

@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "sugar-sweeteners-calories",
+  "source_id": "mfds-consumer-newsletter-2026-36",
+  "source_sha256": "a45693b326fa6da76875c43cf619cabe4229126d5c30b4c5cb3c039edcf652ed",
+  "page": 1,
+  "section": "우상단·좌하단: 감미료와 열량 확인 (사실 요약·재구성)",
+  "text": "무당·무가당 제품에도 단맛을 내는 감미료가 사용될 수 있습니다. 당류를 강조한 표시만으로 감미료가 없는지 또는 열량이 낮은지 알 수는 없습니다. 식약처 2026년 9월 뉴스레터는 감미료를 사용해 무당·무가당으로 강조한 제품의 감미료 함유 표시를 확인하도록 안내합니다. 저열량 기준에 맞지 않는 경우에는 열량 정보도 함께 표시하도록 안내합니다. 원재료명과 감미료 표시, 영양성분표의 당류 및 열량을 함께 읽고 실제 먹는 양을 확인하세요. 뉴스레터에 제시된 저열량 기준은 100g당 40kcal 미만 또는 100ml당 20kcal 미만입니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "sugar_energy"
+  ]
+}

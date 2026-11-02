@@ -1,0 +1,1697 @@
+{
+  "scope": "Independent recommendation wording and profile-transition constraints; synthetic reviewed product fixtures; candidate usefulness reviewed separately to avoid vacuous safety passes",
+  "products": {
+    "880000009001": {
+      "product_id": 9001,
+      "product_name": "검사우유",
+      "food_code": null,
+      "report_number": "202600009001",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009001",
+      "rawmtrl_nm": "원유 100%",
+      "allergy": [
+        "우유"
+      ],
+      "ingredients": [],
+      "allergy_info": [
+        "우유"
+      ],
+      "nutrition": {
+        "sodium": 40.0,
+        "protein": 3.0,
+        "kcal": 60.0
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100ml",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009001"
+      }
+    },
+    "880000009002": {
+      "product_id": 9002,
+      "product_name": "검사귀리음료",
+      "food_code": null,
+      "report_number": "202600009002",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009002",
+      "rawmtrl_nm": "귀리, 정제수",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [],
+      "nutrition": {
+        "sodium": 20.0,
+        "protein": 1.0,
+        "kcal": 30.0
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100ml",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009002"
+      }
+    },
+    "880000009003": {
+      "product_id": 9003,
+      "product_name": "검사새우스낵",
+      "food_code": null,
+      "report_number": "202600009003",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009003",
+      "rawmtrl_nm": "밀가루, 새우, 소금",
+      "allergy": [
+        "새우",
+        "밀"
+      ],
+      "ingredients": [],
+      "allergy_info": [
+        "새우",
+        "밀"
+      ],
+      "nutrition": {},
+      "nutrition_basis": {
+        "basis_type": "unknown",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009003"
+      }
+    },
+    "880000009004": {
+      "product_id": 9004,
+      "product_name": "검사쌀스낵",
+      "food_code": null,
+      "report_number": "202600009004",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009004",
+      "rawmtrl_nm": "쌀, 소금",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [],
+      "nutrition": {},
+      "nutrition_basis": {
+        "basis_type": "unknown",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009004"
+      }
+    },
+    "880000009005": {
+      "product_id": 9005,
+      "product_name": "검사혼입스낵",
+      "food_code": null,
+      "report_number": "202600009005",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": "우유를 사용한 제품과 같은 제조시설에서 제조",
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009005",
+      "rawmtrl_nm": "쌀, 소금",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [
+        "우유를 사용한 제품과 같은 제조시설에서 제조"
+      ],
+      "nutrition": {},
+      "nutrition_basis": {
+        "basis_type": "unknown",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009005"
+      }
+    },
+    "880000009006": {
+      "product_id": 9006,
+      "product_name": "검사영양음료",
+      "barcode": "880000009006",
+      "raw_materials": "정제수, 소금",
+      "allergy": [],
+      "sodium_mg": 125,
+      "sodium_g": 0.125,
+      "cholesterol_mg": 1.5,
+      "cholesterol_g": 0.0015,
+      "nutrition_basis": {
+        "basis_type": "per_100ml"
+      },
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-mass-not-percent"
+      }
+    },
+    "880000009007": {
+      "product_id": 9007,
+      "product_name": "검사추가음료7",
+      "food_code": null,
+      "report_number": "880000009007",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009007",
+      "rawmtrl_nm": "정제수",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [],
+      "nutrition": {
+        "sodium": 0,
+        "sugars": 0,
+        "fat": 5,
+        "saturated_fat": 2,
+        "kcal": 50
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100ml",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "fresh-880000009007"
+      }
+    },
+    "880000009008": {
+      "product_id": 9008,
+      "product_name": "검사추가음료8",
+      "food_code": null,
+      "report_number": "880000009008",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009008",
+      "rawmtrl_nm": "정제수",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [],
+      "nutrition": {
+        "sodium": 12
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100ml",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "fresh-880000009008"
+      }
+    },
+    "880000009010": {
+      "product_id": 9010,
+      "product_name": "검사한팩우유",
+      "food_code": null,
+      "report_number": "880000009010",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009010",
+      "rawmtrl_nm": "원유",
+      "allergy": [
+        "우유"
+      ],
+      "ingredients": [],
+      "allergy_info": [
+        "우유"
+      ],
+      "nutrition": {
+        "sodium": 40,
+        "protein": 3,
+        "kcal": 60
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100ml",
+        "package_size_value": 250,
+        "package_size_unit": "ml"
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "holdout-880000009010"
+      }
+    },
+    "880000009011": {
+      "product_id": 9011,
+      "product_name": "검사큰봉지곡물",
+      "food_code": null,
+      "report_number": "880000009011",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009011",
+      "rawmtrl_nm": "쌀",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [],
+      "nutrition": {
+        "sodium": 20,
+        "protein": 4,
+        "kcal": 100
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100g",
+        "package_size_value": 500,
+        "package_size_unit": "g"
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "holdout-880000009011"
+      }
+    },
+    "880000009012": {
+      "product_id": 9012,
+      "product_name": "검사미확인음료",
+      "food_code": null,
+      "report_number": "880000009012",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009012",
+      "rawmtrl_nm": "",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [],
+      "nutrition": {},
+      "nutrition_basis": {
+        "basis_type": "unknown"
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "holdout-880000009012"
+      }
+    },
+    "880000009013": {
+      "product_id": 9013,
+      "product_name": "엄마손파이",
+      "food_code": null,
+      "report_number": "880000009013",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009013",
+      "rawmtrl_nm": "밀가루, 원유",
+      "allergy": [
+        "밀",
+        "우유"
+      ],
+      "ingredients": [],
+      "allergy_info": [
+        "밀",
+        "우유"
+      ],
+      "nutrition": {
+        "kcal": 100
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100g"
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "holdout-880000009013"
+      }
+    },
+    "880000009014": {
+      "product_id": 9014,
+      "product_name": "검사땅콩과자",
+      "food_code": null,
+      "report_number": "880000009014",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009014",
+      "rawmtrl_nm": "땅콩, 쌀",
+      "allergy": [
+        "땅콩"
+      ],
+      "ingredients": [],
+      "allergy_info": [
+        "땅콩"
+      ],
+      "nutrition": {
+        "sodium": 20
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100g"
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "holdout-880000009014"
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "recommend_mother_0",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "조건에 맞는 과자 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_mother_1",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "알레르기 피해서 먹을 다른 간식 알려줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_mother_2",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "이거 말고 다른 제품 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_father_0",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "조건에 맞는 과자 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009014"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_father_1",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "알레르기 피해서 먹을 다른 간식 알려줘",
+          "profiles": [
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009014"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_father_2",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "이거 말고 다른 제품 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009014"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_both_0",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "조건에 맞는 과자 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013",
+            "880000009014"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_both_1",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "알레르기 피해서 먹을 다른 간식 알려줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013",
+            "880000009014"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_both_2",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "이거 말고 다른 제품 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013",
+            "880000009014"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_three_0",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 63,
+              "nickname": "아이",
+              "allergies": [
+                "새우",
+                "밀"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "조건에 맞는 과자 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 63,
+              "nickname": "아이",
+              "allergies": [
+                "새우",
+                "밀"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013",
+            "880000009014",
+            "880000009003"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_three_1",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 63,
+              "nickname": "아이",
+              "allergies": [
+                "새우",
+                "밀"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "알레르기 피해서 먹을 다른 간식 알려줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 63,
+              "nickname": "아이",
+              "allergies": [
+                "새우",
+                "밀"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013",
+            "880000009014",
+            "880000009003"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_three_2",
+      "category": "recommendation",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "이거 먹어도 돼?",
+          "barcode": "880000009001",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 63,
+              "nickname": "아이",
+              "allergies": [
+                "새우",
+                "밀"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "이거 말고 다른 제품 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 63,
+              "nickname": "아이",
+              "allergies": [
+                "새우",
+                "밀"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "recommendation intent is preserved"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013",
+            "880000009014",
+            "880000009003"
+          ],
+          "description": "No known conflicting item for any active profile"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ]
+    },
+    {
+      "id": "recommend_switch_0",
+      "category": "recommendation_profile_transition",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "검사우유 말고 다른 과자 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "현재 선택된 사람들 기준으로 다시 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "active_profile_names",
+          "kind": "eq",
+          "value": [
+            "아빠"
+          ],
+          "description": "current active profiles only"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009014"
+          ],
+          "description": "Current profile conflicts excluded"
+        },
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "Re-evaluate recommendations rather than generic unknown response"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ],
+      "turn_checks": {
+        "0": [
+          {
+            "field": "recommended_products",
+            "kind": "not_eq",
+            "value": [],
+            "description": "precondition: recommendation actually issued"
+          }
+        ]
+      }
+    },
+    {
+      "id": "recommend_switch_1",
+      "category": "recommendation_profile_transition",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "검사우유 말고 다른 과자 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "현재 선택된 사람들 기준으로 다시 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            },
+            {
+              "profile_id": 62,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "active_profile_names",
+          "kind": "eq",
+          "value": [
+            "엄마",
+            "아빠"
+          ],
+          "description": "current active profiles only"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013",
+            "880000009014"
+          ],
+          "description": "Current profile conflicts excluded"
+        },
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "Re-evaluate recommendations rather than generic unknown response"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ],
+      "turn_checks": {
+        "0": [
+          {
+            "field": "recommended_products",
+            "kind": "not_eq",
+            "value": [],
+            "description": "precondition: recommendation actually issued"
+          }
+        ]
+      }
+    },
+    {
+      "id": "recommend_switch_2",
+      "category": "recommendation_profile_transition",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "검사우유 말고 다른 과자 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "현재 선택된 사람들 기준으로 다시 추천해줘",
+          "profiles": []
+        }
+      ],
+      "checks": [
+        {
+          "field": "active_profile_names",
+          "kind": "eq",
+          "value": [],
+          "description": "current active profiles only"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [],
+          "description": "Current profile conflicts excluded"
+        },
+        {
+          "field": "answer",
+          "kind": "contains_any",
+          "value": [
+            "ON",
+            "선택된 프로필이 없",
+            "프로필을 선택"
+          ],
+          "description": "Explain why no current-person recommendation is possible when all profiles are OFF"
+        }
+      ],
+      "turn_checks": {
+        "0": [
+          {
+            "field": "recommended_products",
+            "kind": "not_eq",
+            "value": [],
+            "description": "precondition: recommendation actually issued"
+          }
+        ]
+      }
+    },
+    {
+      "id": "recommend_switch_3",
+      "category": "recommendation_profile_transition",
+      "priority": "P0",
+      "turns": [
+        {
+          "message": "검사우유 말고 다른 과자 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "현재 선택된 사람들 기준으로 다시 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 61,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "field": "active_profile_names",
+          "kind": "eq",
+          "value": [
+            "엄마"
+          ],
+          "description": "current active profiles only"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "list_excludes_barcodes",
+          "value": [
+            "880000009001",
+            "880000009010",
+            "880000009013"
+          ],
+          "description": "Current profile conflicts excluded"
+        },
+        {
+          "field": "intent",
+          "kind": "eq",
+          "value": "alternative_food_recommend",
+          "description": "Re-evaluate recommendations rather than generic unknown response"
+        },
+        {
+          "field": "recommended_products",
+          "kind": "not_eq",
+          "value": [],
+          "description": "Eligible fixtures exist, no vacuous empty-list safety pass"
+        }
+      ],
+      "turn_checks": {
+        "0": [
+          {
+            "field": "recommended_products",
+            "kind": "not_eq",
+            "value": [],
+            "description": "precondition: recommendation actually issued"
+          }
+        ]
+      }
+    }
+  ],
+  "grading_revision": "Safety exclusions alone do not establish successful recommendations. Added intent/nonempty checks, and a selection explanation when all profiles are OFF."
+}

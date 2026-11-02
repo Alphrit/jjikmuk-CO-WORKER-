@@ -168,6 +168,23 @@ def test_import_preserves_original_hashes_and_unicode_filenames(tmp_path):
     assert before == {p.name: p.read_bytes() for p in raw.iterdir()}
 
 
+def test_optional_uploaded_pdfs_preserve_empty_text_and_are_searchable_after_extraction(tmp_path, monkeypatch):
+    raw, _ = prepared_fixture(tmp_path)
+    for spec in sources.ADDITIONAL_PDF_SOURCES:
+        (raw / unicodedata.normalize("NFD", spec.filename)).write_bytes(blank_pdf())
+    bundle = sources.prepare_sources(raw)
+    assert len(bundle["sources"]) == 7
+    newsletter = sources.ADDITIONAL_PDF_SOURCES[1]
+    pages = [p for p in bundle["pdf_pages"] if p["source_id"] == newsletter.source_id]
+    assert all(p["extraction_status"] == "no_text" and not p["text"] for p in pages)
+    # Preparing an image-only source never invents OCR or approves its contents.
+    assert all(p["review_status"] == "pending" for p in pages)
+    pages[0].update(text="검토용 무가당 원문", extraction_status="text_extracted")
+    results = search_prepared_sources(bundle, "무가당", kind="pdf")
+    assert results[0]["source_url"] == newsletter.url
+    assert results[0]["page"] == 1
+
+
 def test_source_missing_symlink_and_oversize_fail_closed(tmp_path, monkeypatch):
     spec = replace(sources.SOURCES[0], filename="source.pdf")
     with pytest.raises(ValueError, match="파일이 없거나"):

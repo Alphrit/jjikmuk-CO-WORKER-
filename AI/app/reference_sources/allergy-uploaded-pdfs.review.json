@@ -1,0 +1,83 @@
+{
+  "format": "food-pdf-factual-summary-review-v1",
+  "reviewed_at": "2026-10-15",
+  "binding": "operator_supplied_pdf_sha256_not_remote_download_verification",
+  "release_scope": "New factual wording only. No publication, artwork, tables, translations or source passages redistributed. No blanket license approval.",
+  "sources": [
+    {
+      "source_id": "mfds-allergy-label-reading-2022",
+      "sha256": "1fb3e315408e3493a0421e79e956544db25edbff586df516740598d546b08532",
+      "physical_pdf_pages": 13,
+      "publication_date": "2022-09-01",
+      "user_saved_pdf": true,
+      "extraction": "Pages 1–4 have a transcript (including a typo); pages 5–13 are images. Do not treat the transcript or saved PDF as an official downloadable PDF.",
+      "selected_physical_pages": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "verification": "Official cards 4–7 visually checked against user PDF; factual wording, no current statutory claims.",
+      "url": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?bbs_no=bbs001&menu_no=3120&ntctxt_no=1091412"
+    },
+    {
+      "source_id": "nfsi-allergen-labelling-2023",
+      "sha256": "3552e8940df047d5037ebb27f269eb5db0aa4792a1aa40b19ce9a6bffc100600",
+      "physical_pdf_pages": 64,
+      "publication_date": "2023-09-20",
+      "selected_physical_pages": [
+        57,
+        58,
+        59
+      ],
+      "printed_pages": [
+        55,
+        56,
+        57
+      ],
+      "extraction": "pypdf text, cross-checked with official PDF text.",
+      "jurisdiction": "Appendix 6 introduces UK PAL guidance; only general cross-contact concepts and practical examples released, visibly attributed to that scope.",
+      "current_primary_cross_check": "https://www.gov.uk/food-labelling-and-packaging/precautionary-allergen-labelling-pal",
+      "excluded": "Country-specific laws, mandatory/allergen lists, exemptions, thresholds, probabilities, individual suitability and medicine.",
+      "url": "https://www.foodinfo.or.kr/cmm/fms/FileDown.do?atchFileId=FILE_000000000031029&fileSn=0",
+      "verification": "Selected text compared with official PDF text; PDF 57 and 59 visually checked on a white page background."
+    }
+  ],
+  "excerpts": [
+    {
+      "document_id": "allergy-label-reading",
+      "source_id": "mfds-allergy-label-reading-2022",
+      "first_physical_page": 8,
+      "section": "공식 카드 4: 원재료·별도 알레르기 표시란",
+      "topic": "allergy_label"
+    },
+    {
+      "document_id": "allergy-facility-warning",
+      "source_id": "mfds-allergy-label-reading-2022",
+      "first_physical_page": 8,
+      "section": "공식 카드 4: 함유 표시와 제조시설 주의문구",
+      "topic": "allergy_facility_warning"
+    },
+    {
+      "document_id": "allergy-cross-contact-definition",
+      "source_id": "nfsi-allergen-labelling-2023",
+      "first_physical_page": 57,
+      "section": "붙임 6·인쇄 55~56쪽, PDF 57~58쪽: 교차접촉 개념",
+      "topic": "allergy_cross_contact"
+    },
+    {
+      "document_id": "allergy-cross-contact-controls",
+      "source_id": "nfsi-allergen-labelling-2023",
+      "first_physical_page": 59,
+      "section": "붙임 6·인쇄 57쪽: 교차접촉 관리 사례",
+      "topic": "allergy_contact_controls"
+    },
+    {
+      "document_id": "allergy-ordering-check",
+      "source_id": "mfds-allergy-label-reading-2022",
+      "first_physical_page": 9,
+      "section": "공식 카드 5~7, PDF 9~11쪽: 매장·배달 주문 전 확인",
+      "topic": "allergy_ordering"
+    }
+  ]
+}

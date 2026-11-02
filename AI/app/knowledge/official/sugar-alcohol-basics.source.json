@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "sugar-alcohol-basics",
+  "source_id": "fda-carbohydrate-basics",
+  "source_sha256": "e1cc84a9fd13a510ce3d43b5e00e5cb36933f7f796ba405166f2e2f788adfe05",
+  "page": null,
+  "section": "당알코올의 개념 (사실 요약·재구성)",
+  "text": "당알코올은 당과 알코올의 화학적 특성을 함께 지닌 탄수화물의 한 종류입니다. 체내에 완전히 흡수되지 않아 보통 당보다 g당 열량이 낮으면서 단맛을 냅니다. 당알코올이라는 이름을 당류와 같은 뜻이나 열량이 항상 없다는 뜻으로 해석하지 마세요. 제품의 원재료와 영양성분표를 함께 확인해야 합니다. 개인의 반응이나 섭취량을 정하는 설명은 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "sugar_alcohol"
+  ]
+}

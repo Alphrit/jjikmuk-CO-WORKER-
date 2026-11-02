@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "calories-basics",
+  "source_id": "fda-label-basics",
+  "source_sha256": "e07f90e2f11d6ccfb67bdc8c4ee4667c8bb3b7611844fbe73c8ef7cb79720e28",
+  "page": null,
+  "section": "열량과 실제 먹는 양 (사실 요약·재구성)",
+  "text": "열량은 식품을 통해 얻는 에너지의 양을 나타내며 영양표시에서는 kcal 같은 단위를 사용합니다. 표시된 열량은 그 표의 기준량에 해당하므로 실제 먹는 양과 함께 읽어야 합니다. 같은 식품을 표시 기준량의 두 배 먹으면 해당 열량과 영양성분의 양도 두 배가 됩니다. 한 성분의 양이나 열량 하나만으로 식품의 다른 성분까지 알 수는 없습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "calories_basics"
+  ]
+}

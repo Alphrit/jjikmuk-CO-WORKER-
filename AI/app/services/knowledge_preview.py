@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from app.core.models import Product, Profile
-from app.infrastructure.knowledge_sources import SOURCES, normalized
+from app.infrastructure.knowledge_sources import ADDITIONAL_PDF_SOURCES, SOURCES, normalized
 from app.services.response_helpers import (
     find_cross_contamination_allergies,
     find_triggered_allergies,
@@ -132,7 +132,7 @@ def search_prepared_sources(
     if not query or len(query) > 200:
         raise ValueError("검색어는 1~200자여야 합니다.")
     tokens = query.split()
-    sources = {source.source_id: source for source in SOURCES}
+    sources = {source.source_id: source for source in SOURCES + ADDITIONAL_PDF_SOURCES}
     source_hashes = {source["source_id"]: source["sha256"] for source in bundle["sources"]}
     ranked = []
     records = bundle["pdf_pages"] if kind == "pdf" else bundle["recipes"]

@@ -215,7 +215,10 @@ def test_dislike_does_not_turn_into_an_allergy_warning():
 
     assert response.preference_match == "disliked_found"
     assert response.allergy_status == "no_known_match"
-    assert response.overall_decision == "no_known_conflict"
+    # This seed has no bound label revision. A dislike is still not a conflict,
+    # but it cannot turn the incomplete assessment into a completed result.
+    assert response.overall_decision == "check_required"
+    assert response.assessment_summary.decision == "insufficient_information"
 
 
 def test_gluten_free_is_not_inferred_only_from_no_wheat_match():

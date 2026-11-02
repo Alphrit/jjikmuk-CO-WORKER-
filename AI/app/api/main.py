@@ -704,6 +704,31 @@ def _run_chat_pipeline(
     allow_raw_audit_message: bool = True,
     trusted_user_id: int | None = None,
 ):
+    if req.analysis_context is None:
+        return _run_legacy_chat_pipeline(req, log_activity=log_activity,
+            allow_raw_audit_message=allow_raw_audit_message, trusted_user_id=trusted_user_id)
+    from app.services.backend_analysis import run_backend_pipeline
+    from app.core.backend_analysis import backend_analysis_active
+    token = backend_analysis_active.set(True)
+    try:
+        response, product, activity_context = run_backend_pipeline(req, _run_legacy_chat_pipeline)
+    finally:
+        backend_analysis_active.reset(token)
+    if log_activity:
+        _log_pipeline_response(response, activity_context=activity_context,
+            allow_raw_audit_message=allow_raw_audit_message, trusted_user_id=trusted_user_id)
+    return response, product, activity_context
+
+
+def _run_legacy_chat_pipeline(
+    req: ChatRequest,
+    *,
+    log_activity: bool = True,
+    allow_raw_audit_message: bool = True,
+    trusted_user_id: int | None = None,
+):
+    from app.intent.request_semantics import current_topic_message
+    req = req.model_copy(update={"message": current_topic_message(req.message)})
     # Time-sensitive symptom guidance must not wait for a product repository or
     # an LLM. Profile normalization is local and is used only to recognize a
     # known allergy context; no product facts are trusted here.
@@ -716,9 +741,13 @@ def _run_chat_pipeline(
             "message": remaining_message or req.message,
         })
     active_profiles = normalize_active_profiles(req)
+    from app.services.conversation_controls import conversation_control_response, history_after_reset
+    req = req.model_copy(update={"chat_history": history_after_reset(req.chat_history)})
     emergency_response = build_emergency_triage_response(
         req.message,
         profiles=active_profiles,
+        has_food_context=bool(req.product or req.barcode or req.report_number
+                              or req.conversation_state.get("last_confirmed_product")),
     )
     from app.services.request_language import standalone_cancellation_response, request_lifecycle, request_state_after_action
     current_condition_message = req.message
@@ -730,11 +759,29 @@ def _run_chat_pipeline(
             "chat_history": [] if lifecycle.cancel or lifecycle.cancel_search else req.chat_history,
         })
     cancellation_response = (
-        standalone_cancellation_response(req.message, req.conversation_state,
+        (conversation_control_response(req.message, req.conversation_state) or standalone_cancellation_response(req.message, req.conversation_state,
                                          profiles=active_profiles, known_profiles=normalize_known_profiles(req))
+        )
         if emergency_response is None else None
     )
-    if emergency_response is not None or cancellation_response is not None:
+    from app.services.condition_subject import unresolved_profile_target_response
+    target_response = (
+        unresolved_profile_target_response(req.message, active_profiles, normalize_known_profiles(req), req.conversation_state)
+        if emergency_response is None and cancellation_response is None else None
+    )
+    if target_response is not None:
+        # Preserve only lookup identifiers while the person is unresolved. No
+        # catalog fact or suitability decision is accepted from the request.
+        reference = {key: value for key, value in {
+            "barcode": req.barcode or (req.product.barcode if req.product else None),
+            "report_number": req.report_number or (req.product.report_number if req.product else None),
+        }.items() if value}
+        if reference:
+            state = {**req.conversation_state, "pending_target_product": reference}
+            target_response = target_response.model_copy(update={
+                "conversation_state": public_conversation_state(state), "internal_conversation_state": state,
+            })
+    if emergency_response is not None or cancellation_response is not None or target_response is not None:
         response = emergency_response.model_copy(
             # A safety interruption must not discard the previously confirmed
             # product or other bounded conversation state.
@@ -744,7 +791,7 @@ def _run_chat_pipeline(
                 ),
                 "internal_conversation_state": req.conversation_state,
             },
-        ) if emergency_response is not None else cancellation_response
+        ) if emergency_response is not None else (cancellation_response or target_response)
         response = attach_response_assessment(
             response,
             profiles=active_profiles,
@@ -819,6 +866,18 @@ def _run_chat_pipeline(
                 trusted_user_id=trusted_user_id,
             )
         return response, product, activity_context
+
+    from app.services.recipe_followup import recipe_followup_response
+    recipe_followup = (recipe_followup_response(req.message, req.conversation_state, prepared_conditions.profiles)
+                       if not (req.product or req.barcode or req.report_number or prepared_conditions.ambiguous_diet) else None)
+    if recipe_followup is not None:
+        response = attach_response_assessment(recipe_followup, profiles=active_profiles, product=None)
+        activity_context = {"profile": active_profiles[0] if active_profiles else None,
+                            "product": None, "barcode": None, "report_number": None, "message": req.message}
+        if log_activity:
+            _log_pipeline_response(response, activity_context=activity_context,
+                                   allow_raw_audit_message=allow_raw_audit_message, trusted_user_id=trusted_user_id)
+        return response, None, activity_context
 
     profile, product, barcode, report_number = normalize_chat_request(req)
     resumed_original_message = pending_original_message_for_selection(
@@ -1072,6 +1131,8 @@ def chat(req: ChatRequest) -> ChatResponse:
     ``_stateless_chat_response``.
     """
 
+    if req.analysis_context is not None:
+        raise ValueError("Backend analysis requires the authenticated HTTP API.")
     return _stateless_chat_response(req)
 
 
@@ -1305,6 +1366,9 @@ def _processing_request(
             current_message=req.message,
         )
     ]
+    if req.analysis_context is not None:
+        from app.core.backend_analysis import MAX_V2_HISTORY_ITEMS
+        payload["chat_history"] = payload["chat_history"][-MAX_V2_HISTORY_ITEMS:]
     return ChatRequest.model_validate(payload)
 
 
@@ -1575,10 +1639,24 @@ def _chat_persisted(req: ChatRequest, *, user_id: int) -> ChatResponse:
 
 
 @app.post("/chat", response_model=PublicChatResponse)
-def chat_http(req: ChatRequest, request: Request):
-    if req.conversation_id is None:
-        return _stateless_chat_response(req)
-    return _chat_persisted(req, user_id=_conversation_user_id(request))
+def chat_http(req: ChatRequest, request: Request, response: Response):
+    from app.core.backend_analysis import ANALYSIS_VERSION, CONTRACT_HEADER, CONTEXT_HEADER
+    ctx = req.analysis_context
+    if ctx is not None:
+        _assert_chat_service_token(request, feature="Backend analysis")
+        if (request.headers.get(CONTRACT_HEADER) != ANALYSIS_VERSION
+                or request.headers.get(CONTEXT_HEADER) != ctx.contextId):
+            raise HTTPException(status_code=422, detail={"code": "AI_ANALYSIS_CONTRACT_MISMATCH"})
+    elif request.headers.get(CONTRACT_HEADER) or request.headers.get(CONTEXT_HEADER):
+        raise HTTPException(status_code=422, detail={"code": "AI_ANALYSIS_CONTEXT_REQUIRED"})
+    result = (_stateless_chat_response(req) if req.conversation_id is None
+              else _chat_persisted(req, user_id=_conversation_user_id(request)))
+    if ctx is not None:
+        if result.backend_analysis is None or result.backend_analysis.contextId != ctx.contextId:
+            raise HTTPException(status_code=500, detail={"code": "AI_ANALYSIS_NOT_PROCESSED"})
+        response.headers[CONTRACT_HEADER] = ANALYSIS_VERSION
+        response.headers[CONTEXT_HEADER] = ctx.contextId
+    return result
 
 
 @app.post(

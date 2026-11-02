@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "sugar-zero-vs-added",
+  "source_id": "mfds-consumer-newsletter-2026-36",
+  "source_sha256": "a45693b326fa6da76875c43cf619cabe4229126d5c30b4c5cb3c039edcf652ed",
+  "page": 1,
+  "section": "좌상단: 무당·무가당 / 우하단: 표시 확인 (사실 요약·재구성)",
+  "text": "무당(제로슈거)과 무가당은 같은 뜻이 아닙니다. 식약처 2026년 9월 뉴스레터에서 무당은 제조·가공으로 당 함량을 낮추거나 제거하고 식품 100g 또는 100ml당 당류가 0.5g 미만인 경우로 설명합니다. 따라서 제로슈거가 당류의 절대적인 0을 뜻하지는 않습니다. 무가당은 당류나 당류를 대신하는 원료, 당류가 첨가된 원료 등을 추가로 쓰지 않는 제조 조건에 관한 표시여서, 원료 자체의 당류가 남을 수 있습니다. 두 문구를 볼 때 모두 당류의 실제 함량과 기준량을 영양성분표에서 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "sugar_zero"
+  ]
+}

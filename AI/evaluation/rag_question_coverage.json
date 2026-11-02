@@ -1,0 +1,816 @@
+{
+  "format": "food-rag-question-coverage-v1",
+  "scope": "검토한 일반 식품 설명의 질문 표현·복수 주제·답변 제한 사례. 실제 사용자 질문 분포에 대한 응답률 측정이 아님.",
+  "groups": [
+    {
+      "document_id": "allergy-purchase-check",
+      "expected_intent": "general_allergy_guide",
+      "questions": [
+        "알레르기가 있으면 구매 전 뭘 확인해?",
+        "식품 알러지 구매 전 확인 요령",
+        "알레르기 식품을 살 때 먼저 뭘 봐야 해?",
+        "알러지가 있을 때 식품 구매 안내"
+      ],
+      "must_contain_all": [
+        "구입하기 전",
+        "포함"
+      ]
+    },
+    {
+      "document_id": "allergy-label-reading",
+      "expected_intent": "general_allergy_guide",
+      "questions": [
+        "알레르기 표시 읽는 방법 알려줘",
+        "원재료명과 알레르기 표시란은 어떻게 봐?",
+        "식품 알러지 라벨을 확인하는 방법",
+        "우유 함유 표시는 무슨 뜻이야?"
+      ],
+      "must_contain_all": [
+        "원재료명",
+        "별도",
+        "혼입"
+      ]
+    },
+    {
+      "document_id": "allergy-facility-warning",
+      "expected_intent": "general_allergy_guide",
+      "questions": [
+        "같은 제조시설이라는 말은 무슨 뜻이야?",
+        "동일 제조시설 문구 설명해줘",
+        "우유 함유와 같은 제조시설 문구는 어떻게 달라?",
+        "같은 공장이라는 알레르기 문구 뜻"
+      ],
+      "must_contain_all": [
+        "섞일 가능성",
+        "의미가 다릅니다",
+        "실제 혼입량"
+      ]
+    },
+    {
+      "document_id": "allergy-cross-contact-definition",
+      "expected_intent": "general_allergy_guide",
+      "questions": [
+        "교차접촉이 뭐야?",
+        "알레르기 교차오염 뜻 알려줘",
+        "교차 접촉이라는 말의 의미",
+        "알러지 공유장비는 어떤 뜻이야?"
+      ],
+      "must_contain_all": [
+        "의도치 않게",
+        "보관·운송",
+        "영국"
+      ]
+    },
+    {
+      "document_id": "allergy-cross-contact-controls",
+      "expected_intent": "general_allergy_guide",
+      "questions": [
+        "알레르기 교차접촉을 줄이는 방법 알려줘",
+        "교차오염 관리 방법을 설명해줘",
+        "알러지 교차접촉 방지를 위한 도구 분리",
+        "교차접촉을 줄이려면 세척은 어떻게 해?"
+      ],
+      "must_contain_all": [
+        "전용 도구",
+        "세척",
+        "단정하지 않습니다"
+      ]
+    },
+    {
+      "document_id": "allergy-ordering-check",
+      "expected_intent": "general_allergy_guide",
+      "questions": [
+        "배달 주문 전 알레르기 정보는 어디서 확인해?",
+        "외식할 때 알러지 표시 확인 방법",
+        "음식 주문할 때 알레르기 정보를 어디서 봐?",
+        "알레르기가 있으면 외식 주문 전에 무엇을 확인해?"
+      ],
+      "must_contain_all": [
+        "메뉴",
+        "홈페이지·앱",
+        "주문하기 전에"
+      ]
+    },
+    {
+      "document_id": "nutrition-label-basis",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "영양표시 기준량은 어떻게 확인해?",
+        "100g당과 한 봉지 기준을 어떻게 봐?",
+        "영양성분표 총 내용량 확인 방법 알려줘",
+        "영양정보 비교할 때 기준량을 어떻게 맞춰?"
+      ],
+      "must_contain_all": [
+        "표시 기준량",
+        "총 내용량",
+        "100g"
+      ]
+    },
+    {
+      "document_id": "nutrition-label-percentage",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "영양표시의 기준치 퍼센트는 무슨 뜻이야?",
+        "영양성분표 %는 어떻게 읽어?",
+        "기준치 대비 비율이라는 말이 뭐야?",
+        "영양표시 백분율 설명해줘"
+      ],
+      "must_contain_all": [
+        "개인에게",
+        "표시 기준량",
+        "비율"
+      ]
+    },
+    {
+      "document_id": "nutrition-front-claims",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "포장 앞면 강조 문구는 무슨 뜻이야?",
+        "영양강조표시가 뭐야?",
+        "식품 포장문구 읽는 방법 알려줘",
+        "앞면 강조표시와 성분표는 어떻게 봐?"
+      ],
+      "must_contain_all": [
+        "무·저·고·함유",
+        "비교",
+        "실제 함량"
+      ]
+    },
+    {
+      "document_id": "sugar-zero-vs-added",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "무당과 무가당의 차이가 뭐야?",
+        "제로슈거는 당이 정말 없는 뜻이야?",
+        "무설탕과 무가당은 어떻게 달라?",
+        "설탕 제로라는 말 설명해줘"
+      ],
+      "must_contain_all": [
+        "0.5g 미만",
+        "절대적인 0",
+        "원료 자체"
+      ]
+    },
+    {
+      "document_id": "sugar-no-added-reading",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "무가당 표시 기준을 알려줘",
+        "설탕무첨가는 무슨 뜻이야?",
+        "무가당이면 당류가 없는 거야?",
+        "설탕을 안 넣었다는 표시는 어떤 의미야?"
+      ],
+      "must_contain_all": [
+        "모두",
+        "꿀",
+        "효소",
+        "최종 제품"
+      ]
+    },
+    {
+      "document_id": "sugar-sweeteners-calories",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "무가당인데 왜 달아?",
+        "무당이면 칼로리도 없는 거야?",
+        "감미료가 들어간 표시를 어떻게 봐?",
+        "제로슈거의 단맛은 어떻게 확인해?"
+      ],
+      "must_contain_all": [
+        "감미료",
+        "원재료명",
+        "열량"
+      ]
+    },
+    {
+      "document_id": "nutrition-low-sugar",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "저당 기준은 몇 g이야?",
+        "저당 식품은 어떤 표시를 확인해?",
+        "저당이라는 문구 설명해줘",
+        "저당 함량 기준이 뭐야?"
+      ],
+      "must_contain_all": [
+        "5g 미만",
+        "2.5g 미만",
+        "제조·가공"
+      ]
+    },
+    {
+      "document_id": "nutrition-low-fat",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "저지방 기준을 알려줘",
+        "저지방 표시 뜻이 뭐야?",
+        "저지방 식품을 고를 때 어떤 표시를 봐?",
+        "저지방 함량 조건을 설명해줘"
+      ],
+      "must_contain_all": [
+        "3g 미만",
+        "1.5g 미만",
+        "예외"
+      ]
+    },
+    {
+      "document_id": "nutrition-low-energy",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "저칼로리 기준은 뭐야?",
+        "저열량 표시를 설명해줘",
+        "저칼로리 식품을 고를 때 뭘 확인해?",
+        "저열량이라는 말의 뜻"
+      ],
+      "must_contain_all": [
+        "40kcal 미만",
+        "20kcal 미만",
+        "총 내용량"
+      ]
+    },
+    {
+      "document_id": "nutrition-high-protein",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "고단백 기준을 알려줘",
+        "고단백 식품 표시를 어떻게 봐?",
+        "단백질 풍부 표시는 무슨 뜻이야?",
+        "고단백의 함량 조건 설명해줘"
+      ],
+      "must_contain_all": [
+        "네 조건 중 하나",
+        "100kcal",
+        "1회 섭취참고량",
+        "2배"
+      ]
+    },
+    {
+      "document_id": "nutrition-zero-energy",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "제로칼로리면 열량이 정말 0이야?",
+        "제로칼로리 표시 기준 알려줘",
+        "무열량이라는 표시의 뜻은 뭐야?",
+        "제로열량은 무슨 뜻이야?"
+      ],
+      "must_contain_all": [
+        "100ml당",
+        "4kcal 미만",
+        "절대적인 0"
+      ]
+    },
+    {
+      "document_id": "sodium-practical-choices",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "저염식 조리 방법 알려줘",
+        "저염 식품 고를 때 뭘 확인해?",
+        "저염식 외식할 때 어떻게 해?",
+        "저염 식단에서 양념을 어떻게 써?"
+      ],
+      "must_contain_all": [
+        "영양표시",
+        "양념",
+        "외식"
+      ]
+    },
+    {
+      "document_id": "diet-reduction-direction",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "일반적인 식생활 방향을 알려줘",
+        "식단에 대한 일반 안내를 해줘",
+        "식생활 가이드의 방향은 뭐야?",
+        "식단의 일반 방향 설명해줘"
+      ],
+      "must_contain_all": [
+        "나트륨",
+        "당류",
+        "포화지방산"
+      ]
+    },
+    {
+      "document_id": "carbohydrate-and-sugars",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "탄수화물과 당류는 어떻게 달라?",
+        "당류가 탄수화물에 포함되는 거야?",
+        "제로슈거가 탄수화물도 없다는 뜻이야?",
+        "탄수와 당류의 관계 설명해줘"
+      ],
+      "must_contain_all": [
+        "당류는 탄수화물의 일부",
+        "식이섬유",
+        "전혀 없다고"
+      ],
+      "expected_documents_by_question": {
+        "제로슈거가 탄수화물도 없다는 뜻이야?": [
+          "carbohydrate-and-sugars",
+          "sugar-zero-vs-added"
+        ]
+      }
+    },
+    {
+      "document_id": "dietary-fiber-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "식이섬유는 뭐야?",
+        "섬유질이란 어떤 성분이야?",
+        "식이섬유도 탄수화물이야?",
+        "식이섬유가 들어 있는 식품의 예를 알려줘"
+      ],
+      "must_contain_all": [
+        "소장에서",
+        "콩류",
+        "통곡물"
+      ],
+      "expected_documents_by_question": {
+        "식이섬유도 탄수화물이야?": [
+          "carbohydrate-and-sugars",
+          "dietary-fiber-basics"
+        ]
+      }
+    },
+    {
+      "document_id": "sugar-alcohol-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "당알코올은 뭐야?",
+        "당알콜이란 어떤 성분이야?",
+        "당알코올도 칼로리가 없는 뜻이야?",
+        "당알코올과 당류는 같은 뜻이야?"
+      ],
+      "must_contain_all": [
+        "탄수화물",
+        "g당 열량",
+        "항상 없다는 뜻"
+      ]
+    },
+    {
+      "document_id": "fat-types-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "지방과 포화지방은 어떻게 달라?",
+        "포화지방과 트랜스지방은 같은 성분이야?",
+        "불포화지방도 총 지방에 포함돼?",
+        "식물성 지방이면 포화지방이 없는 뜻이야?"
+      ],
+      "must_contain_all": [
+        "총 지방",
+        "다른 종류",
+        "식물성"
+      ]
+    },
+    {
+      "document_id": "protein-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "단백질이 뭐야?",
+        "식물성 식품에도 단백질이 들어 있나?",
+        "단백질은 어떤 영양성분인지 설명해줘",
+        "단백질이 있는 식품의 예를 알려줘"
+      ],
+      "must_contain_all": [
+        "아미노산",
+        "콩류",
+        "추천 목록은 아닙니다"
+      ]
+    },
+    {
+      "document_id": "sodium-and-salt",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "나트륨과 소금은 어떻게 달라?",
+        "나트륨이 소금이랑 같은 말이야?",
+        "소금과 나트륨의 관계를 설명해줘",
+        "나트륨과 소금의 차이가 뭐야?"
+      ],
+      "must_contain_all": [
+        "염화나트륨",
+        "원소",
+        "다른 나트륨"
+      ]
+    },
+    {
+      "document_id": "sodium-and-taste",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "안 짠데 나트륨이 있는 건 왜야?",
+        "짠맛으로 나트륨을 판단해도 되는 뜻이야?",
+        "짜지 않은 음식에도 나트륨이 있나?",
+        "짠맛과 나트륨 함량은 어떻게 봐?"
+      ],
+      "must_contain_all": [
+        "느껴지지 않는",
+        "같은 양",
+        "나트륨 수치"
+      ]
+    },
+    {
+      "document_id": "calories-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "칼로리는 무슨 뜻이야?",
+        "열량과 에너지는 같은 말이야?",
+        "칼로리라는 게 뭐야?",
+        "열량은 어떤 의미야?"
+      ],
+      "must_contain_all": [
+        "에너지",
+        "두 배",
+        "기준량"
+      ]
+    },
+    {
+      "document_id": "serving-and-recommendation",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "미국 라벨의 serving size가 뭐야?",
+        "서빙 사이즈는 무슨 뜻이야?",
+        "1회 제공량은 권장량이라는 뜻이야?",
+        "한 번에 먹으라는 양이 서빙 사이즈야?"
+      ],
+      "must_contain_all": [
+        "미국",
+        "권하는 양은 아닙니다",
+        "여러 분량"
+      ]
+    },
+    {
+      "document_id": "total-and-added-sugars",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "총 당류와 첨가당의 차이가 뭐야?",
+        "미국 표의 Total Sugars와 Added Sugars 설명해줘",
+        "첨가당은 총 당류에 포함되는 거야?",
+        "첨가당이라는 말은 설탕만 뜻해?"
+      ],
+      "must_contain_all": [
+        "함께 포함",
+        "다시 더하지",
+        "미국"
+      ]
+    },
+    {
+      "document_id": "vegan-definition",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "비건은 무슨 뜻이야?",
+        "완전채식은 어떤 의미야?",
+        "vegan의 정의를 알려줘",
+        "비건 식품 원재료는 어떻게 확인해?"
+      ],
+      "must_contain_all": [
+        "유제품과 달걀",
+        "동물성",
+        "국내 인증"
+      ]
+    },
+    {
+      "document_id": "vegetarian-definition",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "채식이면 달걀도 빼는 거야?",
+        "채식 식품 고르는 법 알려줘",
+        "베지테리언의 의미를 알려줘",
+        "채식에서 유제품과 계란은 어떻게 봐?"
+      ],
+      "must_contain_all": [
+        "유제품과 달걀",
+        "사람별",
+        "허용"
+      ]
+    },
+    {
+      "document_id": "vegan-and-allergens",
+      "expected_intent": "general_allergy_guide",
+      "questions": [
+        "비건과 알레르기 표시는 어떻게 달라?",
+        "비건 표시면 우유 알레르기 성분도 없다는 뜻이야?",
+        "비건과 알러지 정보 구분을 설명해줘",
+        "비건은 알레르기 유발물질 부재를 보장하는 표시야?"
+      ],
+      "must_contain_all": [
+        "부재를 보장하지",
+        "별도로",
+        "해외"
+      ]
+    },
+    {
+      "document_id": "gluten-basics",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "글루텐은 뭐야?",
+        "글루텐프리 식품 고르는 법 알려줘",
+        "글루텐은 어떤 곡물에 있는 성분이야?",
+        "글루텐 프리 원재료를 어떻게 확인해?"
+      ],
+      "must_contain_all": [
+        "밀·보리·호밀",
+        "단백질",
+        "국내 인증"
+      ]
+    },
+    {
+      "document_id": "lactose-free-and-milk",
+      "expected_intent": "general_allergy_guide",
+      "questions": [
+        "락토프리와 우유 알레르기 표시는 어떻게 달라?",
+        "유당 제거면 우유 성분도 없다는 뜻이야?",
+        "락토프리와 우유 함유 정보를 구분해줘",
+        "유당 없는 우유의 표시 의미를 설명해줘"
+      ],
+      "must_contain_all": [
+        "구분해야",
+        "유당",
+        "판단할 수 없다고",
+        "섭취 판정",
+        "대신하지"
+      ]
+    },
+    {
+      "document_id": "nutrition-zero-rounding",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "당류 0g은 아예 없다는 뜻이야?",
+        "영양성분표 반올림은 무슨 뜻이야?",
+        "단백질 0g 표시가 완전한 부재라는 의미야?",
+        "지방 0g이면 전혀 없는 뜻이야?"
+      ],
+      "must_contain_all": [
+        "0.5g 미만",
+        "절대적인 부재",
+        "강조표시"
+      ]
+    },
+    {
+      "document_id": "nutrition-mass-units",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "영양성분표에서 g과 mg은 어떻게 달라?",
+        "그램과 밀리그램의 차이를 알려줘",
+        "g이랑 mg의 단위 차이 설명해줘",
+        "영양표시의 밀리그램이 무슨 뜻이야?"
+      ],
+      "must_contain_all": [
+        "1,000mg",
+        "3,000mg",
+        "표시 기준량"
+      ]
+    },
+    {
+      "document_id": "nutrition-low-sodium",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "저나트륨 표시 기준은 뭐야?",
+        "저염 기준은 몇 mg이야?",
+        "저나트륨 함량 조건 설명해줘",
+        "저염 표시의 의미를 알려줘"
+      ],
+      "must_contain_all": [
+        "120mg 미만",
+        "305mg 미만",
+        "100g당",
+        "제조·가공"
+      ]
+    },
+    {
+      "document_id": "nutrition-low-saturated-fat",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "저포화지방 기준이 뭐야?",
+        "저포화지방 표시를 어떻게 봐?",
+        "저포화지방의 함량 조건을 알려줘",
+        "저포화지방 문구의 뜻을 설명해줘"
+      ],
+      "must_contain_all": [
+        "1.5g 미만",
+        "0.75g 미만",
+        "동시에",
+        "10% 미만"
+      ]
+    },
+    {
+      "document_id": "nutrition-high-fiber",
+      "expected_intent": "general_diet_guide",
+      "questions": [
+        "고식이섬유 기준을 알려줘",
+        "식이섬유 풍부라는 표시는 무슨 뜻이야?",
+        "섬유질 풍부 표시의 조건이 뭐야?",
+        "고식이섬유 함량 조건을 설명해줘"
+      ],
+      "must_contain_all": [
+        "100kcal당",
+        "1회 섭취참고량",
+        "2배",
+        "6g·3g·20%"
+      ]
+    },
+    {
+      "document_id": "sugars-definition",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "영양표시의 당류는 뭐야?",
+        "당류라는 말의 정의를 알려줘",
+        "당류가 무슨 뜻인지 설명해줘",
+        "당류는 설탕만 의미하는 거야?"
+      ],
+      "must_contain_all": [
+        "단당류와 이당류",
+        "설탕",
+        "서로 다른 정보"
+      ]
+    }
+  ],
+  "multi_topic": [
+    {
+      "question": "알레르기 교차접촉이 뭐고 어떻게 줄여?",
+      "expected_documents": [
+        "allergy-cross-contact-definition",
+        "allergy-cross-contact-controls"
+      ],
+      "expected_intent": "general_allergy_guide"
+    },
+    {
+      "question": "비건과 채식의 차이를 알려줘",
+      "expected_documents": [
+        "vegan-definition",
+        "vegetarian-definition"
+      ],
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "탄수화물과 식이섬유의 관계를 알려줘",
+      "expected_documents": [
+        "carbohydrate-and-sugars",
+        "dietary-fiber-basics"
+      ],
+      "expected_intent": "general_nutrition_guide"
+    },
+    {
+      "question": "100g 기준과 기준치 %는 어떻게 봐?",
+      "expected_documents": [
+        "nutrition-label-basis",
+        "nutrition-label-percentage"
+      ],
+      "expected_intent": "general_nutrition_guide"
+    },
+    {
+      "question": "저당과 고단백의 기준을 함께 알려줘",
+      "expected_documents": [
+        "nutrition-low-sugar",
+        "nutrition-high-protein"
+      ],
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "저지방과 저포화지방의 차이를 알려줘",
+      "expected_documents": [
+        "nutrition-low-fat",
+        "nutrition-low-saturated-fat"
+      ],
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "단백질과 지방과 탄수화물의 뜻을 설명해줘",
+      "expected_documents": [
+        "protein-basics",
+        "fat-types-basics",
+        "carbohydrate-and-sugars"
+      ],
+      "expected_intent": "general_nutrition_guide"
+    },
+    {
+      "question": "고식이섬유와 저나트륨 표시 기준을 알려줘",
+      "expected_documents": [
+        "nutrition-high-fiber",
+        "nutrition-low-sodium"
+      ],
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "저당, 저지방, 저열량, 고단백 표시 기준을 알려줘",
+      "expected_documents": [
+        "nutrition-low-sugar",
+        "nutrition-low-fat",
+        "nutrition-low-energy",
+        "nutrition-high-protein"
+      ],
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "저당, 저지방, 저열량, 고단백, 고식이섬유 표시 기준을 알려줘",
+      "expected_documents": [
+        "nutrition-low-sugar",
+        "nutrition-low-fat",
+        "nutrition-low-energy",
+        "nutrition-high-protein",
+        "nutrition-high-fiber"
+      ],
+      "expected_intent": "general_diet_guide"
+    }
+  ],
+  "unsupported_questions": [
+    "당뇨가 있으면 무가당 주스를 마셔도 돼?",
+    "고단백 제품을 하루에 몇 개 먹으면 돼?",
+    "락토프리 우유를 우유 알레르기가 있는 내가 먹어도 돼?",
+    "비건 제품이면 알레르기에도 안전해?",
+    "글루텐프리의 국내 인증 기준 수치를 알려줘",
+    "같은 제조시설의 혼입 확률은 몇 %야?",
+    "영국 알레르기 표시 의무를 알려줘",
+    "글루텐프리 식품이 살 빠지는 데 효과가 있어?",
+    "감미료의 부작용을 알려줘",
+    "교차접촉과 교차반응의 차이는?",
+    "알레르기 치료법을 알려줘",
+    "영양표시에서 하루 권장 소금량은?",
+    "식단에서 무염 표시 기준은?",
+    "고식이섬유 식품을 아기에게 얼마나 먹여?",
+    "저포화지방이면 심장질환을 치료해?",
+    "내 신장 상태에 고단백 식품이 적합해?",
+    "영양표시의 순탄수 계산법을 알려줘",
+    "임산부는 비건 식단을 어떻게 짜야 해?",
+    "교차오염 성분을 가열하면 없어져?",
+    "알레르기 표시 대상 목록은 몇 종이야?"
+  ],
+  "unsupported_cases": [
+    {
+      "question": "당뇨가 있으면 무가당 주스를 마셔도 돼?",
+      "expected_intent": "out_of_domain"
+    },
+    {
+      "question": "고단백 제품을 하루에 몇 개 먹으면 돼?",
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "락토프리 우유를 우유 알레르기가 있는 내가 먹어도 돼?",
+      "expected_intent": "missing_product"
+    },
+    {
+      "question": "비건 제품이면 알레르기에도 안전해?",
+      "expected_intent": "missing_product"
+    },
+    {
+      "question": "글루텐프리의 국내 인증 기준 수치를 알려줘",
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "같은 제조시설의 혼입 확률은 몇 %야?",
+      "expected_intent": "general_allergy_guide"
+    },
+    {
+      "question": "영국 알레르기 표시 의무를 알려줘",
+      "expected_intent": "general_allergy_guide"
+    },
+    {
+      "question": "글루텐프리 식품이 살 빠지는 데 효과가 있어?",
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "감미료의 부작용을 알려줘",
+      "expected_intent": "general_nutrition_guide"
+    },
+    {
+      "question": "교차접촉과 교차반응의 차이는?",
+      "expected_intent": "general_allergy_guide"
+    },
+    {
+      "question": "알레르기 치료법을 알려줘",
+      "expected_intent": "out_of_domain"
+    },
+    {
+      "question": "영양표시에서 하루 권장 소금량은?",
+      "expected_intent": "general_nutrition_guide"
+    },
+    {
+      "question": "식단에서 무염 표시 기준은?",
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "고식이섬유 식품을 아기에게 얼마나 먹여?",
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "저포화지방이면 심장질환을 치료해?",
+      "expected_intent": "out_of_domain"
+    },
+    {
+      "question": "내 신장 상태에 고단백 식품이 적합해?",
+      "expected_intent": "general_diet_guide"
+    },
+    {
+      "question": "영양표시의 순탄수 계산법을 알려줘",
+      "expected_intent": "general_nutrition_guide"
+    },
+    {
+      "question": "임산부는 비건 식단을 어떻게 짜야 해?",
+      "expected_intent": "out_of_domain"
+    },
+    {
+      "question": "교차오염 성분을 가열하면 없어져?",
+      "expected_intent": "general_allergy_guide"
+    },
+    {
+      "question": "알레르기 표시 대상 목록은 몇 종이야?",
+      "expected_intent": "general_allergy_guide"
+    }
+  ]
+}

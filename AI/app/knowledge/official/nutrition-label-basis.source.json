@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-label-basis",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 5,
+  "section": "인쇄 7쪽: 용어의 정의·영양성분 표시단위 (사실 요약·재구성)",
+  "text": "영양성분표는 제품의 일정량에 들어 있는 성분의 양을 나타냅니다. 먼저 표 위의 기준이 포장 전체인 총 내용량인지, 한 개·한 포·한 병 같은 단위 내용량인지, 100g·100ml인지, 1회 섭취참고량인지 확인하세요. 같은 숫자라도 기준량이 다르면 실제 먹는 영양성분의 양은 달라집니다. 제품끼리 비교할 때도 같은 기준량으로 확인하고, 한 봉지를 전부 먹는다면 포장 전체의 양과 표시 기준량을 함께 살펴보세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "nutrition_basis"
+  ]
+}

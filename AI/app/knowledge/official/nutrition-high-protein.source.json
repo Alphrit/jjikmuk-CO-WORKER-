@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-high-protein",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 24,
+  "section": "인쇄 45쪽: 단백질 함량강조표시 (사실 요약·재구성)",
+  "text": "식약처 2025년 12월 안내서에서 단백질 함유·급원은 다음 네 조건 중 하나를 만족하는 경우입니다. 100g당 1일 영양성분 기준치의 10% 이상, 100ml당 5% 이상, 100kcal당 5% 이상, 또는 1회 섭취참고량당 10% 이상입니다. 고단백·단백질 풍부는 이 함유·급원 기준의 2배로, 각각 20%·10%·10%·20% 이상에 해당합니다. 따라서 모든 제품에 한 봉지당 몇 g이라는 하나의 기준을 적용하지 말고, 어느 양을 기준으로 표시했는지와 단백질 함량을 함께 확인하세요. 이 표시 기준은 개인의 하루 단백질 권장량을 정하는 기준이 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "high_protein"
+  ]
+}

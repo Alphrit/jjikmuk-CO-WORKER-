@@ -9,6 +9,8 @@ from app.services.condition_language import coordinated_mentions, shared_predica
 
 
 def profile_key(profile):
+    if profile.profile_key is not None:
+        return f"backend:{profile.profile_key}"
     return f"id:{profile.profile_id}" if profile.profile_id else f"name:{profile.profile_name}:{profile.target_type}"
 
 

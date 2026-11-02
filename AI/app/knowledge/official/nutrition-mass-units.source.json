@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-mass-units",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 16,
+  "section": "인쇄 28~29쪽: 함량 단위와 분량 기준 (사실 요약·재구성)",
+  "text": "영양성분의 함량을 읽을 때는 숫자와 단위를 함께 확인하세요. g과 mg은 질량 단위이며 1g은 1,000mg입니다. 예를 들어 3g과 3,000mg은 같은 양입니다. 또한 성분의 양을 적는 단위와 총 내용량·100g·100ml 등 표시 분량의 기준은 서로 다른 정보입니다. 제품을 비교할 때는 함량 단위와 표시 기준량을 모두 맞춰 읽어야 합니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "nutrition_units"
+  ]
+}

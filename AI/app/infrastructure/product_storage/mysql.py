@@ -379,7 +379,7 @@ class MySQLProductRepository(ProductRepository):
             )
             return cursor.fetchall()
 
-    def _fetch_like_rows(self, conn, columns: List[str], tokens: List[str], limit: int):
+    def _fetch_like_rows(self, conn, columns: List[str], tokens: List[str], limit: int, preferred_tokens=None):
         if not columns or not tokens:
             return []
 
@@ -387,6 +387,18 @@ class MySQLProductRepository(ProductRepository):
         params = []
         score_parts = []
         score_params = []
+        compact_query = "".join(preferred_tokens or [])
+        for column in columns:
+            if compact_query and column in (*PRODUCT_NAME_COLUMNS, *CLEAN_PRODUCT_NAME_COLUMNS):
+                compact_name = f"REPLACE(LOWER({_quote_mysql_identifier(column)}), ' ', '')"
+                score_parts.append(f"CASE WHEN {compact_name} = %s THEN 100000 WHEN {compact_name} LIKE %s THEN 10000 ELSE 0 END")
+                score_params.extend([compact_query, f"%{compact_query}%"])
+        # Rank coverage of the original request ahead of expanded broad food
+        # terms before LIMIT truncates the candidate pool.
+        for token in preferred_tokens or []:
+            parts = [f"{_quote_mysql_identifier(column)} LIKE %s" for column in columns]
+            score_parts.append(f"CASE WHEN ({' OR '.join(parts)}) THEN 1000 ELSE 0 END")
+            score_params.extend([f"%{token}%"] * len(columns))
         for column in columns:
             quoted_column = _quote_mysql_identifier(column)
             for token in tokens:
@@ -420,7 +432,8 @@ class MySQLProductRepository(ProductRepository):
                     return []
                 search_columns = self._search_columns(conn)
 
-                tokens = _expanded_product_name_tokens(normalized_text) or _tokenize_search_text(normalized_text)
+                primary_tokens = _tokenize_search_text(normalized_text)
+                tokens = list(dict.fromkeys([*primary_tokens, *_expanded_product_name_tokens(normalized_text)]))
                 if not tokens:
                     return []
                 rows = []
@@ -433,8 +446,8 @@ class MySQLProductRepository(ProductRepository):
                         if not self._is_database_error(exc):
                             raise
                         logger.warning("MySQL fulltext product search failed; falling back to LIKE: %s", exc)
-                if _should_merge_like_fallback(fulltext_columns, len(rows)):
-                    like_rows = self._fetch_like_rows(conn, search_columns, tokens, 50)
+                if len(primary_tokens) > 1 or _should_merge_like_fallback(fulltext_columns, len(rows)):
+                    like_rows = self._fetch_like_rows(conn, search_columns, tokens, 50, preferred_tokens=primary_tokens)
                     rows = [*rows, *like_rows]
         except Exception as exc:
             if not self._is_database_error(exc):

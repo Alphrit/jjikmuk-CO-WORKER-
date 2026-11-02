@@ -1,0 +1,127 @@
+{
+  "message": "이 제품 먹어도 돼?",
+  "profile": {
+    "id": null,
+    "nickname": "엄마",
+    "allergies": "땅콩",
+    "diseases": null,
+    "specialDiet": null,
+    "dislikedIngredients": null,
+    "profileKey": "request:0",
+    "profileSource": "CLIENT_REQUEST",
+    "profile_id": 1,
+    "target_type": "provided"
+  },
+  "profiles": [],
+  "product": {
+    "barcode": "8800000000001",
+    "productName": "합성 시험 우유",
+    "allergy": "우유",
+    "rawMaterialName": "우유",
+    "energyKcal": 60.0,
+    "proteinG": 3.0,
+    "sodiumMg": 40.0,
+    "vegan": true
+  },
+  "chat_history": [],
+  "analysisContext": {
+    "contextId": "v2-example-single",
+    "contractVersion": "chat-analysis-v2",
+    "policyVersion": "recommendation-v2",
+    "selection": {
+      "mode": "provided",
+      "analysisApplied": true,
+      "includeSelf": false,
+      "familyProfileIds": []
+    },
+    "effectiveConditions": {
+      "allergyIds": [
+        "milk",
+        "peanut"
+      ],
+      "unknownAllergyTerms": [],
+      "requiredDietFilterIds": [],
+      "diseases": [],
+      "dislikedIngredients": []
+    },
+    "productResolution": "FOUND",
+    "decisionScope": "BARCODE_ROW",
+    "analysis": {
+      "status": "PASS",
+      "analysisApplied": true,
+      "selection": {
+        "mode": "provided",
+        "analysisApplied": true,
+        "includeSelf": false,
+        "familyProfileIds": []
+      },
+      "isDangerous": false,
+      "dangerousIngredients": [],
+      "conflictingAllergenIds": [],
+      "evidenceSources": [
+        "allergy"
+      ],
+      "evidenceLevel": "DECLARED_LABEL",
+      "verificationRequired": false,
+      "message": "백엔드 판정 설명",
+      "dietConstraints": {
+        "status": "PASS",
+        "requiredFilters": [],
+        "satisfiedFilters": [],
+        "failedFilters": [],
+        "uncertainFilters": [],
+        "evidenceOrigin": "SOURCE",
+        "confidence": 0.95,
+        "message": "백엔드 식단 판정 설명",
+        "attributes": []
+      }
+    },
+    "dataEvidence": {
+      "allergyEvidenceLevel": "DECLARED_LABEL",
+      "allergyConfidence": 0.95,
+      "nutritionOrigin": "SOURCE",
+      "nutritionConfidence": 0.95,
+      "dietaryOrigin": "SOURCE",
+      "dietaryConfidence": 0.95
+    },
+    "decisionAuthority": "BACKEND",
+    "historyIsAuthoritative": false,
+    "storedDietFlagsAreAuthoritative": false,
+    "profileSource": "CLIENT_REQUEST",
+    "profileAnalyses": [
+      {
+        "profileKey": "request:0",
+        "analysis": {
+          "status": "PASS",
+          "analysisApplied": true,
+          "selection": {
+            "mode": "provided",
+            "analysisApplied": true,
+            "includeSelf": false,
+            "familyProfileIds": []
+          },
+          "isDangerous": false,
+          "dangerousIngredients": [],
+          "conflictingAllergenIds": [],
+          "evidenceSources": [
+            "allergy"
+          ],
+          "evidenceLevel": "DECLARED_LABEL",
+          "verificationRequired": false,
+          "message": "백엔드 판정 설명",
+          "dietConstraints": {
+            "status": "PASS",
+            "requiredFilters": [],
+            "satisfiedFilters": [],
+            "failedFilters": [],
+            "uncertainFilters": [],
+            "evidenceOrigin": "SOURCE",
+            "confidence": 0.95,
+            "message": "백엔드 식단 판정 설명",
+            "attributes": []
+          }
+        }
+      }
+    ]
+  }
+}

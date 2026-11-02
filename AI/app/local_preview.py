@@ -133,6 +133,12 @@ def _readiness(allow_external: bool):
 
 
 def _explanation(response, events, usage):
+    if response.fallback_reason == "rag_generated_answer_rejected":
+        return "생성 답변의 근거 검증을 통과하지 못해 검색된 검토 완료 본문을 출처와 함께 표시했습니다. 생성 문장은 채택하지 않았습니다."
+    if response.fallback_reason == "rag_reviewed_excerpt_answer":
+        return "질문과 관련된 검토 완료 자료의 본문을 출처와 함께 표시했습니다. 답변 문장을 새로 생성하지 않았습니다."
+    if response.fallback_reason == "rag_question_outside_evidence_scope":
+        return "검색된 자료가 질문에 필요한 설명 범위를 충족하지 않아 규칙 답변을 표시합니다."
     if response.answer_source in {"llm", "rag", "hybrid"}:
         return "LLM 생성 결과가 검증을 통과해 최종 응답에 포함됐습니다. 안전성 보증을 뜻하지는 않습니다."
     reason = response.fallback_reason or ""
@@ -262,7 +268,10 @@ def create_preview_app(*, port: int = 8765, allow_external: bool = False) -> Fas
                 "response": public,
                 "diagnostics": {
                     "calls": events,
-                    "llm_output_adopted": response.answer_source in {"llm", "rag", "hybrid"},
+                    "llm_output_adopted": (
+                        response.answer_source in {"llm", "rag", "hybrid"}
+                        and response.fallback_reason not in {"rag_reviewed_excerpt_answer", "rag_generated_answer_rejected"}
+                    ),
                     "answer_source": response.answer_source,
                     "explanation": _explanation(response, events, usage),
                     "fallback_reason": response.fallback_reason,

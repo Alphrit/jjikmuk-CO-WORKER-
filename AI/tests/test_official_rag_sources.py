@@ -11,6 +11,7 @@ from app.api.response_contract import PublicChatResponse
 from app.infrastructure import knowledge_review as review, rag
 from app.infrastructure.knowledge_sources import SourceSpec
 from app.services import hybrid
+from rag_test_helpers import grounding_review
 
 
 @pytest.fixture
@@ -26,6 +27,7 @@ def released_source(monkeypatch, tmp_path):
         "format": "food-rag-excerpt-v1", "document_id": "fixture-label-reading",
         "source_id": spec.source_id, "source_sha256": "a" * 64, "page": 3,
         "section": "식품 표시 확인", "text": "식품을 선택할 때 원재료 표시를 확인합니다.",
+        "topics": ["allergy_label"],
         "content_review": "approved", "usage_scope": "general_food_explanation",
         "reviewed_at": date.today().isoformat(),
         "review_due": (date.today() + timedelta(days=30)).isoformat(),
@@ -46,7 +48,7 @@ def install_retrieval(monkeypatch):
     documents = rag._split_rag_documents(rag._load_documents())
 
     class LocalFixtureStore:
-        def similarity_search(self, _query, k):
+        def similarity_search(self, _query, k, **_kwargs):
             return documents[:k]
 
     monkeypatch.setattr(rag, "build_vectorstore", lambda: LocalFixtureStore())
@@ -87,6 +89,7 @@ def test_approved_json_loads_as_text_and_keeps_semantic_unit(released_source):
     ("usage_scope", "medical_treatment"), ("url", "https://attacker.invalid"),
     ("page", True), ("page", 0), ("page", 501), ("text", "x" * 3001),
     ("page", None),
+    ("topics", ["nutrition_basis"]),
 ])
 def test_altered_or_unapproved_excerpt_cannot_enter_manifest(released_source, field, value):
     payload, path = released_source
@@ -167,9 +170,13 @@ def test_public_source_helper_rejects_unverified_external_entries():
 
 
 def test_general_llm_adopts_citation_without_reintroducing_internal_fields(released_source, monkeypatch):
+    monkeypatch.setenv("RAG_GENERAL_RESPONSE_MODE", "generated")
     install_retrieval(monkeypatch)
     monkeypatch.setattr(hybrid, "is_llm_enabled", lambda: True)
-    monkeypatch.setattr(hybrid, "generate_text", lambda _prompt: "식품을 선택할 때 원재료 표시를 확인해 주세요.")
+    answer = "식품을 선택할 때 원재료 표시를 확인해 주세요."
+    body = released_source[0]["text"]
+    monkeypatch.setattr(hybrid, "generate_text", lambda prompt:
+                        grounding_review(answer, [body]) if prompt.startswith("너는 식품 설명의 독립 근거 검토자") else answer)
     base = ChatResponse(intent="general_allergy_guide", answer="기본 안내", risk_level="unknown")
     result = hybrid.try_general_llm_fallback(base, "알레르기 표시 보는 법", None, None)
     assert result.answer_source == "rag"
@@ -178,6 +185,7 @@ def test_general_llm_adopts_citation_without_reintroducing_internal_fields(relea
 
 
 def test_permission_changed_during_generation_falls_back(released_source, monkeypatch):
+    monkeypatch.setenv("RAG_GENERAL_RESPONSE_MODE", "generated")
     payload, _ = released_source
     install_retrieval(monkeypatch)
     monkeypatch.setattr(hybrid, "is_llm_enabled", lambda: True)

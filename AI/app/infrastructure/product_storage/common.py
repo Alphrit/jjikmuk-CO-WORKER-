@@ -2,6 +2,7 @@
 
 from app.core.models import Product
 from difflib import SequenceMatcher
+import re
 from typing import Any, Dict, List, Optional
 
 
@@ -372,7 +373,67 @@ def _product_search_text(product: Product) -> str:
     )
 
 
+def _explicit_package_sizes(text: str) -> set[tuple[str, float]]:
+    scales = {"ml": ("volume", 1), "l": ("volume", 1000),
+              "g": ("mass", 1), "kg": ("mass", 1000)}
+    return {(scales[unit][0], round(float(value) * scales[unit][1], 6))
+            for value, unit in re.findall(r"(\d+(?:\.\d+)?)\s*(kg|ml|g|l)(?![a-z])", text.lower())}
+
+
 def _product_text_score(query: str, product: Product) -> float:
+    score = _product_name_score(query, product)
+    tokens = _tokenize_search_text(query)
+    identity = _normalize_search_text(" ".join(filter(None, [
+        product.product_name, product.clean_product_name,
+        product.manufacturer_name, product.company_name,
+    ]))).replace(" ", "")
+    # Brand names are generic for fuzzy name matching, but an explicitly
+    # requested brand must not disappear as a constraint. Ingredient fields
+    # are not evidence that the product belongs to that brand.
+    brands = GENERIC_PRODUCT_TOKENS - {"라이트", "스탠다드", "light", "standard"}
+    brands = {brand for brand in brands if not re.search(r"\d", brand)}
+    compact_query = _normalize_search_text(query).replace(" ", "")
+    requested_brands = {brand for brand in brands if any(token.startswith(brand) for token in tokens)
+                        or compact_query.startswith(brand)}
+    if requested_brands and any(brand not in identity for brand in requested_brands):
+        return min(score, 0.34)
+    requested_sizes = _explicit_package_sizes(query)
+    # Only packaging/name fields establish package size. Nutrient quantities
+    # and ingredient amounts are not evidence of the requested package.
+    product_sizes = _explicit_package_sizes(" ".join(str(value) for value in (
+        product.product_name, product.weight, product.total_weight,
+    ) if value))
+    if requested_sizes and product_sizes and requested_sizes.isdisjoint(product_sizes):
+        return min(score, 0.34)
+    lexical = [token for token in tokens if not re.fullmatch(r"\d+(?:\.\d+)?(?:g|kg|ml|l)?", token)]
+    if len(tokens) > 1 and lexical and not any(token in identity for token in lexical):
+        # A shared size (500ml) alone must not retrieve an unrelated beverage.
+        return min(score, 0.34)
+    # Preserve every explicit identity qualifier, including '제로' and a
+    # separated one-character name fragment. Ingredient/size overlap must not
+    # turn regular cola or raw shrimp into a match for a different product.
+    raw_words = _normalize_search_text(query).split()
+    fragments = [word for word in raw_words if len(word) == 1 and word.isalpha()
+                 and word not in {"은", "는", "이", "가", "을", "를", "도", "와", "과", "랑", "로", "에", "줘", "돼"}]
+    name_identity = _normalize_search_text(" ".join(filter(None, [product.product_name, product.clean_product_name])))
+    identity_words = name_identity.split()
+    if len(lexical) + len(fragments) > 1:
+        for token in [*lexical, *fragments]:
+            token_identity = identity if any(token.startswith(brand) or brand.startswith(token) for brand in requested_brands) else name_identity.replace(" ", "")
+            if token in token_identity:
+                continue
+            if token in _normalize_search_text(product.prdlst_dcnm or ""):
+                # A category request can match the catalog category even when
+                # the product's name uses another food-form word (과자/스낵).
+                continue
+            # Keep bounded spelling variations, but never drop a qualifier.
+            if len(token) >= 3 and any(SequenceMatcher(None, token, word).ratio() >= 0.75 for word in identity_words):
+                continue
+            return min(score, 0.34)
+    return score
+
+
+def _product_name_score(query: str, product: Product) -> float:
     if not product.product_name:
         return 0.0
 

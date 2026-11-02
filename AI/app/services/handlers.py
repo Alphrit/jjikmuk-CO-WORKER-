@@ -7,7 +7,7 @@ from app.core.product_provenance import (
     label_provenance_supports,
 )
 from app.intent.rules import is_medical_scope_question
-from app.intent.text import detect_ingredient_keyword, detect_nutrition_keyword
+from app.intent.text import detect_ingredient_keyword, detect_nutrition_keyword, detect_nutrition_keywords
 from app.services.recommended_questions import pick_recommended_questions
 from app.services.general_handlers import (
     handle_alternative_food_recommend,
@@ -28,6 +28,7 @@ NUTRITION_LABELS = {
     "fat": "지방",
     "saturated_fat": "포화지방",
     "protein": "단백질",
+    "cholesterol": "콜레스테롤",
 }
 NUTRITION_UNITS = {
     "sodium": "mg",
@@ -37,6 +38,7 @@ NUTRITION_UNITS = {
     "fat": "g",
     "saturated_fat": "g",
     "protein": "g",
+    "cholesterol": "mg",
 }
 
 DETAIL_REQUEST_KEYWORDS = [
@@ -491,7 +493,8 @@ def handle_nutrition_explain(
     if not product.facts_verified:
         return build_unverified_product_response("nutrition_explain", profile)
 
-    nutrient = detect_nutrition_keyword(message)
+    nutrients = detect_nutrition_keywords(message)
+    nutrient = nutrients[0] if nutrients else None
     nutrition_key_map = {
         "당류": "sugars",
         "탄수화물": "carbohydrate",
@@ -499,18 +502,37 @@ def handle_nutrition_explain(
         "지방": "fat",
         "포화지방": "saturated_fat",
         "나트륨": "sodium",
+        "콜레스테롤": "cholesterol",
         "칼로리": "kcal",
     }
     key = nutrition_key_map.get(nutrient)
     product_name = product.product_name or "이 제품"
     basis_label = nutrition_basis_label(product)
+    from app.intent.request_semantics import package_amount
+    requested_amount = package_amount(message)
+    package_count, package_unit = requested_amount or (1, "봉지")
+    amount_label = "포장 전체" if package_count == 1 else f"{package_count:g}{package_unit} 분량"
+
+    if len(nutrients) > 1 and product.nutrition:
+        # Reuse the single-nutrient calculations, including whole-package
+        # limitations, instead of silently choosing one requested value.
+        portion = f" {package_count:g}{package_unit}" if requested_amount else (
+            " 한 봉지 전체" if any(term in message for term in _WHOLE_PACKAGE_REQUEST_KEYWORDS) else " 얼마야?")
+        results = [handle_nutrition_explain(profile, product, name + portion) for name in nutrients]
+        lines = [item.answer.splitlines()[0] for item in results]
+        return build_response(
+            intent="nutrition_explain", answer="\n".join([*lines, f"표시 기준: {basis_label}. 실제 섭취량과 포장지를 함께 확인해 주세요."]),
+            risk_level="unknown", assessment_status="incomplete", profile=profile,
+            reasons=list(dict.fromkeys(reason for item in results for reason in item.reasons)),
+            recommended_questions=pick_recommended_questions("nutrition_explain", "unknown", product),
+        )
 
     if not product.nutrition:
         return build_response(
             intent="nutrition_explain",
             answer=format_nutrition_answer(
                 f"현재는 {product_name}의 영양성분 정보를 확인하지 못했어요.",
-                "DB에 확인 가능한 영양 수치가 없어요.",
+                "DB에 확인 가능한 영양 수치가 없어요. 정보가 없다는 것은 함량이 0이라는 뜻이 아니에요.",
                 [],
                 ["제품의 영양성분표를 확인하거나 다른 제품을 선택해 주세요."],
             ),
@@ -523,9 +545,31 @@ def handle_nutrition_explain(
             ),
         )
 
-    whole_package_requested = any(
+    whole_package_requested = requested_amount is not None or any(
         phrase in message for phrase in _WHOLE_PACKAGE_REQUEST_KEYWORDS
     )
+    if whole_package_requested and key and product.nutrition_basis.basis_type != "per_serving":
+        basis = product.nutrition_basis
+        value = product.nutrition.get(key)
+        factor = None
+        if basis.basis_type == "per_package":
+            factor = 1
+        elif basis.package_size_value is not None:
+            units = {"g": 1, "kg": 1000} if basis.basis_type == "per_100g" else {"ml": 1, "l": 1000} if basis.basis_type == "per_100ml" else {}
+            multiplier = units.get(str(basis.package_size_unit or "").lower())
+            if multiplier is not None:
+                factor = basis.package_size_value * multiplier / 100
+        if factor is not None and value is not None:
+            factor *= package_count
+            total_text = f"{float(value) * factor:.6f}".rstrip("0").rstrip(".") + NUTRITION_UNITS.get(key, "")
+            answer = (f"{product_name}의 {amount_label} {nutrient}{topic_particle(nutrient)} 약 {total_text}예요.\n"
+                      f"계산 근거: {basis_label}의 수치 × {factor:g}. 실제 포장 용량과 섭취량을 확인해 주세요.")
+        else:
+            answer = (f"{product_name}의 포장 전체 {nutrient}은 계산하지 못했어요.\n"
+                      f"현재 표시 기준은 {basis_label}이에요. 해당 영양 수치와 같은 단위의 포장 총용량을 확인해 주세요.")
+        return build_response(intent="nutrition_explain", answer=answer, profile=profile,
+                              risk_level="unknown", assessment_status="incomplete",
+                              reasons=["포장 전체 계산" if factor is not None and value is not None else "패키지 전체 계산 근거 부족"])
     if (
         whole_package_requested
         and key
@@ -534,7 +578,7 @@ def handle_nutrition_explain(
         value = product.nutrition.get(key)
         servings = product.nutrition_basis.servings_per_package
         if value is not None and servings is not None:
-            total = float(value) * float(servings)
+            total = float(value) * float(servings) * package_count
             formatted_servings = (
                 str(int(servings))
                 if float(servings).is_integer()
@@ -544,9 +588,9 @@ def handle_nutrition_explain(
             return build_response(
                 intent="nutrition_explain",
                 answer=format_nutrition_answer(
-                    f"{product_name}{object_particle(product_name)} 한 봉지 전체 먹으면 "
-                    f"{nutrient}는 약 {format_measurement(total, unit)}예요.",
-                    f"계산 근거: 1회 제공량 {format_measurement(value, unit)} × {formatted_servings}회 제공량({basis_label}).",
+                    f"{product_name}{object_particle(product_name)} {amount_label} 먹으면 "
+                    f"{nutrient}{topic_particle(nutrient)} 약 {format_measurement(total, unit)}예요.",
+                    f"계산 근거: 1회 제공량 {format_measurement(value, unit)} × {formatted_servings}회 제공량({basis_label}) × {package_count:g}포장.",
                     [
                         "표시된 제공 횟수를 단순 합산한 값이며, 이 수치만으로 건강 적합성을 판정하지 않아요."
                     ],
@@ -587,7 +631,7 @@ def handle_nutrition_explain(
                 intent="nutrition_explain",
                 answer=format_nutrition_answer(
                     f"현재는 {product_name}의 {nutrient} 정보를 확인하지 못했어요.",
-                    f"DB에 {nutrient} 수치가 없고, 확인된 기준은 {basis_label}이에요.",
+                    f"DB에 {nutrient} 수치가 없고, 확인된 기준은 {basis_label}이에요. 정보가 없다는 것은 함량이 0이라는 뜻이 아니에요.",
                     [],
                     ["제품의 영양성분표를 확인해 주세요."],
                 ),
@@ -617,7 +661,7 @@ def handle_nutrition_explain(
         return build_response(
             intent="nutrition_explain",
             answer=format_nutrition_answer(
-                f"{product_name}의 {nutrient}는 {format_measurement(value, unit)}예요.",
+                f"{product_name}의 {nutrient}{topic_particle(nutrient)} {format_measurement(value, unit)}예요.",
                 f"표시 기준은 {basis_label}이에요.",
                 [limitation],
                 ["원하면 같은 기준량으로 확인된 다른 제품과 수치를 비교해 드릴게요."],

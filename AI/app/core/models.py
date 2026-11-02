@@ -6,6 +6,7 @@ from typing import Annotated, Any, Dict, List, Literal, Optional
 from uuid import UUID, uuid4
 
 from pydantic import (
+    AliasChoices,
     BaseModel,
     ConfigDict,
     Field,
@@ -13,6 +14,12 @@ from pydantic import (
     StringConstraints,
     model_serializer,
     model_validator,
+)
+
+from app.core.backend_analysis import (
+    BackendAnalysisContext, PublicBackendAnalysis, ProfileKey, ProfileSource,
+    MAX_V2_PROFILES, MAX_V2_HISTORY_ITEMS, MAX_V2_HISTORY_CONTENT,
+    MAX_V2_HISTORY_TOTAL, validate_request_context, backend_analysis_active,
 )
 
 from app.core.numeric import parse_non_negative_number, parse_positive_food_quantity
@@ -505,6 +512,8 @@ class Profile(BaseModel):
         max_length=MAX_PROFILE_LIST_ITEMS,
     )
     target_type: ProfileTargetType = "self"
+    profile_key: Optional[ProfileKey] = Field(default=None, validation_alias=AliasChoices("profileKey", "profile_key"))
+    profile_source: Optional[ProfileSource] = Field(default=None, validation_alias=AliasChoices("profileSource", "profile_source"))
     is_active: bool = True
     allergy_context_provided: bool = Field(default=False, exclude=True)
     condition_context_provided: bool = Field(default=False, exclude=True)
@@ -590,10 +599,12 @@ class Profile(BaseModel):
             PROFILE_DATA_ALIAS_GROUPS["is_active"],
         )
 
-        payload["profile_id"] = int(profile_id) if profile_id not in (None, "") else 0
+        # Let the bounded integer field validate aliases too. Eager int()
+        # both truncated fractional IDs and raised OverflowError for infinity.
+        payload["profile_id"] = profile_id if profile_id not in (None, "") else 0
         payload["profile_name"] = str(profile_name).strip() or "기본 프로필"
         payload["user_id"] = (
-            int(user_id)
+            user_id
             if user_id_supplied and user_id not in (None, "")
             else None
         )
@@ -639,7 +650,7 @@ class Profile(BaseModel):
         if not isinstance(payload, dict):
             return payload
         # Keep legacy requests without these optional flags fingerprint-stable.
-        for field in ("vegetarian_dairy_allowed", "vegetarian_egg_allowed"):
+        for field in ("vegetarian_dairy_allowed", "vegetarian_egg_allowed", "profile_key", "profile_source"):
             if getattr(self, field) is None:
                 payload.pop(field, None)
         if not self.allergy_context_provided:
@@ -1236,8 +1247,8 @@ class Product(BaseModel):
             "carbohydrate": ["carbs_percent", "carbsPercent"],
             "protein": ["protein_percent", "proteinPercent"],
             "fat": ["fat_percent", "fatPercent"],
-            "sodium": ["sodium_g", "sodiumG"],
-            "cholesterol": ["cholesterol_g", "cholesterolG"],
+            "sodium": ["sodium_percent", "sodiumPercent"],
+            "cholesterol": ["cholesterol_percent", "cholesterolPercent"],
         }
         percent_expected_units = {
             alias: "%"
@@ -1260,7 +1271,12 @@ class Product(BaseModel):
             )
             if parsed is not None:
                 nutrition_percent[field_name] = parsed
-        payload["nutrition_percent"] = nutrition_percent
+        # Mass columns are not daily-value percentages, including when a
+        # legacy client nests them inside the percentage object.
+        payload["nutrition_percent"] = {
+            key: value for key, value in nutrition_percent.items()
+            if key in percent_aliases
+        }
         macro_percent_aliases = {
             "carbohydrate": ["carbs_percent", "carbsPercent"],
             "protein": ["protein_percent", "proteinPercent"],
@@ -1393,11 +1409,18 @@ class ChatHistoryItem(BaseModel):
     content: ChatHistoryContent
 
 
+class BackendChatHistoryItem(ChatHistoryItem):
+    content: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_V2_HISTORY_CONTENT)]
+
+
 class ChatRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     profile: Optional[Profile] = None
-    profiles: List[Profile] = Field(default_factory=list, max_length=MAX_ACTIVE_PROFILES)
+    profiles: List[Profile] = Field(default_factory=list, max_length=MAX_V2_PROFILES)
+    analysis_context: Optional[BackendAnalysisContext] = Field(
+        default=None, validation_alias=AliasChoices("analysisContext", "analysis_context"),
+    )
     product: Optional[Product] = None
     raw_profile: Optional[Dict[str, Any]] = None
     raw_profiles: List[Dict[str, Any]] = Field(default_factory=list, max_length=MAX_ACTIVE_PROFILES)
@@ -1405,7 +1428,7 @@ class ChatRequest(BaseModel):
     barcode: Optional[str] = None
     report_number: Optional[str] = None
     conversation_state: Dict[str, Any] = Field(default_factory=dict)
-    chat_history: List[ChatHistoryItem] = Field(default_factory=list, max_length=MAX_CHAT_HISTORY_ITEMS)
+    chat_history: List[ChatHistoryItem | BackendChatHistoryItem] = Field(default_factory=list, max_length=MAX_CHAT_HISTORY_ITEMS)
     conversation_id: Optional[UUID] = None
     turn_id: Optional[UUID] = None
     message: str = Field(max_length=MAX_CHAT_MESSAGE_LENGTH)
@@ -1431,6 +1454,16 @@ class ChatRequest(BaseModel):
         for key in ["profiles", "raw_profiles", "chat_history"]:
             if payload.get(key) is None:
                 payload[key] = []
+
+        if payload.get("analysisContext") is not None or payload.get("analysis_context") is not None:
+            profile_items = payload.get("profiles")
+            for p in [payload.get("profile"), *(profile_items if isinstance(profile_items, list) else [])]:
+                if isinstance(p, dict) and "profile_id" in p and type(p["profile_id"]) is not int:
+                    raise ValueError("v2 profile_id must be an integer")
+                if isinstance(p, dict) and p.get("id") is not None:
+                    key = p.get("profileKey", p.get("profile_key", ""))
+                    if not isinstance(key, str) or not key.startswith("self:") or type(p["id"]) is not int or str(p["id"]) != key.split(":", 1)[1]:
+                        raise ValueError("v2 id is only the self account identifier")
 
         raw_profile_payloads = []
         if payload.get("raw_profile") is not None:
@@ -1469,10 +1502,11 @@ class ChatRequest(BaseModel):
             + (1 if self.raw_profile is not None else 0)
             + len(self.raw_profiles)
         )
-        if supplied_profile_count > MAX_ACTIVE_PROFILES:
+        max_profiles = MAX_V2_PROFILES if self.analysis_context else MAX_ACTIVE_PROFILES
+        if supplied_profile_count > max_profiles:
             raise ValueError(
                 "combined profile inputs exceed "
-                f"{MAX_ACTIVE_PROFILES} profiles"
+                f"{max_profiles} profiles"
             )
 
         validated_profiles = [
@@ -1508,22 +1542,50 @@ class ChatRequest(BaseModel):
             len(item.content)
             for item in self.chat_history
         )
-        if history_text_length > MAX_CHAT_HISTORY_TOTAL_LENGTH:
+        history_limit = MAX_V2_HISTORY_TOTAL if self.analysis_context else MAX_CHAT_HISTORY_TOTAL_LENGTH
+        content_limit = MAX_V2_HISTORY_CONTENT if self.analysis_context else MAX_CHAT_HISTORY_CONTENT_LENGTH
+        if any(len(item.content) > content_limit for item in self.chat_history):
+            raise ValueError(f"chat_history content exceeds {content_limit} characters")
+        if self.analysis_context and len(self.chat_history) > MAX_V2_HISTORY_ITEMS:
+            raise ValueError(f"v2 chat_history exceeds {MAX_V2_HISTORY_ITEMS} items")
+        if history_text_length > history_limit:
             raise ValueError(
                 "chat_history text exceeds "
-                f"{MAX_CHAT_HISTORY_TOTAL_LENGTH} characters"
+                f"{history_limit} characters"
             )
-        if history_text_length + len(self.message) > MAX_CHAT_CONTEXT_TOTAL_LENGTH:
+        if history_text_length + len(self.message) > history_limit + MAX_CHAT_MESSAGE_LENGTH:
             raise ValueError(
                 "message and chat_history text exceed "
                 f"{MAX_CHAT_CONTEXT_TOTAL_LENGTH} characters"
             )
 
         for previous, current in zip(self.chat_history, self.chat_history[1:]):
-            if previous.role == current.role:
+            if previous.role == current.role and self.analysis_context is None:
                 raise ValueError(
                     "chat_history roles must alternate between user and assistant"
                 )
+
+        if self.analysis_context is not None:
+            if not self.message.strip():
+                raise ValueError("v2 message must not be blank")
+            if self.raw_profile is not None or self.raw_profiles or self.raw_product is not None:
+                raise ValueError("v2 accepts only typed profile/profiles/product")
+            if self.profile is not None and self.profiles:
+                raise ValueError("v2 uses profile for one person or profiles for multiple people")
+            if len(self.profiles) == 1:
+                raise ValueError("v2 single person must use profile")
+            validate_request_context(self.analysis_context, validated_profiles, self.product)
+            if self.product is not None:
+                # Reject unrenderable backend snapshots at the request boundary,
+                # never truncate label facts or crash during response encoding.
+                from app.core.public_product import public_product_payload
+                public_product_payload(self.product)
+            if self.product and self.barcode and self.product.barcode != self.barcode:
+                raise ValueError("barcode disagrees with v2 product")
+            if self.product is None and (self.barcode or self.report_number):
+                raise ValueError("v2 identifiers require backend product resolution")
+        elif any(p.profile_key is not None or p.profile_source is not None for p in validated_profiles):
+            raise ValueError("profileKey/profileSource require analysisContext")
 
         if self.conversation_id is not None:
             if self.turn_id is None:
@@ -1543,6 +1605,13 @@ class ChatRequest(BaseModel):
                 "turn_id requires conversation_id"
             )
         return self
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_fingerprint(self, serializer):
+        payload = serializer(self)
+        if self.analysis_context is None:
+            payload.pop("analysis_context", None)
+        return payload
 
 
 ConversationTitle = Annotated[
@@ -1853,11 +1922,11 @@ class RecipeResult(BaseModel):
         StringConstraints(strip_whitespace=True, min_length=1, max_length=1000),
     ]] = Field(min_length=1, max_length=20)
     substitutions: List[ChatResponseReason] = Field(default_factory=list, max_length=10)
-    applied_profiles: List[ProfileName] = Field(default_factory=list, max_length=MAX_ACTIVE_PROFILES)
+    applied_profiles: List[ProfileName] = Field(default_factory=list, max_length=MAX_V2_PROFILES)
     applied_diets: List[ProfileListItem] = Field(default_factory=list, max_length=MAX_PROFILE_LIST_ITEMS)
     requested_diets: List[ProfileListItem] = Field(default_factory=list, max_length=MAX_PROFILE_LIST_ITEMS)
     diet_limitations: List[ChatResponseReason] = Field(default_factory=list, max_length=10)
-    allergen_check: List[ChatResponseReason] = Field(min_length=1, max_length=20)
+    allergen_check: List[ChatResponseReason] = Field(min_length=1, max_length=MAX_V2_PROFILES)
     packaged_item_cautions: List[ChatResponseReason] = Field(default_factory=list, max_length=10)
 
 
@@ -1935,12 +2004,13 @@ class ChatResponse(BaseModel):
     profile_name: Optional[ProfileName] = None
     active_profile_names: List[ProfileName] = Field(
         default_factory=list,
-        max_length=MAX_ACTIVE_PROFILES,
+        max_length=MAX_V2_PROFILES,
     )
     per_profile_results: List[PublicPerProfileResult] = Field(
         default_factory=list,
         max_length=MAX_PUBLIC_PROFILE_RESULTS,
     )
+    backend_analysis: Optional[PublicBackendAnalysis] = None
     current_product: Optional[PublicProduct] = None
     # Server-owned lookup reference for a saved response. It is persisted
     # outside the public payload and is never serialized to clients.
@@ -2048,6 +2118,13 @@ class ChatResponse(BaseModel):
     external_ai_processing: ExternalAIProcessingSummary = Field(
         default_factory=ExternalAIProcessingSummary
     )
+
+    @model_validator(mode="after")
+    def preserve_legacy_profile_limit(self):
+        if self.backend_analysis is None and not backend_analysis_active.get():
+            if max(len(self.active_profile_names), len(self.per_profile_results)) > MAX_ACTIVE_PROFILES:
+                raise ValueError("legacy responses support at most 20 profiles")
+        return self
 
     def model_copy(
         self,

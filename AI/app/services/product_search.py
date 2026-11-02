@@ -33,6 +33,7 @@ GENERIC_PRODUCT_TOKENS = {
 }
 
 CONVERSATIONAL_SEARCH_TOKENS = {
+    "같이", "함께", "다시",
     "혹시",
     "제가",
     "저는",
@@ -62,6 +63,7 @@ PRODUCT_REFERENCE_ONLY_TOKENS = {
     "그제품",
     "현재제품",
     "방금제품",
+    "이상품", "그상품", "현재상품", "해당상품", "해당제품",
 }
 
 NON_PRODUCT_QUERY_TOKENS = {
@@ -120,7 +122,7 @@ _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
         r"\s+(?:알레르기|알러지|원재료|성분|영양성분|나트륨|당류|단백질|"
         r"지방|탄수화물|칼로리|열량|콜레스테롤)\s*"
         r"(?:(?:성분|정보|표시)\s*)?"
-        r"(?:은|는|이|가|도|을|를|함량|수치|뭐|몇|얼마|어떤|어떠|어때|"
+        r"(?:은|는|이|가|도|만|을|를|함량|수치|뭐|몇|얼마|어떤|어떠|어때|"
         r"들어|포함|있|없|높|낮|많|적|알려|보여|설명|확인)",
         re.IGNORECASE,
     ),
@@ -139,7 +141,7 @@ _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
         r"(?:의)?(?:알레르기|알러지|원재료|성분|영양성분|나트륨|당류|"
         r"칼로리|열량|콜레스테롤)"
         r"(?:(?:성분|정보|표시))?"
-        r"(?:은|는|이|가|도|을|를|함량|수치|뭐|몇|얼마|어떤|어떠|어때|"
+        r"(?:은|는|이|가|도|만|을|를|함량|수치|뭐|몇|얼마|어떤|어떠|어때|"
         r"들어|포함|있|없|높|낮|많|적|알려|보여|설명|확인)",
         re.IGNORECASE,
     ),
@@ -261,10 +263,21 @@ def extract_product_search_query(message: str) -> str:
 
     cleaned = re.sub(r"^[^\w가-힣]+", "", cleaned).strip()
     cleaned = _LEADING_CONVERSATION_PATTERN.sub("", cleaned).strip()
+    cleaned = re.sub(r"^(?:(?:아까|방금|이번에는|그럼|그러면)\s+)+", "", cleaned)
+    cleaned = re.sub(r"^(?:이|그|현재|해당)\s*(?:제품|상품)(?:은|는|을|를)?\s*(?:말고|대신)\s*", "", cleaned)
+    # Parse replacement targets independently of catalog lookup success.
+    cleaned = re.sub(r"^.{1,80}?\s+(?:말고|대신)\s+", "", cleaned)
+    cleaned = re.sub(r"^(?:다른|새|새로운)\s*(?:제품|상품)(?:인)?\s+", "", cleaned)
+    declaration = re.fullmatch(r"(.+?)(?:으로|로)\s*(?:바꿨어|바꿨[가-힣]*|변경했[가-힣]*|선택했[가-힣]*|골랐[가-힣]*)[.!?\s]*", cleaned)
+    if declaration:
+        cleaned = declaration[1] + " 찾아줘"
     # In "새우 알레르기가 있는데 새우깡 먹어도 돼?", the first 새우 is
     # a user constraint and the second term is the product. Search only the
     # product clause so the catalog does not offer every shrimp-containing item.
     cleaned = _LEADING_PERSONAL_ALLERGY_PATTERN.sub("", cleaned).strip()
+    # The named person in '상품명은 아빠가 먹어도 돼?' is a subject,
+    # not part of the product's catalog identity.
+    cleaned = re.sub(r"^(.+?)(?:은|는)\s+\S+(?:이|가|도)\s+(?=먹어도|먹을\s*수|마셔도|드셔도|드실\s*수)", r"\1 ", cleaned)
     cleaned = re.sub(r"^[^\w가-힣]+", "", cleaned).strip()
     boundary_indexes = []
     for pattern in _PRODUCT_QUERY_BOUNDARY_PATTERNS:
@@ -313,10 +326,16 @@ def recipe_source_query(message: str) -> str:
     }
     for sentence in re.split(r"[.!?;\n]", message):
         sentence = product_text_without_goal_edits(sentence)
+        sentence = re.sub(r"(?<![\w])(?:제품\s*(?:없이|없는)|기본\s*식재료|일반\s*식재료)", "일반", sentence)
+        sentence = re.sub(r"(?<![가-힣])한\s*끼(?=\s|$)", "일반", sentence)
+        # Remove only goal operations following an actual diet term. Keep
+        # named food tokens, so a failed named-source lookup stays unresolved.
+        diet_terms = "|".join(re.escape(term) for name, aliases in SPECIAL_DIET_KEYWORDS.items() for term in (name, *aliases))
+        sentence = re.sub(r"(" + diet_terms + r")(?:도)?\s*(?:(?:같이|함께)\s*)?(?:적용한|적용해서|추가한)", r"\1", sentence)
         sentence = _LEADING_CONVERSATION_PATTERN.sub("", sentence.strip())
         sentence = _LEADING_PERSONAL_ALLERGY_PATTERN.sub("", sentence).strip()
         sentence = re.sub(
-            r"^(?:(?:유제품|우유|달걀|계란)(?:은|는|을|를)?\s*(?:없이|빼고|제외하고)\s*)+",
+            r"^(?:(?:유제품|우유|달걀|계란)(?:은|는|을|를)?\s*(?:없이|없는|빼고|제외하고)\s*)+",
             "", sentence,
         )
         match = re.match(
@@ -419,6 +438,14 @@ def candidate_matches_product_query(query: str, product: Product) -> bool:
         return False
     if compact_query and _matches_identity_token_boundary(compact_query, identity_tokens):
         return True
+    if len(query_tokens) == 1:
+        # A joined brand/type query (e.g. '브랜드스낵') may omit the flavour.
+        # Require both parts in the product name, never just a raw ingredient.
+        name = compact_search_text(product.product_name or "")
+        for form in ("스낵", "과자"):
+            stem = compact_query[:-len(form)] if compact_query.endswith(form) else ""
+            if len(stem) >= 2 and name.startswith(stem) and name.endswith(form):
+                return True
 
     matched = 0
     for query_token in query_tokens:

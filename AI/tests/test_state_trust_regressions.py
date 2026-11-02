@@ -302,6 +302,28 @@ class _IdAwareRepository(ProductRepository):
         return []
 
 
+def test_shared_report_number_does_not_replace_selected_package():
+    from app.services.conversation_router import enrich_product_from_repository, _resolve_authoritative_product_reference
+    first = Product(barcode="PACKAGE-SMALL", report_number="SHARED-REPORT", product_name="작은 포장", rawmtrl_nm="새우", allergy=["새우"])
+    selected = Product(barcode="PACKAGE-LARGE", report_number="SHARED-REPORT", product_name="큰 포장", rawmtrl_nm="새우", allergy=["새우"])
+    set_product_repository(_IdAwareRepository([first, selected]))
+    ref = {"barcode": selected.barcode, "report_number": selected.report_number}
+    loaded, _, _ = _resolve_authoritative_product_reference(ref)
+    assert loaded.barcode == selected.barcode
+    assert enrich_product_from_repository(selected).barcode == selected.barcode
+    response = chat(ChatRequest(
+        message="첫 번째", profile=_complete_profile(["새우"]),
+        conversation_state={
+            "pending_product_candidates": [{**ref, "product_name": selected.product_name}],
+            "pending_user_message": "이 제품 먹어도 돼?", "pending_intent": "can_i_eat",
+        },
+    ))
+    assert response.current_product.barcode == selected.barcode
+    assert response.overall_decision == "avoid"
+    assert _resolve_authoritative_product_reference({**ref, "report_number": "WRONG"})[0] is None
+    assert _resolve_authoritative_product_reference({**ref, "barcode": "MISSING"})[0] is None
+
+
 def test_conflicting_embedded_barcode_and_product_id_fail_closed():
     first = Product(
         product_id=705,

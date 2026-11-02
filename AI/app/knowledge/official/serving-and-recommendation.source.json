@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "serving-and-recommendation",
+  "source_id": "fda-label-basics",
+  "source_sha256": "e07f90e2f11d6ccfb67bdc8c4ee4667c8bb3b7611844fbe73c8ef7cb79720e28",
+  "page": null,
+  "section": "미국 serving size와 개인 권장량의 구분 (사실 요약·재구성)",
+  "text": "미국 영양표시의 serving size는 사람들이 통상 먹거나 마시는 양을 바탕으로 정한 표시 분량이며, 개인에게 그만큼 먹으라고 권하는 양은 아닙니다. 한 포장에 여러 분량이 들어 있으면 한 분량의 수치를 포장 전체의 수치로 읽지 않아야 합니다. 이는 FDA가 설명하는 미국 표시 용어의 의미이며 국내 제품의 표시 의무나 개인의 식사량을 정하는 기준으로 적용하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "serving_portion"
+  ]
+}

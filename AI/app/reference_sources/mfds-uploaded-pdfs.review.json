@@ -1,0 +1,137 @@
+{
+  "format": "food-pdf-factual-summary-review-v1",
+  "reviewed_at": "2026-10-15",
+  "binding": "operator_supplied_pdf_sha256_not_remote_download_verification",
+  "release_scope": "Independently worded factual summaries only; no PDF pages, artwork, source prose or tables redistributed. Not blanket permission for the publications.",
+  "rights_note": "No KOGL label established for these two attachments. MFDS policy requests prior consultation for reuse of unlabeled materials. This release uses factual information in new wording, not a license claim for the PDF or creative expression.",
+  "rights_policy": "https://www.mfds.go.kr/wpge/m_34/de010803l001.do",
+  "sources": [
+    {
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+      "physical_pdf_pages": 43,
+      "extraction": "pypdf text; selected pages visually checked",
+      "selected_physical_pages": [
+        5,
+        23,
+        24,
+        25
+      ],
+      "printed_pages": "6–7, 42–47",
+      "url": "https://www.mfds.go.kr/brd/m_1060/view.do?seq=15805",
+      "applicability": "2025.12 guide explanations; numeric criteria explicitly date-scoped. Not current legal compliance advice."
+    },
+    {
+      "source_id": "mfds-consumer-newsletter-2026-36",
+      "sha256": "a45693b326fa6da76875c43cf619cabe4229126d5c30b4c5cb3c039edcf652ed",
+      "physical_pdf_pages": 1,
+      "extraction": "image_only_no_text; visually read, manually checked factual paraphrase; no OCR claim",
+      "selected_physical_pages": [
+        1
+      ],
+      "url": "https://www.mfds.go.kr/brd/m_61/view.do?seq=54457",
+      "applicability": "Consumer label reading, 2026.9.11 issue; no sweetener health/safety claims."
+    }
+  ],
+  "excerpts": [
+    {
+      "document_id": "nutrition-label-basis",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 5,
+      "section": "인쇄 7쪽: 용어의 정의·영양성분 표시단위",
+      "topic": "nutrition_basis"
+    },
+    {
+      "document_id": "nutrition-label-percentage",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 5,
+      "section": "인쇄 7쪽: 1일 영양성분 기준치의 정의",
+      "topic": "nutrition_percentage"
+    },
+    {
+      "document_id": "nutrition-front-claims",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 5,
+      "section": "인쇄 6~7쪽: 영양성분 표시와 영양강조표시",
+      "topic": "nutrition_claims"
+    },
+    {
+      "document_id": "sugar-no-added-reading",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 23,
+      "section": "인쇄 43·47쪽, PDF 23·25쪽: 무가당 조건과 문답",
+      "topic": "sugar_claims"
+    },
+    {
+      "document_id": "sugar-zero-vs-added",
+      "source_id": "mfds-consumer-newsletter-2026-36",
+      "first_physical_page": 1,
+      "section": "좌상단: 무당·무가당 / 우하단: 표시 확인",
+      "topic": "sugar_zero"
+    },
+    {
+      "document_id": "sugar-sweeteners-calories",
+      "source_id": "mfds-consumer-newsletter-2026-36",
+      "first_physical_page": 1,
+      "section": "우상단·좌하단: 감미료와 열량 확인",
+      "topic": "sugar_energy"
+    },
+    {
+      "document_id": "nutrition-low-sugar",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 23,
+      "section": "인쇄 42·45쪽, PDF 23~24쪽: 저당 조건",
+      "topic": "low_sugar"
+    },
+    {
+      "document_id": "nutrition-low-fat",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 23,
+      "section": "인쇄 42·45쪽, PDF 23~24쪽: 저지방 조건과 예외",
+      "topic": "low_fat"
+    },
+    {
+      "document_id": "nutrition-low-energy",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 23,
+      "section": "인쇄 42·45쪽, PDF 23~24쪽: 저열량 조건",
+      "topic": "low_energy"
+    },
+    {
+      "document_id": "nutrition-high-protein",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 24,
+      "section": "인쇄 45쪽: 단백질 함량강조표시",
+      "topic": "high_protein"
+    },
+    {
+      "document_id": "nutrition-zero-energy",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 25,
+      "section": "인쇄 46쪽: 제로칼로리 문답",
+      "topic": "zero_energy"
+    }
+  ],
+  "excluded": [
+    "artwork/design",
+    "legal enforcement/dates",
+    "clinical advice",
+    "individual intake targets",
+    "product suitability",
+    "unreviewed sections"
+  ],
+  "additional_review_2026_10_15": {
+    "source_id": "mfds-nutrition-label-guide-2025-12",
+    "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+    "physical_pages": [
+      16,
+      24
+    ],
+    "printed_pages": [
+      "28–29",
+      "44–45"
+    ],
+    "verification": "추출 텍스트와 원본 페이지 렌더링을 시각 대조. 0 표시·단위·저나트륨·저포화지방·고식이섬유만 새 문장으로 정리. 제조·가공 조건은 기존 검토 PDF 23쪽을 함께 적용.",
+    "scope": "2025.12 안내서의 표시 설명. 현재 법률 적용·개인 권장량·원문 표 복제 제외."
+  }
+}

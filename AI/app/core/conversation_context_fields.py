@@ -1,6 +1,7 @@
 """Bounded task context shared by internal and public state sanitizers."""
 
 from collections.abc import Mapping
+import json
 import re
 
 from pydantic import BaseModel
@@ -9,11 +10,11 @@ DIETS = {"채식", "저염식", "저당식", "글루텐프리", "저칼로리", 
 
 PERSISTENT_TASK_KEYS = (
     "recipe_requested_diets", "recipe_goals_initialized", "recipe_product",
-    "recipe_fingerprints", "vegetarian_allowances", "comparison_products", "comparison_queries",
-    "comparison_status",
+    "recipe_fingerprints", "recipe_receipt", "vegetarian_allowances", "comparison_products", "comparison_queries",
+    "comparison_status", "comparison_axes", "unresolved_product_query",
 )
 
-COMPARISON_KEYS = ("comparison_products", "comparison_queries", "comparison_pending_index", "comparison_status")
+COMPARISON_KEYS = ("comparison_products", "comparison_queries", "comparison_pending_index", "comparison_status", "comparison_axes")
 
 
 def json_state(value):
@@ -41,7 +42,14 @@ def carry_task_context(previous, next_state):
         result.pop("recipe_product", None)
     if next_state.get("last_intent") == "missing_product" and next_state.get("pending_intent") == "recipe_recommend":
         result.pop("recipe_product", None)
+    if next_state.get("pending_intent") == "recipe_recommend":
+        result.pop("recipe_receipt", None)
     result.update(next_state)
+    if next_state.get("last_confirmed_product") or next_state.get("pending_product_candidates"):
+        result.pop("unresolved_product_query", None)
+    if result.get("unresolved_product_query"):
+        for key in ("last_confirmed_product", "pending_target_product", "recipe_product"):
+            result.pop(key, None)
     if (next_state.get("last_intent") not in (None, "food_compare")
             and next_state.get("pending_intent") != "food_compare"
             and result.get("comparison_status") in {"active", "pending", "unresolved"}):
@@ -49,11 +57,21 @@ def carry_task_context(previous, next_state):
         for key in COMPARISON_KEYS:
             result.pop(key, None)
         result.update(comparison_status="cleared", comparison_products=[], comparison_queries=[])
+    # Replay is optional. Reserve space for identifiers added after this merge
+    # instead of making an otherwise valid saved turn exceed its 8 KiB budget.
+    if result.get("recipe_receipt") and len(json.dumps(result, ensure_ascii=False).encode()) > 6 * 1024:
+        result.pop("recipe_receipt", None)
     return result
 
 
 def task_context_fields(value, reference_cleaner):
     result = {}
+    unresolved = value.get("unresolved_product_query")
+    if isinstance(unresolved, str) and unresolved.strip():
+        result["unresolved_product_query"] = unresolved.strip()[:256]
+    receipt = value.get("recipe_receipt")
+    if isinstance(receipt, str) and re.fullmatch(r"[A-Za-z0-9_=\-]{1,3007}\.[0-9a-f]{64}", receipt):
+        result["recipe_receipt"] = receipt
     pending = value.get("pending_allergy")
     if isinstance(pending, Mapping) and isinstance(pending.get("message"), str) and pending["message"].strip():
         from app.data.dictionaries import ALLERGEN_CANONICAL_ALIASES
@@ -79,6 +97,11 @@ def task_context_fields(value, reference_cleaner):
             result["pending_allergy"] = clean
     if isinstance(value.get("comparison_status"), str) and value["comparison_status"] in {"active", "pending", "unresolved", "cleared"}:
         result["comparison_status"] = value["comparison_status"]
+    axes = value.get("comparison_axes")
+    if isinstance(axes, list):
+        from app.data.dictionaries import NUTRITION_KEYWORDS
+        result["comparison_axes"] = list(dict.fromkeys(axis for axis in axes[:9]
+            if isinstance(axis, str) and axis in {*NUTRITION_KEYWORDS, "알레르기"}))
     if value.get("recipe_goals_initialized") is True:
         result["recipe_goals_initialized"] = True
     diets = value.get("recipe_requested_diets")
@@ -87,6 +110,9 @@ def task_context_fields(value, reference_cleaner):
     reference = reference_cleaner(value.get("recipe_product"))
     if reference:
         result["recipe_product"] = reference
+    reference = reference_cleaner(value.get("pending_target_product"))
+    if reference:
+        result["pending_target_product"] = reference
     references = value.get("comparison_products")
     if isinstance(references, list):
         result["comparison_products"] = [reference_cleaner(item) for item in references[:3]]

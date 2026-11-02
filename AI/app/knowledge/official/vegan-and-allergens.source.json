@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "vegan-and-allergens",
+  "source_id": "uk-vegan-allergen-basics",
+  "source_sha256": "cc2c64b58547a060fcaae58ef0ad707fefb2b14589846eb5fe8de44c81ba8f06",
+  "page": null,
+  "section": "비건 표시와 알레르기 정보 (사실 요약·재구성)",
+  "text": "영국 정부의 표시 안내는 비건 표시가 특정 알레르기 유발물질의 부재를 보장하지 않는다고 설명합니다. 비건인지 확인하는 정보와 알레르기 성분·혼입 가능성을 확인하는 정보는 별도로 살펴야 합니다. 비건이라는 말만으로 우유나 달걀 등 알레르기 유발물질이 전혀 없거나 개인에게 적합하다고 결론내리지 않습니다. 해외의 표시 의무를 국내 기준으로 적용하는 설명은 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "vegan_allergy"
+  ]
+}

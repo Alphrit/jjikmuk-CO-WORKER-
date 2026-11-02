@@ -1,7 +1,7 @@
 import re
 from typing import List, Optional
 
-from app.data.dictionaries import INGREDIENT_KEYWORDS, NUTRITION_KEYWORDS
+from app.data.dictionaries import ALLERGEN_CANONICAL_ALIASES, INGREDIENT_KEYWORDS, NUTRITION_KEYWORDS
 from app.core.models import ChatHistoryItem, Product, Profile
 
 
@@ -21,12 +21,43 @@ def normalize_message(message: str) -> str:
     }
     for before, after in replacements.items():
         text = text.replace(before, after)
+    text = re.sub(r"먹어두(?=\s*(?:돼|되|괜찮))", "먹어도", text)
     return " ".join(text.split())
+
+
+def detect_nutrition_keywords(message: str) -> list[str]:
+    """Find every requested nutrient, consuming longer aliases first."""
+    matches = []
+    remaining = message.lower()
+    aliases = sorted(((alias, nutrient) for nutrient, names in NUTRITION_KEYWORDS.items()
+                      for alias in names), key=lambda item: len(item[0]), reverse=True)
+    for alias, nutrient in aliases:
+        pattern = re.escape(alias)
+        if len(alias) <= 1:
+            pattern = rf"(?<![가-힣A-Za-z]){pattern}(?=은|는|이|가|도|\s|[?!.]|$|함량|수치|얼마)"
+        if re.search(pattern, remaining):
+            matches.append(nutrient)
+            remaining = re.sub(pattern, " ", remaining)
+    return list(dict.fromkeys(matches))
 
 
 def detect_ingredient_keyword(message: str) -> Optional[str]:
     for ingredient in INGREDIENT_KEYWORDS:
-        if ingredient in message:
+        if len(ingredient) == 1:
+            aliases = ALLERGEN_CANONICAL_ALIASES.get("대두" if ingredient == "콩" else ingredient, ())
+            if any(len(alias) > 1 and ingredient in alias and alias in message for alias in aliases):
+                return ingredient
+            # A single Korean syllable also occurs in ordinary conversation
+            # (쉽게, 그게, 비밀). Accept food compounds and attached particles,
+            # but never a syllable inside an unrelated word.
+            ending = (
+                r"(?=$|[^가-힣a-zA-Z]|알레르기|알러지|함유|포함|들어|없|있|"
+                r"가루|분말|기름|단백질|소스|살|국수|국|죽|밥|빵|차|즙|"
+                r"(?:은|는|이|가|을|를|도|와|과|만|에|로)(?=$|[^가-힣a-zA-Z]|알레르기|알러지|함유|포함|들어|없|있))"
+            )
+            if re.search(rf"(?<![가-힣a-zA-Z]){re.escape(ingredient)}{ending}", message):
+                return ingredient
+        elif ingredient in message:
             return ingredient
     return None
 

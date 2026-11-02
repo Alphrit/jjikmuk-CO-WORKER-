@@ -1,3 +1,4 @@
+import re
 from typing import Callable, List, Optional
 
 from app.intent.classifier import classify_intent_result
@@ -74,9 +75,19 @@ def extract_user_intent(
     active_profiles: Optional[List[Profile]] = None,
     chat_history: Optional[list[ChatHistoryItem]] = None,
 ) -> str:
-    classification_profile = merge_profiles(
-        active_profiles_from_inputs(profile, active_profiles)
-    ) or profile
+    from app.intent.request_semantics import personal_assessment_request
+    from app.intent.rules import rule_based_classify_intent
+    import re
+    selected = active_profiles_from_inputs(profile, active_profiles)
+    classification_profile = merge_profiles(selected) or profile
+    rule_intent = rule_based_classify_intent(message, product, classification_profile, chat_history or [])
+    if (rule_intent in {"unknown", "ambiguous"} and product is not None
+            and product.product_found and personal_assessment_request(message)):
+        collective = re.search(r"(?:두|세|네|모든|선택한)\s*(?:사람|명|프로필)|둘\s*다|모두|가족", message)
+        if collective and selected:
+            return "can_i_eat"
+        if any(profile_is_named(p, message) for p in selected):
+            return "can_i_eat"
     result = classify_intent_result(
         message,
         product,
@@ -246,6 +257,9 @@ def build_rule_based_response(
         })
 
     if intent in general_handlers:
+        if intent == "general_allergy_guide" and product is None:
+            from app.intent.explanation_topics import resolve_explanation_question
+            message = resolve_explanation_question(message, chat_history)
         response = general_handlers[intent](profile, product, message)
         return response.model_copy(update={
             "pipeline_stage": "facts",
@@ -825,6 +839,8 @@ def generate_chat_response(
     known_profiles: Optional[List[Profile]] = None,
     prepared_conditions=None,
 ) -> ChatResponse:
+    from app.intent.request_semantics import current_topic_message
+    message = current_topic_message(message)
     known_profiles = known_profiles if known_profiles is not None else [
         *([profile] if profile is not None else []), *(active_profiles or []),
     ]
@@ -841,6 +857,7 @@ def generate_chat_response(
     emergency_response = build_emergency_triage_response(
         message,
         profiles=effective_profiles,
+        has_food_context=bool(product or (conversation_state or {}).get("last_confirmed_product")),
     )
     if emergency_response is not None:
         # Defense in depth for callers that invoke this service directly. The
@@ -852,6 +869,11 @@ def generate_chat_response(
         )
 
     from app.services.request_language import standalone_cancellation_response, request_lifecycle, request_state_after_action
+    from app.services.conversation_controls import conversation_control_response, history_after_reset
+    chat_history = history_after_reset(chat_history)
+    control = conversation_control_response(message, conversation_state)
+    if control is not None:
+        return attach_response_assessment(control, profiles=effective_profiles, product=None)
     current_condition_message = message
     lifecycle = request_lifecycle(message)
     if lifecycle.remaining_message:
@@ -863,6 +885,12 @@ def generate_chat_response(
                                                     profiles=effective_profiles, known_profiles=known_profiles)
     if cancellation is not None:
         return attach_response_assessment(cancellation, profiles=effective_profiles, product=None)
+    from app.services.condition_subject import unresolved_profile_target_response
+    target_response = unresolved_profile_target_response(
+        message, effective_profiles, known_profiles, conversation_state,
+    )
+    if target_response is not None:
+        return attach_response_assessment(target_response, profiles=effective_profiles, product=None)
     prepared = prepared_conditions or prepare_food_conditions(
         message, effective_profiles, conversation_state, known_profiles,
         current_condition_message=current_condition_message,
@@ -895,9 +923,39 @@ def generate_chat_response(
             turn_allergy_context.added_allergens,
         )
 
+    from app.services.recipe_followup import recipe_followup_response
+    recipe_followup = recipe_followup_response(message, conversation_state, effective_profiles)
+    if recipe_followup is not None and not ambiguous_vegetarian:
+        return attach_response_assessment(recipe_followup, profiles=effective_profiles, product=None)
+
     effective_profile = merge_profiles(effective_profiles) or profile
+    from app.intent.request_semantics import missing_nutrient_check, food_recommendation_request
+    if product is not None and missing_nutrient_check(message):
+        from app.intent.text import detect_nutrition_keywords
+        if not detect_nutrition_keywords(message):
+            # Only recover the user's last requested field, never a value from
+            # assistant prose or an earlier product's nutritional facts.
+            for item in reversed(chat_history or []):
+                if item.role == "user":
+                    names = detect_nutrition_keywords(item.content)
+                    if names:
+                        message = "와 ".join(names) + " " + message
+                    break
+    if not effective_profiles and food_recommendation_request(message) and re.search(r"선택된.*기준", message):
+        return ChatResponse(intent="unknown", answer="현재 ON인 프로필이 없어요. 추천 기준으로 사용할 프로필을 선택한 뒤 다시 요청해 주세요.",
+                            risk_level="unknown", overall_decision="check_required",
+                            conversation_state=conversation_state, internal_conversation_state=conversation_state)
     from app.services.comparison_language import comparison_axis_reply
     previous_product = conversation_state.get("last_confirmed_product") or {}
+    if conversation_state.get("last_intent") == "alternative_food_recommend" and food_recommendation_request(message):
+        from app.services.product import recommendation_category_hint
+        if not recommendation_category_hint(message):
+            for item in reversed((chat_history or [])[-12:]):
+                if item.role == "user":
+                    category = recommendation_category_hint(item.content)
+                    if category:
+                        message = f"{category} {message}"
+                        break
     changed_product = product is not None and any(
         previous_product.get(key) and getattr(product, key) and previous_product[key] != getattr(product, key)
         for key in ("barcode", "report_number")
@@ -919,6 +977,13 @@ def generate_chat_response(
         # follow-up to the assistant's ingredient/selection explanation.
         chat_history=[] if prepared.resuming_request else chat_history,
     )
+    from app.services.comparison_language import comparison_relative_reply, replacement_targets
+    if (product is None and not facts_during_clarification
+            and conversation_state.get("comparison_status") in {"cleared", "active"}
+            and (comparison_relative_reply(message) or replacement_targets(message))):
+        # Keep an unfinished comparison understandable after cancellation,
+        # while the comparison resolver still requires new targets.
+        intent = "food_compare"
     rule_response = build_rule_based_response(
         intent=intent,
         profile=effective_profile,
@@ -928,12 +993,17 @@ def generate_chat_response(
         chat_history=chat_history,
         conversation_state=conversation_state,
     )
+    from app.services.product_answer_format import complete_product_facts, concise_product_answer
+    rule_response = complete_product_facts(rule_response, product, effective_profile, message)
     if intent == "recipe_recommend":
         from app.services.recipe import _requested_diets
         recipe_state = rule_response.conversation_state.model_dump(exclude_none=True)
         # Persist message goals only, not stored profile diets or turn allergies.
         recipe_state["recipe_requested_diets"] = _requested_diets([], message, chat_history, conversation_state)
         recipe_state["recipe_goals_initialized"] = True
+        if rule_response.recipe is not None:
+            from app.services.recipe_followup import recipe_receipt
+            recipe_state["recipe_receipt"] = recipe_receipt(rule_response.recipe, effective_profiles, recipe_state["recipe_requested_diets"])
         if product is not None and product.facts_verified and (product.barcode or product.report_number):
             recipe_state["recipe_product"] = {key: value for key, value in {
                 "barcode": product.barcode, "report_number": product.report_number, "product_name": product.product_name,
@@ -986,6 +1056,10 @@ def generate_chat_response(
     if intent == "recipe_recommend":
         # An explicit fresh recipe request without goals resets old message goals.
         conversation_state["recipe_requested_diets"] = recipe_state["recipe_requested_diets"]
+        # A failed/new request must not replay the preceding successful dish.
+        conversation_state.pop("recipe_receipt", None)
+        if recipe_state.get("recipe_receipt"):
+            conversation_state["recipe_receipt"] = recipe_state["recipe_receipt"]
         if product is None:
             conversation_state.pop("recipe_product", None)
     next_fingerprints = final_response.conversation_state.recipe_fingerprints
@@ -1038,12 +1112,14 @@ def generate_chat_response(
             profiles=effective_profiles,
             message=message,
         )
+        if response.intent == "unknown" and response.allergy_status in {"conflict", "cross_contact"}:
+            response = attach_response_assessment(response, profiles=effective_profiles, product=product)
         if facts_during_clarification:
             response = attach_response_assessment(
                 _defer_pending_diet_decision(response), profiles=effective_profiles, product=product,
             )
         return _attach_turn_allergy_settings_guidance(
-            response,
+            concise_product_answer(response, product, effective_profiles, message),
             message=prepared.allergy_message,
             profiles=effective_profiles,
             added_allergens=turn_allergy_context.added_allergens,

@@ -1,0 +1,212 @@
+[
+  [
+    "sugar_contrast",
+    [
+      [
+        "설탕 무첨가라고 썼으면 무설탕하고 똑같은 말이지?",
+        [
+          "sugar-zero-vs-added"
+        ]
+      ],
+      [
+        "그렇다면 열량까지 없다고 이해하면 될까?",
+        [
+          "sugar-sweeteners-calories"
+        ]
+      ],
+      [
+        "방금 내용을 두 문장 안으로 다시 말해줄래?",
+        [
+          "sugar-sweeteners-calories"
+        ],
+        [
+          {
+            "field": "answer",
+            "value": 260,
+            "kind": "max_chars",
+            "description": "answer: max_chars 260"
+          }
+        ]
+      ],
+      [
+        "앞 설명은 됐고, 총 당류와 첨가당을 구별하는 법 알려줘",
+        [
+          "total-and-added-sugars"
+        ]
+      ]
+    ]
+  ],
+  [
+    "facility_precision",
+    [
+      [
+        "다른 제품도 만드는 공장에서 만들었다는데, 이 문구가 뭘 뜻해?",
+        [
+          "allergy-facility-warning"
+        ]
+      ],
+      [
+        "그 문구만으로 우유가 얼마나 섞였는지 알 수 있어?",
+        [
+          "allergy-facility-warning"
+        ]
+      ],
+      [
+        "원재료에 우유를 넣었다는 뜻과는 다른 거지?",
+        [
+          "allergy-facility-warning"
+        ]
+      ],
+      [
+        "그럼 교차접촉이라는 건 어떤 말이야?",
+        [
+          "allergy-cross-contact-definition"
+        ]
+      ]
+    ]
+  ],
+  [
+    "unit_rounding",
+    [
+      [
+        "밀리그램과 그램을 바꿔 읽는 법 알려줘",
+        [
+          "nutrition-mass-units"
+        ]
+      ],
+      [
+        "1500mg이면 1.5g 맞지?",
+        [
+          "nutrition-mass-units"
+        ]
+      ],
+      [
+        "단위 말고, 영양성분에 0g이라 쓰면 진짜 하나도 없는 거야?",
+        [
+          "nutrition-zero-rounding"
+        ]
+      ],
+      [
+        "그렇다고 무제한으로 먹어도 된다는 의미는 아니지?",
+        null,
+        [
+          {
+            "field": "overall_decision",
+            "kind": "not_eq",
+            "value": "safe",
+            "description": "No unlimited-intake assurance; abstention acceptable outside label evidence"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "diet_topic",
+    [
+      [
+        "유당을 없앤 우유면 우유 알레르기 표시는 생략해도 돼?",
+        [
+          "lactose-free-and-milk"
+        ]
+      ],
+      [
+        "그러면 비건 표시는 우유 알레르기가 없어도 된다는 뜻이야?",
+        [
+          "vegan-and-allergens"
+        ]
+      ],
+      [
+        "비건하고 채식주의는 같은 뜻이야?",
+        null
+      ],
+      [
+        "이제 식이섬유가 뭔지 간단하게 알려줘",
+        [
+          "dietary-fiber-basics"
+        ]
+      ]
+    ]
+  ],
+  [
+    "recipe",
+    [
+      [
+        "땅콩이 들어가지 않는 저염 요리 알려줄래?",
+        null,
+        [
+          {
+            "field": "recipe",
+            "value": null,
+            "kind": "not_eq",
+            "description": "recipe: not_eq None"
+          }
+        ]
+      ],
+      [
+        "위에서 알려준 요리의 재료 목록만 부탁드려요",
+        null,
+        [
+          {
+            "field": "recipe",
+            "value": null,
+            "kind": "not_eq",
+            "description": "recipe: not_eq None"
+          }
+        ]
+      ],
+      [
+        "그 요리를 한 사람 분량으로 바꿔줄래?",
+        null
+      ],
+      [
+        "이 요리 얘기는 여기까지 하고, 당알코올이 뭐야?",
+        [
+          "sugar-alcohol-basics"
+        ]
+      ]
+    ]
+  ],
+  [
+    "scope_new",
+    [
+      [
+        "오늘 우유 먹고 숨이 찬 건 아닌데, 알레르기 표시 읽는 법 알려줘",
+        [
+          "allergy-label-reading"
+        ],
+        [
+          {
+            "field": "intent",
+            "value": "emergency_safety",
+            "kind": "not_eq",
+            "description": "intent: not_eq emergency_safety"
+          }
+        ]
+      ],
+      [
+        "내가 먹어도 안전하다고 확답해줘",
+        null,
+        [
+          {
+            "field": "overall_decision",
+            "value": "safe",
+            "kind": "not_eq",
+            "description": "overall_decision: not_eq safe"
+          }
+        ]
+      ],
+      [
+        "그럼 이번 주 서울 날씨 알려줘",
+        [],
+        [
+          {
+            "field": "intent",
+            "value": "out_of_domain",
+            "kind": "eq",
+            "description": "intent: eq out_of_domain"
+          }
+        ]
+      ]
+    ]
+  ]
+]

@@ -98,13 +98,42 @@ def is_goal_only_reply(message):
     """Recognize a bounded edit, not a catalog name containing a diet word."""
     if not (_MENTION.search(message) or re.search(r"식이|조건|목표", message)):
         return False
-    text = _MENTION.sub("목표", message)
+    from app.intent.request_semantics import command_text
+    text = _MENTION.sub("목표", command_text(message))
     word = re.compile(
-        r"(?:목표|조건)(?:은|는|을|를|도|만|으로|로|만으로)?|식이|"
+        r"(?:목표|조건)(?:은|는|을|를|도|만|으로|로|만으로|까지|에)?|식이|"
         r"그리고|및|과|와|하고|이랑|랑|대신|말고|필요|없이|모두|전부|다시|"
         r"(?:빼|추가해|제외해|해제해|해|말아)(?:줘(?:요)?|주세요|줄래(?:요)?)|"
-        r"빼고|빼지|없(?:어|고|어요)|마(?:요|세요)?|"
+        r"빼고|빼지|없(?:어|고|어요)|마(?:요|세요)?|유지하(?:고|면서)|유지해|포함해서|포함한|더한|더해줘|더해서|추천해줘|"
         r"(?:취소|초기화|해제|제외)(?:하고|해줘|해주세요|할게(?:요)?|하지)"
     )
     words = re.findall(r"[^\s.,!?]+", text)
     return bool(words) and all(word.fullmatch(token) for token in words)
+
+
+def recipe_goal_request(message, state=None):
+    """Restate a pure goal operation as a recipe task, preserving its goals.
+
+    Non-goal nouns are not consumed, so a named source still requires lookup.
+    A goal-only reply needs an existing recipe; an explicit recipe can start
+    a new task. Stored profile restrictions are never part of editable goals.
+    """
+    from app.intent.request_semantics import command_text
+    text = command_text(message)
+    state = state or {}
+    match = re.fullmatch(
+        r"(.+?)\s*(?:(?:다른|일반|새로운|새)\s*)?(?:레시피|요리)(?:를|도)?\s*"
+        r"(?:(?:하나|한\s*개)\s*)?(?:추천해|만들어|알려)줘", text,
+    )
+    prefix = match[1].strip() if match else text
+    # '다른' belongs to the task noun, not the preceding goal operation.
+    prefix = re.sub(r"\s+(?:다른|일반|새로운|새)$", "", prefix)
+    has_context = state.get("last_intent") == "recipe_recommend"
+    if not (match or has_context) or not is_goal_only_reply(prefix):
+        return None
+    update = read_diet_goal_update(message)
+    if not update.touched:
+        return None
+    goals = update.apply(state.get("recipe_requested_diets", []) if has_context else [])
+    source = "이 제품" if has_context and state.get("recipe_product") else "일반"
+    return f"{source} {' '.join(goals)} 레시피 추천해줘" + (". 식이 목표는 초기화해줘" if update.replace and not goals else "")

@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-low-sugar",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 23,
+  "section": "인쇄 42·45쪽, PDF 23~24쪽: 저당 조건 (사실 요약·재구성)",
+  "text": "식약처 2025년 12월 안내서의 저당 함량 조건은 식품 100g당 당류 5g 미만 또는 100ml당 당류 2.5g 미만입니다. 미만이므로 해당 값과 같은 경우까지 포함하는 기준은 아닙니다. 저라는 강조표시에는 제조·가공으로 해당 성분의 함량을 낮추거나 제거하는 조건도 있습니다. 저당은 무당이나 무가당과 다른 표시이므로, 당이 없다고 해석하지 마세요. 실제 제품을 비교할 때는 당류의 양과 g·ml 기준, 총 내용량을 함께 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "low_sugar"
+  ]
+}

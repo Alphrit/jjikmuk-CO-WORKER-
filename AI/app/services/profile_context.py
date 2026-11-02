@@ -31,6 +31,14 @@ def dedupe_profiles(profiles: List[Profile]) -> List[Profile]:
     seen = set()
     result = []
     for profile in profiles:
+        if profile.profile_key is not None:
+            # v2 identity is a namespaced key. A self and family row can have
+            # the same numeric ID; neither names nor those IDs deduplicate them.
+            key = ("backend_profile", profile.profile_key)
+            if profile.is_active and key not in seen:
+                seen.add(key)
+                result.append(profile)
+            continue
         stable_profile_id = _stable_profile_id(profile)
         if not profile.is_active:
             continue
@@ -79,12 +87,15 @@ def merge_profiles(profiles: List[Profile]) -> Optional[Profile]:
 
     first = profiles[0]
     names = [profile.profile_name for profile in profiles if profile.profile_name]
+    merged_name = ", ".join(names)
+    if len(merged_name) > 128:
+        merged_name = f"{first.profile_name[:100]} 외 {len(profiles) - 1}명"
 
     merged_profile = Profile(
         profile_id=first.profile_id,
-        profile_name=", ".join(names),
+        profile_name=merged_name,
         user_id=first.user_id,
-        nickname=", ".join(names),
+        nickname=merged_name,
         allergies=[],
         user_allergies=[],
         conditions=[],

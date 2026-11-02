@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "allergy-cross-contact-definition",
+  "source_id": "nfsi-allergen-labelling-2023",
+  "source_sha256": "3552e8940df047d5037ebb27f269eb5db0aa4792a1aa40b19ce9a6bffc100600",
+  "page": 57,
+  "section": "붙임 6·인쇄 55~56쪽, PDF 57~58쪽: 교차접촉 개념 (사실 요약·재구성)",
+  "text": "식품 알레르기에서 말하는 교차접촉(자료에서는 교차오염이라고도 표현)은 원재료로 넣으려던 성분이 아닌 알레르기 유발물질이 식품에 의도치 않게 섞이는 경우를 뜻합니다. 제조뿐 아니라 취급·보관·운송 과정에서도 발생할 수 있습니다. 원료 처리나 공유 장비 등 여러 경로를 함께 살펴야 합니다. 이 설명은 식품안전정보원 2023년 자료에서 영국 안내를 소개한 부분의 개념만 정리한 것으로, 해외의 표시 의무나 허용 기준을 국내 기준으로 적용한 설명은 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "allergy_cross_contact"
+  ]
+}

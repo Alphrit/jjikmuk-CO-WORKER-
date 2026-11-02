@@ -9,5 +9,6 @@
   "content_review": "approved",
   "usage_scope": "general_food_explanation",
   "reviewed_at": "2026-10-01",
-  "review_due": "2027-04-01"
+  "review_due": "2027-04-01",
+  "topics": ["allergy_purchase"]
 }

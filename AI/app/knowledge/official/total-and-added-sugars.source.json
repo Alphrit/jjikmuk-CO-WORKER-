@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "total-and-added-sugars",
+  "source_id": "fda-added-sugars-basics",
+  "source_sha256": "5bc2eef9b0bc2daa6b386a935ce1792439fb4c15f02e32702dd778dcb7db7a09",
+  "page": null,
+  "section": "총 당류와 첨가당의 구분 (사실 요약·재구성)",
+  "text": "총 당류에는 우유·과일 등에 원래 있던 당과 제조 과정 등에서 더해진 첨가당이 함께 포함됩니다. 첨가당에는 설탕뿐 아니라 시럽·꿀 등에서 온 당도 포함될 수 있습니다. 미국 영양표시에서 Total Sugars 아래의 Includes Added Sugars는 총 당류 안에 포함된 첨가당의 양이므로 두 값을 다시 더하지 않습니다. 이는 미국 표시를 읽는 설명이며 한국 제품에 같은 항목의 표시 의무가 있다고 뜻하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "sugars_added"
+  ]
+}

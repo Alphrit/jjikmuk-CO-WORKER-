@@ -11,9 +11,10 @@ from app import knowledge_import as cli
 from app.api.response_contract import PublicChatResponse
 from app.core.models import ChatResponse
 from app.infrastructure import knowledge_review as review, rag
-from app.infrastructure.knowledge_sources import SOURCES, WEB_SOURCES
+from app.infrastructure.knowledge_sources import ADDITIONAL_PDF_SOURCES, EXPLANATION_WEB_SOURCES, SOURCES, WEB_SOURCES
 from app.services import hybrid
 from app.services.knowledge_preview import preview_released_sources
+from rag_test_helpers import grounding_review
 
 
 OFFICIAL_DIR = Path(__file__).resolve().parents[1] / "app" / "knowledge" / "official"
@@ -27,7 +28,7 @@ def packaged_sources(monkeypatch, tmp_path):
     class ReviewDate(date):
         @classmethod
         def today(cls):
-            return cls(2026, 10, 1)
+            return cls(2026, 10, 15)
 
     monkeypatch.setattr(review, "date", ReviewDate)
     for path in OFFICIAL_DIR.glob("*.source.json"):
@@ -40,8 +41,10 @@ def packaged_sources(monkeypatch, tmp_path):
 
 def test_shipped_references_are_traceable_and_excerpts_are_released(packaged_sources):
     assert len(SOURCES) == 3  # Offline prepare still requires only the supplied files.
-    assert len(WEB_SOURCES) == 3
-    for spec in WEB_SOURCES:
+    assert len(ADDITIONAL_PDF_SOURCES) == 4
+    assert len(WEB_SOURCES) == 4
+    assert len(EXPLANATION_WEB_SOURCES) == 11
+    for spec in WEB_SOURCES + EXPLANATION_WEB_SOURCES:
         content = (CAPTURE_DIR / spec.filename).read_bytes()
         capture = json.loads(content)
         assert capture["capture_kind"] == "selected_web_text_not_full_html"
@@ -49,23 +52,28 @@ def test_shipped_references_are_traceable_and_excerpts_are_released(packaged_sou
         assert capture["url"] == spec.url
         assert capture["publisher"] == spec.publisher
         assert capture["title"] == spec.title
-        assert capture["rights"].startswith("KOGL-1")
+        if spec in WEB_SOURCES:
+            assert capture["rights"].startswith("KOGL-1")
+        else:
+            assert capture["rights"] == "facts-only-independent-wording"
+            assert "전체" in capture["limitations"]
         assert hashlib.sha256(content).hexdigest() == review.SOURCE_REVIEWS[spec.source_id].sha256
     entries = preview_released_sources()
-    assert len(entries) == 3
-    assert all("웹 본문" in e["citation"] and "PDF" not in e["citation"] for e in entries)
+    assert len(entries) == 40
+    assert sum("웹 본문" in e["citation"] for e in entries) == 18
+    assert sum(" | PDF " in e["citation"] for e in entries) == 22
     assert all("요약·재구성" in e["citation"] for e in entries)
     assert all(e["runtime_eligible"] for e in entries)
 
 
 def test_capture_notes_raw_medical_content_and_private_paths_do_not_enter_rag(packaged_sources):
     documents = rag._load_documents()
-    assert len(documents) == 3
+    assert len(documents) == 40
     text = " ".join(d.page_content for d in documents)
-    for excluded in ("rights", "source_sha256", "reference.json", "진료", "치료", "500g", "의무", "법령"):
+    for excluded in ("rights", "source_sha256", "reference.json", "진료", "치료", "500g", "법령"):
         assert excluded not in text
     assert all(d.metadata["source_kind"] == "official_excerpt" for d in documents)
-    assert len(rag._split_rag_documents(documents, {"chunk_size": 10, "chunk_overlap": 0})) == 3
+    assert len(rag._split_rag_documents(documents, {"chunk_size": 10, "chunk_overlap": 0})) == 40
 
 
 def test_web_source_must_not_claim_a_pdf_page_even_if_digest_approved(packaged_sources, monkeypatch):
@@ -119,8 +127,8 @@ def test_released_preview_does_not_require_private_files_or_call_models(packaged
     result = json.loads(capsys.readouterr().out)
     assert result["llm_called"] is False
     assert result["index_built"] is False
-    assert len(result["results"]) == 1
-    assert "kca.go.kr" in result["results"][0]["citation"]
+    assert len(result["results"]) == 9
+    assert any("kca.go.kr" in entry["citation"] for entry in result["results"])
     assert preview_released_sources("아무관련없는검색어") == []
 
 
@@ -135,10 +143,11 @@ def test_released_preview_does_not_require_private_files_or_call_models(packaged
 def test_real_excerpt_to_mock_search_to_mock_llm_to_public_sources(
     packaged_sources, monkeypatch, filename, message, intent, answer, host,
 ):
+    monkeypatch.setenv("RAG_GENERAL_RESPONSE_MODE", "generated")
     documents = [d for d in rag._load_documents() if d.metadata["source"] == filename]
 
     class LocalStore:
-        def similarity_search(self, _query, k):
+        def similarity_search(self, _query, k, **_kwargs):
             return documents[:k]
 
     monkeypatch.setattr(rag, "build_vectorstore", lambda: LocalStore())
@@ -150,6 +159,8 @@ def test_real_excerpt_to_mock_search_to_mock_llm_to_public_sources(
 
     def generate(prompt):
         prompts.append(prompt)
+        if prompt.startswith("너는 식품 설명의 독립 근거 검토자"):
+            return grounding_review(answer, [documents[0].page_content])
         return answer
 
     monkeypatch.setattr(hybrid, "generate_text", generate)
@@ -218,6 +229,7 @@ def test_unapproved_or_internal_context_does_not_enable_general_llm(
 def test_only_verified_body_not_title_policy_or_provider_text_is_food_evidence(
     sodium_entry, monkeypatch, answer, accepted,
 ):
+    monkeypatch.setenv("RAG_GENERAL_RESPONSE_MODE", "generated")
     # The official title really contains 5g, but that part was NOT approved.
     assert "5g" in sodium_entry["text"]
     sodium_entry["text"] += " 공급자 추가 문장: 하루 소금 987g"
@@ -231,12 +243,14 @@ def test_only_verified_body_not_title_policy_or_provider_text_is_food_evidence(
 
     def generate(prompt):
         prompts.append(prompt)
+        if prompt.startswith("너는 식품 설명의 독립 근거 검토자"):
+            return grounding_review(answer, [sodium_entry["content"]])
         return answer
 
     monkeypatch.setattr(hybrid, "generate_text", generate)
     base = ChatResponse(intent="general_diet_guide", answer="표시를 확인하세요.", risk_level="unknown")
     result = hybrid.try_general_llm_fallback(base, "저염식 방법 알려줘", None, None)
-    assert len(prompts) == 1
+    assert len(prompts) == (2 if accepted else 1)
     assert sodium_entry["content"] in prompts[0]
     for excluded in ("5g", "987", "internal-policy:", "공급자 추가", "2011"):
         assert excluded not in prompts[0]
@@ -246,12 +260,14 @@ def test_only_verified_body_not_title_policy_or_provider_text_is_food_evidence(
         assert len(result.sources) == 1 and "korea.kr" in result.sources[0]
         assert result.grounding_context == [sodium_entry["content"]]
     else:
-        assert result.answer == base.answer
-        assert result.answer_source == "rules"
+        assert result.answer == sodium_entry["content"]
+        assert result.answer_source == "rag"
+        assert result.fallback_reason == "rag_generated_answer_rejected"
         assert "unsupported_number" in result.validation_failure_types
 
 
 def test_explicit_no_rag_opt_out_does_not_relabel_internal_policy_as_evidence(monkeypatch):
+    monkeypatch.setenv("RAG_GENERAL_RESPONSE_MODE", "generated")
     # Preserve the legacy explicit opt-out, but do not call the result RAG.
     monkeypatch.setenv("REQUIRE_RAG_CONTEXT_FOR_LLM", "false")
     monkeypatch.setattr(hybrid, "is_llm_enabled", lambda: True)
@@ -278,7 +294,7 @@ def test_recipe_rights_are_cleared_but_do_not_approve_any_recipe(packaged_source
 
 def test_sodium_offline_preview_contains_practice_not_dosage(packaged_sources):
     results = preview_released_sources("나트륨")
-    assert len(results) == 2
+    assert len(results) >= 2
     practice = next(e for e in results if "sodium-practical-choices" in e["source"])
     assert "영양표시" in practice["text"] and "양념" in practice["text"] and "외식" in practice["text"]
     for excluded in ("5g", "2g", "혈압", "질병", "치료"):

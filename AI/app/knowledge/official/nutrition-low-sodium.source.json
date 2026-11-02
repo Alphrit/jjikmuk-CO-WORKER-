@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-low-sodium",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 24,
+  "section": "인쇄 42·45쪽: 저나트륨 강조표시 (사실 요약·재구성)",
+  "text": "식약처 2025년 12월 안내서에서 저나트륨의 함량 조건은 식품 100g당 나트륨 120mg 미만입니다. 소금(염)에 관한 저 강조표시는 식품 100g당 305mg 미만으로 제시되어 있어 나트륨과 소금의 수치를 같은 값으로 읽으면 안 됩니다. 저 강조표시에는 제조·가공으로 해당 성분을 낮추거나 제거하는 조건도 있습니다. 이 함량 조건을 한 봉지당 기준이나 개인의 하루 나트륨 섭취 기준으로 바꾸어 적용하지 마세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "low_sodium"
+  ]
+}

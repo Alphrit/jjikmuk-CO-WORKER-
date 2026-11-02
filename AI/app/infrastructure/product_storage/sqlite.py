@@ -204,7 +204,8 @@ class SQLiteProductRepository(ProductRepository):
                 if column
             ]
 
-            tokens = _expanded_product_name_tokens(normalized_text) or _tokenize_search_text(normalized_text)
+            primary_tokens = _tokenize_search_text(normalized_text)
+            tokens = list(dict.fromkeys([*primary_tokens, *_expanded_product_name_tokens(normalized_text)]))
             if not tokens:
                 return []
             if tokens:
@@ -212,6 +213,16 @@ class SQLiteProductRepository(ProductRepository):
                 params = []
                 score_parts = []
                 score_params = []
+                compact_query = "".join(primary_tokens)
+                for column in [product_name_column, clean_name_column]:
+                    if column and compact_query:
+                        compact_name = f"REPLACE(LOWER({column}), ' ', '')"
+                        score_parts.append(f"CASE WHEN {compact_name} = ? THEN 100000 WHEN {compact_name} LIKE ? THEN 10000 ELSE 0 END")
+                        score_params.extend([compact_query, f"%{compact_query}%"])
+                for token in primary_tokens:
+                    parts = [f"{column} LIKE ?" for column in search_columns]
+                    score_parts.append(f"CASE WHEN ({' OR '.join(parts)}) THEN 1000 ELSE 0 END")
+                    score_params.extend([f"%{token}%"] * len(search_columns))
                 for column in search_columns:
                     for token in tokens:
                         clauses.append(f"{column} LIKE ?")

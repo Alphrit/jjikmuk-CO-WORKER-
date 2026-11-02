@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "allergy-cross-contact-controls",
+  "source_id": "nfsi-allergen-labelling-2023",
+  "source_sha256": "3552e8940df047d5037ebb27f269eb5db0aa4792a1aa40b19ce9a6bffc100600",
+  "page": 59,
+  "section": "붙임 6·인쇄 57쪽: 교차접촉 관리 사례 (사실 요약·재구성)",
+  "text": "교차접촉 관리 사례로는 알레르기 유발 재료를 다른 재료와 구분해 보관하고, 전용 도구와 작업 공간을 마련하며, 작업 구역과 장비를 세심하게 세척하는 방법이 있습니다. 원료를 옮길 때의 이동과 분말이 공기로 퍼지는 경로도 살펴야 합니다. 이는 식품안전정보원 2023년 자료의 영국 안내에 소개된 혼입 가능성을 줄이기 위한 관리 사례입니다. 일부 조치를 했다는 이유만으로 혼입이 전혀 없거나 개인에게 적합하다고 단정하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "allergy_contact_controls"
+  ]
+}

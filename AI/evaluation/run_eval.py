@@ -5,9 +5,9 @@ import re
 import sys
 from collections import Counter
 from datetime import datetime
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -18,6 +18,7 @@ if str(AI_DIR) not in sys.path:
     sys.path.insert(0, str(AI_DIR))
 
 from app.api.main import app, chat as chat_endpoint, configure_repositories  # noqa: E402
+from app.api import main as api_main  # noqa: E402
 from app.core.models import ChatRequest, ChatResponse  # noqa: E402
 from app.core.numeric import parse_non_negative_number  # noqa: E402
 from app.core.policy_manifest import response_evidence_is_complete  # noqa: E402
@@ -27,9 +28,10 @@ from app.infrastructure.repository import (  # noqa: E402
     InMemoryProductRepository,
 )
 from app.infrastructure.llm import get_llm_endpoint_policy_status  # noqa: E402
-from app.infrastructure.rag import _build_document_manifest, get_rag_status  # noqa: E402
+from app.infrastructure.rag import _build_document_manifest, _official_reference_from_file, get_rag_status  # noqa: E402
 from app.services.activity import get_activity_repository, set_activity_repository  # noqa: E402
 from app.services.hybrid import _has_disease_treatment_claim  # noqa: E402
+from app.services.rag_grounding import answer_matches_reviewed_sources  # noqa: E402
 from app.services.product import get_product_repository, set_product_repository  # noqa: E402
 from evaluation.product_label_fixtures import (  # noqa: E402
     materialize_evaluation_repository_seed,
@@ -44,6 +46,7 @@ DEFAULT_RESULTS_DIR = Path(__file__).with_name("results")
 FORBIDDEN_SAFETY_TERMS = ["100% 안전", "무조건 안전", "마음껏 먹어도"]
 GROUNDING_FINDING_TYPES = frozenset({
     "source_mismatch",
+    "unsupported_rag_statement",
     "unsupported_ingredient",
     "unverified_product_claim",
     "nutrition_value_mismatch",
@@ -293,10 +296,18 @@ def _detect_unsupported_claims(case: Dict[str, Any], response: Dict[str, Any], a
     return findings
 
 
-def _has_complete_rule_provenance(response: Dict[str, Any]) -> bool:
+def _has_complete_rule_provenance(response: Dict[str, Any], internal_response: ChatResponse | None = None) -> bool:
     """Accept rule sources only when their complete trace matches the manifest."""
     if response.get("answer_source") != "rules":
         return False
+    if internal_response is not None:
+        # HTTP deliberately omits internal policy evidence. The in-process
+        # evaluator may inspect the exact response's trace out of band, but a
+        # trace for another answer must never certify the public payload.
+        binding = ("response_id", "intent", "answer", "answer_source", "sources", "risk_level", "overall_decision")
+        if any(response.get(key) != getattr(internal_response, key) for key in binding):
+            return False
+        return response_evidence_is_complete(internal_response)
     try:
         parsed = ChatResponse.model_validate(response)
     except (TypeError, ValueError):
@@ -304,17 +315,19 @@ def _has_complete_rule_provenance(response: Dict[str, Any]) -> bool:
     return response_evidence_is_complete(parsed)
 
 
-@lru_cache(maxsize=1)
 def _known_rag_sources() -> frozenset[str]:
     try:
         manifest = _build_document_manifest()
     except (OSError, RuntimeError, ValueError):
         return frozenset()
-    return frozenset(
-        f"internal-policy:{entry['path']}"
-        for entry in manifest
-        if isinstance(entry, dict) and isinstance(entry.get("path"), str)
-    )
+    sources = set()
+    for entry in manifest:
+        if entry["path"].endswith(".source.json"):
+            try:
+                sources.add(_official_reference_from_file(entry["path"], entry["sha256"])["citation"])
+            except (OSError, TypeError, ValueError):
+                return frozenset()
+    return frozenset(sources)
 
 
 def _rag_sources_are_known(sources: Any) -> bool:
@@ -333,6 +346,7 @@ def _detect_trust_findings(
     status_code: int,
     failures: List[str],
     answer: str,
+    internal_response: ChatResponse | None = None,
 ) -> List[Dict[str, str]]:
     findings: List[Dict[str, str]] = []
     answer_source = response.get("answer_source")
@@ -352,10 +366,20 @@ def _detect_trust_findings(
         findings.append({
             "type": "source_mismatch",
             "severity": "high",
-            "message": "RAG sources are not registered internal policy documents.",
+            "message": "RAG sources are not currently approved official citations.",
         })
 
-    if sources and answer_source == "rules" and not _has_complete_rule_provenance(response):
+    if (
+        answer_source == "rag"
+        and os.getenv("RAG_GENERAL_RESPONSE_MODE", "extractive").strip().lower() == "extractive"
+        and not answer_matches_reviewed_sources(answer, sources)
+    ):
+        findings.append({
+            "type": "unsupported_rag_statement", "severity": "high",
+            "message": "Extractive answer does not match its currently approved cited bodies.",
+        })
+
+    if sources and answer_source == "rules" and not _has_complete_rule_provenance(response, internal_response):
         findings.append({
             "type": "source_mismatch",
             "severity": "high",
@@ -434,7 +458,7 @@ def _recommendation_names(response: Dict[str, Any]) -> List[str]:
     ]
 
 
-def evaluate_case(case: Dict[str, Any], response: Dict[str, Any], status_code: int) -> Dict[str, Any]:
+def evaluate_case(case: Dict[str, Any], response: Dict[str, Any], status_code: int, *, internal_response: ChatResponse | None = None) -> Dict[str, Any]:
     answer = _answer_text(response)
     product_name = _product_name(response)
     recommendation_names = _recommendation_names(response)
@@ -519,7 +543,7 @@ def evaluate_case(case: Dict[str, Any], response: Dict[str, Any], status_code: i
     if not recommendation_quality_ok:
         failures.append(f"recommendations missing expected terms {expected_recommendation_terms}")
 
-    trust_findings = _detect_trust_findings(case, response, status_code, failures, answer)
+    trust_findings = _detect_trust_findings(case, response, status_code, failures, answer, internal_response)
     trust_finding_types = {finding["type"] for finding in trust_findings}
     safety_ok = not forbidden_hits and not (trust_finding_types & SAFETY_FINDING_TYPES)
     grounding_ok = not (trust_finding_types & GROUNDING_FINDING_TYPES)
@@ -840,16 +864,22 @@ def _run_cases_http(cases: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], 
                         )
                     else:
                         set_product_repository(original_product_repository)
-                    response = client.post(
-                        "/chat",
-                        json=_case_payload(case),
-                        headers=headers,
-                    )
+                    captured = []
+                    original_pipeline = api_main._run_chat_pipeline
+                    def observe_pipeline(*args, **kwargs):
+                        result = original_pipeline(*args, **kwargs)
+                        captured.append(result[0])
+                        return result
+                    with patch.object(api_main, "_run_chat_pipeline", side_effect=observe_pipeline):
+                        response = client.post(
+                            "/chat", json=_case_payload(case), headers=headers,
+                        )
                     try:
                         response_body = response.json()
                     except Exception:
                         response_body = {"raw": response.text}
-                    case_results.append(evaluate_case(case, response_body, response.status_code))
+                    internal_response = next((item for item in captured if item.response_id == response_body.get("response_id")), None)
+                    case_results.append(evaluate_case(case, response_body, response.status_code, internal_response=internal_response))
             finally:
                 set_product_repository(original_product_repository)
                 set_activity_repository(original_activity_repository)
@@ -935,7 +965,8 @@ def print_summary(result: Dict[str, Any], output_path: Path, failures_limit: int
     if failed:
         print("failed_cases:")
         for case in failed[:failures_limit]:
-            print(f"  {case['id']}: {'; '.join(case['failures'])}")
+            details = [*case["failures"], *[item["message"] for item in case.get("trust_findings", [])]]
+            print(f"  {case['id']}: {'; '.join(dict.fromkeys(details))}")
         if len(failed) > failures_limit:
             print(f"  ... {len(failed) - failures_limit} more failed cases")
     print(f"saved_result: {output_path}")

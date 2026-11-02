@@ -105,6 +105,19 @@ def test_complete_policy_rule_sources_pass_grounding():
     assert result["checks"]["answer_grounding_score"] == 1.0
 
 
+def test_public_rule_evaluation_requires_the_exact_internal_response_trace():
+    from app.services.emergency_triage import build_emergency_triage_response
+    from app.api.response_contract import PublicChatResponse
+    internal = build_emergency_triage_response("땅콩을 먹고 지금 숨이 안 쉬어져요", profiles=[])
+    public = PublicChatResponse.model_validate(internal).model_dump(mode="json")
+    case = {"id": "public-policy", "category": "test"}
+    assert "source_mismatch" in _finding_types(evaluate_case(case, public, 200))
+    assert "source_mismatch" not in _finding_types(evaluate_case(case, public, 200, internal_response=internal))
+    for field, value in [("answer", "아무 설명"), ("response_id", "another-response"), ("sources", ["fake"])]:
+        result = evaluate_case(case, {**public, field: value}, 200, internal_response=internal)
+        assert "source_mismatch" in _finding_types(result)
+
+
 def test_rule_sources_without_complete_policy_trace_fail_grounding():
     response = {
         "answer": "즉시 119에 연락하세요.",

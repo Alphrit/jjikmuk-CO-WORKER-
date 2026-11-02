@@ -15,6 +15,8 @@ from app.services.product_search import (
     compact_search_text,
     extract_product_search_query,
     filter_product_candidates_for_query,
+    explicitly_mentions_product,
+    mentions_distinct_product_token,
     tokenize_search_text,
 )
 from app.services.response_helpers import (
@@ -191,15 +193,28 @@ def find_product_from_history(
         if item.role == "user"
     ]
     for item in recent_user_items:
+        from app.intent.explanation_topics import explanation_intent
+        general_question = explanation_intent(item.content) is not None
         for query in _history_product_queries(item.content):
             product = _product_with_valid_public_contract(
                 repo.search_by_text(query)
             )
             if product is not None:
+                if general_question and not explicitly_mentions_product(item.content, product):
+                    continue
                 if product.match_confidence is not None and product.match_confidence <= 0.5:
+                    continue
+                if not (
+                    explicitly_mentions_product(item.content, product)
+                    or mentions_distinct_product_token(item.content, product)
+                ):
                     continue
                 # 후속 질문은 여러 제품이 오간 대화에서도 가장 최근에 언급된 제품만 사용한다.
                 return product
+        if general_question:
+            # A general explanation ends the previous product topic. Its
+            # nutrition/allergen words are not evidence of a catalog choice.
+            return None
     return None
 
 
@@ -295,6 +310,17 @@ _DIET_RECOMMENDATION_SEARCH_TERMS = {
 }
 
 
+def recommendation_category_hint(message: str) -> str:
+    """Recover a food category only; never carry previous profile conditions."""
+    normalized = message.replace(" ", "").lower()
+    for token, search_term in _GENERAL_RECOMMENDATION_SEARCH_TERMS:
+        if token == "면" and not re.search(r"(?<![가-힣])(?:면|면류|라면|국수)(?:은|는|을|이|도)?(?=$|[\s,.!?])", message):
+            continue
+        if token in normalized:
+            return search_term
+    return ""
+
+
 def _recommendation_search_term(
     message: str,
     source_product: Optional[Product],
@@ -322,9 +348,9 @@ def _recommendation_search_term(
         for diet in requested_diets
         if diet in _DIET_RECOMMENDATION_SEARCH_TERMS
     ]
-    for token, search_term in _GENERAL_RECOMMENDATION_SEARCH_TERMS:
-        if token in normalized:
-            return " ".join(dict.fromkeys([*diet_terms, search_term]))
+    category = recommendation_category_hint(message)
+    if category:
+        return " ".join(dict.fromkeys([*diet_terms, category]))
     return " ".join(dict.fromkeys(diet_terms))
 
 

@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "protein-basics",
+  "source_id": "fda-protein-basics",
+  "source_sha256": "6556832b5c42ad5ae532cd6423e40f85905b70e42687417dd841299e6b143526",
+  "page": null,
+  "section": "단백질의 개념과 식품 공급원 (사실 요약·재구성)",
+  "text": "단백질은 아미노산이 연결되어 이루어진 영양성분으로 몸의 세포와 조직을 구성하고 유지하는 데 관여합니다. 고기·생선·달걀·유제품뿐 아니라 콩류·대두 제품·견과류·씨앗 같은 식물성 식품에도 있습니다. 단백질이 들어 있다는 설명과 고단백 강조표시의 조건은 구분해야 합니다. 이 예시는 일반적인 공급원이며 개인의 알레르기나 식이 조건에 맞는 추천 목록은 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "protein_basics"
+  ]
+}

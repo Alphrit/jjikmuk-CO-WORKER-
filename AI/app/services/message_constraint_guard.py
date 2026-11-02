@@ -65,7 +65,12 @@ def _message_allergens(message: str) -> MessageAllergies:
     canonical_names: set[str] = set()
     uncertain: set[str] = set()
     denied: set[str] = set()
+    concept_spans = []
     for index, match in enumerate(mentions):
+        from app.intent.request_semantics import concept_allergy_mention
+        if concept_allergy_mention(message, match.start(), match.end()):
+            concept_spans.append((match.start(), match.end()))
+            continue
         names = set()
         for name in listed_food_names(match[1], aliases):
             if name not in aliases:
@@ -112,9 +117,25 @@ def _message_allergens(message: str) -> MessageAllergies:
             # Information requests without a subject are not personal claims.
             prefix = re.split(r"[.!?;,\n]", message[:match.start()])[-1]
             information = re.match(
-                r"\s*(?:(?:의\s*)?(?:정보|증상|원인|뜻|설명|표시|성분)|에\s*대해|란(?:\s|$)|라는\s*(?:게|것))",
+                r"\s*(?:(?:의\s*)?(?:정보|증상|원인|뜻|설명|표시|문구|성분|차이)|(?:가|는|란)?\s*(?:뭔지|무엇인지|뭐야|어떤\s*뜻)|에\s*대해|란(?:\s|$)|라는\s*(?:게|것)|"
+                r"유발\s*(?:물질|성분)\s*(?:의\s*)?(?:부재|없음|표시|정보)|"
+                r"(?:유발\s*물질\s*)?(?:혼입|교차\s*(?:접촉|오염))\s*"
+                r"(?:표시|가능성|확률|주의\s*문구|경로|관리|뜻|개념|의미|여부|과정|원인))",
                 predicate,
             )
+            # Comparing concepts or asking what a label implies does not assert
+            # that the speaker has that allergy. Work per mention so an actual
+            # personal statement elsewhere in the question is still retained.
+            concept_tail = re.split(r"[.!?;,\n]", message[match.end():], maxsplit=1)[0]
+            conceptual_comparison = re.match(
+                r"\s*(?:와|과|하고)\s*.+(?:같은\s*뜻|같은\s*의미|같은\s*거|차이|다른\s*뜻|다르|달라)",
+                concept_tail,
+            ) and not re.search(r"(?:알레르기|알러지)(?:가|는|도)?\s*(?:있|없|모르|의심)", concept_tail)
+            label_implication = re.match(
+                r"\s*(?:에도|에|도|는|란|라는)\s*.*(?:뜻|의미)(?:이|야|인|에요|인가|일까|을|를|\s|$)",
+                predicate,
+            )
+            information = information or conceptual_comparison or label_implication
             symptom = re.match(r"\s*(?:의\s*)?증상(?:이|은|도|을)?\s*(.*)", predicate)
             if symptom and re.match(r"(?:있|나타|생[기겼]|느껴|겪|보여|없)", symptom[1]):
                 # A symptom report is a personal possibility, not a diagnosis
@@ -159,6 +180,11 @@ def _message_allergens(message: str) -> MessageAllergies:
 
     references_saved = bool(_SAVED_ALLERGY_REFERENCE_PATTERN.search(message))
     unspecified_text = _HYPOTHETICAL_PERSON_PATTERN.sub("", message)
+    if concept_spans:
+        unspecified_text = message
+        for start, end in reversed(concept_spans):
+            unspecified_text = unspecified_text[:start] + " " + unspecified_text[end:]
+        unspecified_text = _HYPOTHETICAL_PERSON_PATTERN.sub("", unspecified_text)
     has_unspecified = bool(_UNSPECIFIED_ALLERGY_STATEMENT.search(unspecified_text)
                            and not (canonical_names or uncertain or denied) and not references_saved)
     # Contradictory statements about one allergen need clarification, too.

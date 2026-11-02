@@ -1,4 +1,4 @@
-"""Offline preparation of the three operator-supplied food sources.
+"""Offline preparation of operator-supplied food sources.
 
 Extraction is NOT approval for RAG, recipe generation, legal interpretation, or
 allergy suitability. The resulting bundle deliberately stays outside knowledge/.
@@ -67,10 +67,53 @@ SOURCES = (
     ),
 )
 
+# Optional additions do not make an older three-file import fail. When present,
+# they receive the same bounded extraction and explicit review as required files.
+ADDITIONAL_PDF_SOURCES = (
+    SourceSpec(
+        "mfds-nutrition-label-guide-2025-12",
+        "한눈에+보는+영양표시+가이드라인(민원인+안내서)(2025.12.).pdf",
+        "pdf", "한눈에 보는 영양표시 가이드라인(민원인 안내서)(2025.12.)",
+        "식품의약품안전처", "https://www.mfds.go.kr/brd/m_1060/view.do?seq=15805",
+        "표시 읽기와 안내서에 수록된 강조표시 조건의 사실 요약. "
+        "현재 법률 자문·개인별 섭취량·제품 적합 판정에 사용하지 않음.",
+    ),
+    SourceSpec(
+        "mfds-consumer-newsletter-2026-36", "260911+컨슈머뉴스레터+(36).pdf",
+        "pdf", "컨슈머뉴스레터 36호: 무당(제로슈거)·무가당 무엇이 다를까요? (2026.9.11.)",
+        "식품의약품안전처", "https://www.mfds.go.kr/brd/m_61/view.do?seq=54457",
+        "이미지형 PDF를 직접 확인한 당류·감미료·열량 표시의 사실 요약. "
+        "감미료의 안전성·건강효과·개인별 섭취 적합성은 다루지 않음.",
+    ),
+    SourceSpec(
+        "mfds-allergy-label-reading-2022", "알레르기 유발 식품 표시에 대해 알아보아요.pdf",
+        "pdf", "알레르기 유발 식품 표시에 대해 알아보아요!(수정, 2022.9.1., 사용자 저장본)",
+        "식품의약품안전처 · 식품안전나라",
+        "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?bbs_no=bbs001&menu_no=3120&ntctxt_no=1091412",
+        "사용자 PDF에 수록된 공식 카드의 표시 읽기·혼입 주의문구·주문 전 확인만 사실 요약. "
+        "표시 의무·대상 목록·의료 및 대체식품 설명은 제외.",
+    ),
+    SourceSpec(
+        "nfsi-allergen-labelling-2023", "국내외 식품 중 알레르기 유발물질 표시 규제 현황.pdf",
+        "pdf", "국내외 식품 중 알레르기 유발물질 표시 규제 현황 (2023.9.20.)",
+        "식품안전정보원 · 식품안전정보분석실 글로벌정보부",
+        "https://www.foodinfo.or.kr/cmm/fms/FileDown.do?atchFileId=FILE_000000000031029&fileSn=0",
+        "붙임 6의 교차접촉 개념과 관리 사례만 사실 요약. 영국 자료 소개임을 표시. "
+        "각국 표시 의무·허용량·대상 목록과 국내 최신 법령·개인 적합성 판단은 제외.",
+    ),
+)
+
 # These are reviewed, selected web-text captures, NOT raw HTML downloads. They
 # are distributed separately from the user's three offline import inputs. The
 # source_sha256 binds the exact .reference.json capture bytes, not a remote page.
 WEB_SOURCES = (
+    SourceSpec(
+        "korea-nutrition-label-reading-2013", "korea-nutrition-label-reading-2013.reference.json", "web",
+        "‘제로칼로리’ 음료에는 진짜 칼로리가 없을까?", "대한민국 정책브리핑 · 정책기자 우인혜",
+        "https://www.korea.kr/briefing/policyBriefingView.do?newsId=148763339",
+        "표시 기준량·기준치 비율·강조 문구·무가당 읽기의 일반 원칙만 사용. "
+        "2013년 법정 기준·수치·의학 설명·감미료 효과와 이미지는 제외.",
+    ),
     SourceSpec(
         "kca-allergy-purchase-2018", "kca-allergy-purchase-2018.reference.json", "web",
         "커피전문점 알레르기 유발 식품 주의 필요", "한국소비자원",
@@ -90,6 +133,44 @@ WEB_SOURCES = (
         "https://www.korea.kr/briefing/policyBriefingView.do?newsId=148715048",
         "나트륨 적게 먹기 실천 요령 중 영양표시 확인·양념·외식 주문만 사용. "
         "제목과 본문의 수치, 개인별 권장량·질병 설명·저염 표시 판정 기준 제외.",
+    ),
+)
+
+
+# Independently worded factual captures; no full-page redistribution.
+EXPLANATION_WEB_SOURCES = (
+    SourceSpec(
+        'fda-carbohydrate-basics', 'fda-carbohydrate-basics.reference.json', 'web', 'Interactive Nutrition Facts Label: Total Carbohydrate', '미국 식품의약국(FDA)', 'https://www.accessdata.fda.gov/scripts/interactivenutritionfactslabel/total-carbohydrate.cfm', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'fda-fat-basics', 'fda-fat-basics.reference.json', 'web', 'Interactive Nutrition Facts Label: Total Fat', '미국 식품의약국(FDA)', 'https://www.accessdata.fda.gov/scripts/interactivenutritionfactslabel/total-fat.cfm', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'fda-protein-basics', 'fda-protein-basics.reference.json', 'web', 'Interactive Nutrition Facts Label: Protein', '미국 식품의약국(FDA)', 'https://www.accessdata.fda.gov/scripts/interactivenutritionfactslabel/protein.cfm', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'fda-sodium-basics', 'fda-sodium-basics.reference.json', 'web', 'Sodium in Your Diet', '미국 식품의약국(FDA)', 'https://www.fda.gov/food/nutrition-education-resources-materials/sodium-your-diet', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'fda-label-basics', 'fda-label-basics.reference.json', 'web', 'How to Understand and Use the Nutrition Facts Label', '미국 식품의약국(FDA)', 'https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'fda-added-sugars-basics', 'fda-added-sugars-basics.reference.json', 'web', 'Added Sugars on the Nutrition Facts Label', '미국 식품의약국(FDA)', 'https://www.fda.gov/food/nutrition-facts-label/added-sugars-nutrition-facts-label', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'nhs-vegan-basics', 'nhs-vegan-basics.reference.json', 'web', 'The vegan diet', '영국 국민보건서비스(NHS)', 'https://www.nhs.uk/live-well/eat-well/how-to-eat-a-balanced-diet/the-vegan-diet/', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'nhs-vegetarian-basics', 'nhs-vegetarian-basics.reference.json', 'web', 'The vegetarian diet', '영국 국민보건서비스(NHS)', 'https://www.nhs.uk/live-well/eat-well/how-to-eat-a-balanced-diet/the-vegetarian-diet/', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'uk-vegan-allergen-basics', 'uk-vegan-allergen-basics.reference.json', 'web', 'Understanding food labelling: Allergen labelling', '영국 정부(GOV.UK)', 'https://www.gov.uk/understanding-food-labelling/allergen-labelling', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'fda-gluten-basics', 'fda-gluten-basics.reference.json', 'web', 'Gluten and Food Labeling', '미국 식품의약국(FDA)', 'https://www.fda.gov/food/nutrition-education-resources-materials/gluten-and-food-labeling', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'fda-lactose-label-basics', 'fda-lactose-label-basics.reference.json', 'web', 'FY18/19 Dairy-Free Dark Chocolate Products for Milk Allergen', '미국 식품의약국(FDA)', 'https://www.fda.gov/food/sampling-protect-food-supply/fy1819-sample-collection-and-analysis-domestically-manufactured-dairy-free-dark-chocolate-products', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
     ),
 )
 
@@ -229,7 +310,10 @@ def extract_recipes(content: bytes, source_id: str) -> tuple[list[dict], list[di
 
 def prepare_sources(raw_dir: Path) -> dict:
     sources, pages, recipes, rejected = [], [], [], []
-    for spec in SOURCES:
+    available_names = {normalized(path.name) for path in raw_dir.iterdir()}
+    optional = tuple(spec for spec in ADDITIONAL_PDF_SOURCES
+                     if normalized(spec.filename) in available_names)
+    for spec in SOURCES + optional:
         content = read_source(raw_dir, spec)
         sources.append({
             **asdict(spec), "sha256": hashlib.sha256(content).hexdigest(),

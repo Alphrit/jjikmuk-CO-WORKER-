@@ -34,6 +34,7 @@ from app.intent.text import (
     profile_identifiers,
 )
 from app.core.models import ChatHistoryItem, Product, Profile
+from app.intent.explanation_topics import explanation_intent
 
 
 def is_diet_or_nutrition_question(text: str) -> bool:
@@ -68,6 +69,10 @@ def is_profile_recheck_question(
         return True
 
     identifiers = profile_identifiers(profile)
+    if any(re.fullmatch(r"\s*(?:(?:그럼|그러면)\s*)?" + re.escape(name)
+                        + r"(?:은|는|도)(?:요)?[^\w]*", text)
+           for name in [*identifiers, *TARGET_REFERENCE_KEYWORDS]):
+        return True
     if "다시" in text and identifiers and contains_any(text, identifiers):
         return True
 
@@ -178,6 +183,8 @@ def is_contextual_caution_detail_followup(
             "자세히 알려",
             "자세히 설명",
             "더 자세히",
+            "왜 그런지",
+            "쉬운 말로",
         ],
     )
 
@@ -185,13 +192,17 @@ def is_contextual_caution_detail_followup(
 def is_nutrition_question(text: str) -> bool:
     nutrient = detect_nutrition_keyword(text)
     if nutrient is None and contains_any(text, ["영양성분", "영양 성분", "영양정보", "영양 정보"]):
-        return contains_any(text, ["알려", "설명", "확인", "뭐", "어떻게", "수치", "함량"])
+        return contains_any(text, ["알려", "설명", "확인", "보여", "정리", "뭐", "어떻게", "수치", "함량"])
 
     if nutrient is None:
         return False
 
     if is_nutrition_word_part_of_product_name(text, nutrient):
         return False
+
+    if (re.search(r"(?:은|는|이|가|도)(?:요)?\s*[?？]?$", text)
+            or re.search(r"\d+(?:\.\d+)?\s*(?:g|mg|kcal)?\s*(?:이야|인가|인거|이라는|이란)", text)):
+        return True
 
     extra_eval_keywords = NUTRITION_EVAL_KEYWORDS + [
         "괜찮아",
@@ -209,6 +220,8 @@ def is_nutrition_question(text: str) -> bool:
         "몇이",
         "수치",
         "함량",
+        "보여",
+        "정리",
     ]
     return contains_any(text, extra_eval_keywords)
 
@@ -440,6 +453,37 @@ def is_general_nutrition_guide_question(text: str, product: Optional[Product]) -
     return not has_product_context(product) and contains_any(text, GENERAL_NUTRITION_GUIDE_KEYWORDS)
 
 
+def is_label_claim_explanation(text: str, product: Optional[Product]) -> bool:
+    if has_product_context(product):
+        return False
+    compact = "".join(text.split())
+    if any(cue in compact for cue in (
+        "이제품", "이거", "이음료", "그제품", "바코드", "먹어도", "마셔도",
+    )):
+        return False
+    return any(term in compact for term in (
+        "무당", "무가당", "무설탕", "설탕무첨가", "제로슈거", "감미료",
+    )) and any(cue in compact for cue in (
+        "기준", "차이", "뜻", "정의", "의미", "왜", "설명", "뭐", "알려",
+    ))
+
+
+def is_allergy_label_explanation(text: str, product: Optional[Product]) -> bool:
+    if has_product_context(product):
+        return False
+    compact = "".join(text.split())
+    if any(cue in compact for cue in (
+        "이제품", "이거", "이음료", "그제품", "바코드", "먹어도", "마셔도",
+    )):
+        return False
+    return any(term in compact for term in (
+        "알레르기", "알러지", "교차접촉", "교차오염", "같은제조시설",
+        "동일제조시설", "동일한제조시설", "같은제조라인",
+    )) and any(cue in compact for cue in (
+        "뜻", "의미", "뭐", "설명", "차이", "확인", "관리", "줄이", "줄여", "어떻게", "달라", "다르",
+    ))
+
+
 def is_general_nutrition_or_diet_question(text: str, product: Optional[Product]) -> bool:
     if has_product_context(product):
         return False
@@ -638,6 +682,9 @@ def rule_based_classify_intent(
 ) -> str:
     from app.services.comparison_language import split_comparison_cancellation
     message, _ = split_comparison_cancellation(message)
+    if product is None:
+        from app.intent.explanation_topics import resolve_explanation_question
+        message = resolve_explanation_question(message, chat_history)
     text = normalize_message(message)
 
     if is_missing_product(product):
@@ -651,14 +698,47 @@ def rule_based_classify_intent(
     if is_out_of_domain_question(text, product):
         return "out_of_domain"
 
+    from app.intent.request_semantics import food_recommendation_request
+    if food_recommendation_request(message):
+        return "alternative_food_recommend"
+
+    from app.intent.request_semantics import nutrient_exclusion_question
+    if product is None and nutrient_exclusion_question(message):
+        return "general_nutrition_guide"
+
     if is_profile_recheck_question(text, product, profile):
         return "profile_based_recheck"
+
+    from app.intent.explanation_topics import unsupported_allergy_quantity_question
+    if product is None and unsupported_allergy_quantity_question(message):
+        return "general_allergy_guide"
+
+    if has_product_context(product) and re.fullmatch(r"\d+(?:\.\d+)?\s*(?:g|ml)\s*기준으로\s*(?:정리|알려|보여)\s*(?:해)?\s*줘[.!?]*", text):
+        return "nutrition_explain"
+
+    if has_product_context(product) and detect_nutrition_keyword(text) and not contains_any(text, EATABILITY_KEYWORDS):
+        # A short field question or a zero-value confirmation still asks for
+        # label facts; it does not require a fixed request verb.
+        if (re.search(r"(?:은|는|도)\s*[?？]*$", text)
+                or re.search(r"(?:안\s*보이|없|누락|모르).*?(?:0|영)\s*(?:g|mg)?", text)
+                or re.search(r"0\s*(?:g|mg)?\s*(?:이|라|인|이라는|이란).*(?:뜻|거|건)", text)):
+            return "nutrition_explain"
+
+    if product is None and any(cue in text for cue in ("방법", "기준량", "뜻", "의미", "정의", "관계", "차이")):
+        explanation = explanation_intent(text)
+        if explanation:
+            return explanation
 
     if is_food_compare_question(text, product):
         return "food_compare"
 
     if is_recipe_recommend_question(text):
         return "recipe_recommend"
+
+    if product is None:
+        explanation = explanation_intent(text)
+        if explanation:
+            return explanation
 
     if is_alternative_food_recommend_question(text, product):
         return "alternative_food_recommend"
@@ -679,6 +759,12 @@ def rule_based_classify_intent(
         if detect_nutrition_keyword(text) is not None or contains_any(text, GENERAL_NUTRITION_GUIDE_KEYWORDS):
             return "general_nutrition_guide"
         return "out_of_domain"
+
+    if is_label_claim_explanation(text, product):
+        return "general_nutrition_guide"
+
+    if is_allergy_label_explanation(text, product):
+        return "general_allergy_guide"
 
     if not has_product_context(product) and is_product_required_question_without_product(text):
         return "missing_product"
@@ -704,6 +790,13 @@ def rule_based_classify_intent(
 
     if is_generic_ingredient_or_allergy_question(text, product, chat_history):
         return "ingredient_check"
+
+    if has_product_context(product) and contains_any(text, EATABILITY_KEYWORDS) and (
+        detect_nutrition_keyword(text) is not None or contains_any(text, ["수치", "영양"])
+    ):
+        # Asking about intake after a nutrition explanation still requires an
+        # assessment; the contextual nutrition branch must not swallow it.
+        return "can_i_eat"
 
     if is_contextual_ingredient_followup(text, product, chat_history):
         return "ingredient_check"

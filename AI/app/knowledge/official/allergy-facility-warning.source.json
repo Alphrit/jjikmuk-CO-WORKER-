@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "allergy-facility-warning",
+  "source_id": "mfds-allergy-label-reading-2022",
+  "source_sha256": "1fb3e315408e3493a0421e79e956544db25edbff586df516740598d546b08532",
+  "page": 8,
+  "section": "공식 카드 4: 함유 표시와 제조시설 주의문구 (사실 요약·재구성)",
+  "text": "식약처의 알레르기 표시 안내에서 다른 식품을 사용한 제품과 같은 제조시설에서 제조했다는 문구는 같은 제조과정을 거치며 그 성분이 의도치 않게 섞일 가능성을 알리는 주의문구입니다. 우유 함유처럼 원재료로 사용했다는 표시와는 의미가 다릅니다. 이 문구만으로 그 성분이 제품의 원재료라고 단정하거나 실제 혼입량을 알아낼 수는 없습니다. 문구의 의미를 설명하는 것이며, 특정 제품을 먹어도 되는지에 대한 개인별 판정은 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "allergy_facility_warning"
+  ]
+}

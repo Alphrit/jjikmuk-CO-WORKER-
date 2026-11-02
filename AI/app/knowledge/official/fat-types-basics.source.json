@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "fat-types-basics",
+  "source_id": "fda-fat-basics",
+  "source_sha256": "43c17ea669b8cf78631af202155c961dc773b1b91e713a875b7957346097f522",
+  "page": null,
+  "section": "지방·포화지방·트랜스지방의 관계 (사실 요약·재구성)",
+  "text": "총 지방에는 포화지방·트랜스지방과 단일불포화·다중불포화 지방이 포함됩니다. 포화지방은 동물성 지방과 일부 식물성 기름 등에 있고, 트랜스지방은 유제품·소고기 등에 자연적으로 소량 존재하거나 일부 가공 과정에서 생길 수 있는 다른 종류입니다. 총 지방과 각각의 항목을 구분해서 읽어야 합니다. 식물성이라는 이름만으로 포화지방이 없다고 판단하지 말고 표시된 함량을 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "fat_types"
+  ]
+}

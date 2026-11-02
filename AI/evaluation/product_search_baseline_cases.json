@@ -1,0 +1,66 @@
+[
+  {
+    "id": "baseline_0001",
+    "query": "단백질칩",
+    "expected_name_contains_all": ["단백질", "칩"]
+  },
+  {
+    "id": "baseline_0002",
+    "query": "단백질 칩",
+    "expected_name_contains_all": ["단백질"]
+  },
+  {
+    "id": "baseline_0003",
+    "query": "두유바",
+    "expected_name_contains_all": ["두유"]
+  },
+  {
+    "id": "baseline_0004",
+    "query": "두유 바",
+    "expected_name_contains_all": ["두유"]
+  },
+  {
+    "id": "baseline_0005",
+    "query": "매운 새우깡",
+    "expected_top1_any": ["매운새우깡", "농심 매운새우깡(800원)90G - VINYL"],
+    "expected_name_contains_all": ["새우깡"]
+  },
+  {
+    "id": "baseline_0006",
+    "query": "매운새우깡",
+    "expected_top1_any": ["매운새우깡", "농심 매운새우깡(800원)90G - VINYL"],
+    "expected_name_contains_all": ["새우깡"]
+  },
+  {
+    "id": "baseline_0007",
+    "query": "아인슈타인 우유",
+    "expected_name_contains_all": ["아인슈타인"]
+  },
+  {
+    "id": "baseline_0008",
+    "query": "동원참치",
+    "expected_top1": "동원참치",
+    "expected_name_contains_all": ["참치"]
+  },
+  {
+    "id": "baseline_0009",
+    "query": "동원 참치 라이트",
+    "expected_name_contains_all": ["참치"]
+  },
+  {
+    "id": "baseline_0010",
+    "query": "아몬드브리즈",
+    "expected_top1_any": ["아몬드브리즈 오리지널 45", "아몬드브리즈 언스위트 35"],
+    "expected_name_contains_all": ["아몬드"]
+  },
+  {
+    "id": "baseline_0011",
+    "query": "나100우유",
+    "expected_name_contains_all": ["우유"]
+  },
+  {
+    "id": "baseline_0012",
+    "query": "닥터유 단백질바",
+    "expected_name_contains_all": ["단백질"]
+  }
+]

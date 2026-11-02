@@ -1,0 +1,73 @@
+[
+  {
+    "id": "recommend_quality_0001",
+    "category": "allergy_exclusion",
+    "description": "우유 알레르기 프로필에서 유청 함유 후보를 제외한다.",
+    "current_product": {"product_name": "기준 쿠키", "barcode": "RQ0001", "rawmtrl_nm": "밀가루, 설탕", "prdlst_dcnm": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0001-v1"}},
+    "profile": {"nickname": "나", "allergies": "우유"},
+    "repository_seed": {
+      "RQ0001": {"식품명": "기준 쿠키", "바코드": "RQ0001", "RAWMTRL_NM": "밀가루, 설탕", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0001-v1"}},
+      "RQ0002": {"식품명": "유청 쿠키", "바코드": "RQ0002", "RAWMTRL_NM": "밀가루, 유청단백", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0002-v1"}},
+      "RQ0003": {"식품명": "현미 쿠키", "바코드": "RQ0003", "RAWMTRL_NM": "현미, 코코아", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0003-v1"}}
+    },
+    "min_recommendations": 1,
+    "expected_top1": "현미 쿠키",
+    "forbidden_recommendation_terms": ["유청"]
+  },
+  {
+    "id": "recommend_quality_0002",
+    "category": "cross_contact_exclusion",
+    "description": "땅콩 교차접촉 표시가 있는 후보를 대체품에서 제외한다.",
+    "current_product": {"product_name": "기준 스낵", "barcode": "RQ0011", "rawmtrl_nm": "감자, 소금", "prdlst_dcnm": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0011-v1"}},
+    "profile": {"nickname": "나", "allergies": "땅콩"},
+    "repository_seed": {
+      "RQ0011": {"식품명": "기준 스낵", "바코드": "RQ0011", "RAWMTRL_NM": "감자, 소금", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0011-v1"}},
+      "RQ0012": {"식품명": "공용설비 스낵", "바코드": "RQ0012", "RAWMTRL_NM": "감자, 소금", "알레르기": "땅콩을 사용한 제품과 같은 제조시설에서 제조", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0012-v1"}},
+      "RQ0013": {"식품명": "옥수수 스낵", "바코드": "RQ0013", "RAWMTRL_NM": "옥수수, 소금", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0013-v1"}}
+    },
+    "min_recommendations": 1,
+    "expected_top1": "옥수수 스낵",
+    "forbidden_recommendation_terms": ["공용설비"]
+  },
+  {
+    "id": "recommend_quality_0003",
+    "category": "explicit_diet_claim",
+    "description": "저염식 프로필에는 제품에 저염 특성이 명시된 후보만 제시한다.",
+    "current_product": {"product_name": "기준 단백질바", "barcode": "RQ0021", "rawmtrl_nm": "대두단백, 소금", "prdlst_dcnm": "에너지바", "evaluation_label_fixture": {"source_record_id": "eval-RQ0021-v1"}},
+    "profile": {"nickname": "나", "allergies": [], "specialDiet": "저염식"},
+    "repository_seed": {
+      "RQ0021": {"식품명": "기준 단백질바", "바코드": "RQ0021", "RAWMTRL_NM": "대두단백, 소금", "PRDLST_DCNM": "에너지바", "evaluation_label_fixture": {"source_record_id": "eval-RQ0021-v1"}},
+      "RQ0022": {"식품명": "담백한 단백질바", "바코드": "RQ0022", "RAWMTRL_NM": "대두단백", "PRDLST_DCNM": "에너지바", "evaluation_label_fixture": {"source_record_id": "eval-RQ0022-v1"}},
+      "RQ0023": {"식품명": "저염 단백질바", "바코드": "RQ0023", "RAWMTRL_NM": "대두단백, 저염", "PRDLST_DCNM": "에너지바", "evaluation_label_fixture": {"source_record_id": "eval-RQ0023-v1"}}
+    },
+    "min_recommendations": 1,
+    "expected_top1": "저염 단백질바",
+    "forbidden_recommendation_terms": ["담백한"]
+  },
+  {
+    "id": "recommend_quality_0004",
+    "category": "all_candidates_conflict",
+    "description": "모든 후보가 알레르기와 충돌하면 제품을 억지로 추천하지 않는다.",
+    "current_product": {"product_name": "기준 과자", "barcode": "RQ0031", "rawmtrl_nm": "밀, 설탕", "prdlst_dcnm": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0031-v1"}},
+    "profile": {"nickname": "나", "allergies": "우유"},
+    "repository_seed": {
+      "RQ0031": {"식품명": "기준 과자", "바코드": "RQ0031", "RAWMTRL_NM": "밀, 설탕", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0031-v1"}},
+      "RQ0032": {"식품명": "버터 과자", "바코드": "RQ0032", "RAWMTRL_NM": "밀, 버터, 우유", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0032-v1"}}
+    },
+    "expect_unavailable": true,
+    "forbidden_recommendation_terms": ["버터 과자"]
+  },
+  {
+    "id": "recommend_quality_0005",
+    "category": "untraced_allergy_candidate_hold",
+    "description": "알레르기 프로필에서 라벨 계보가 없는 후보는 추천하지 않는다.",
+    "current_product": {"product_name": "기준 쿠키", "barcode": "RQ0041", "rawmtrl_nm": "밀, 설탕", "prdlst_dcnm": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0041-v1"}},
+    "profile": {"nickname": "나", "allergies": "우유"},
+    "repository_seed": {
+      "RQ0041": {"식품명": "기준 쿠키", "바코드": "RQ0041", "RAWMTRL_NM": "밀, 설탕", "PRDLST_DCNM": "과자", "evaluation_label_fixture": {"source_record_id": "eval-RQ0041-v1"}},
+      "RQ0042": {"식품명": "출처 미확인 쿠키", "바코드": "RQ0042", "RAWMTRL_NM": "현미, 코코아", "PRDLST_DCNM": "과자"}
+    },
+    "expect_unavailable": true,
+    "forbidden_recommendation_terms": ["출처 미확인"]
+  }
+]

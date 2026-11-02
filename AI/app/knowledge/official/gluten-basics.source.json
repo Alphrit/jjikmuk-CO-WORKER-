@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "gluten-basics",
+  "source_id": "fda-gluten-basics",
+  "source_sha256": "0ddc554788803c50c170896d7b772ec3f3dffbacf43551b7e06e6ada045fcc28",
+  "page": null,
+  "section": "글루텐과 확인할 곡물 (사실 요약·재구성)",
+  "text": "글루텐은 밀·보리·호밀과 이들의 교잡종에 자연적으로 존재하는 단백질입니다. 따라서 글루텐을 확인할 때 밀이라는 이름 하나만 살펴보는 것으로 범위를 모두 확인했다고 볼 수는 없습니다. 글루텐프리 제품을 고를 때는 원재료와 제품의 글루텐 관련 표시를 함께 확인하세요. FDA의 일반 개념만 정리한 것으로 국내 인증·허용 수치나 특정 제품의 적합성을 판단하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "gluten_basics"
+  ]
+}

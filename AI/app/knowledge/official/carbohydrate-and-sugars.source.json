@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "carbohydrate-and-sugars",
+  "source_id": "fda-carbohydrate-basics",
+  "source_sha256": "e1cc84a9fd13a510ce3d43b5e00e5cb36933f7f796ba405166f2e2f788adfe05",
+  "page": null,
+  "section": "탄수화물과 당류의 관계 (사실 요약·재구성)",
+  "text": "당류는 탄수화물의 일부이며 두 이름이 같은 뜻은 아닙니다. FDA의 총 탄수화물 설명에는 당류뿐 아니라 식이섬유와 당알코올도 포함됩니다. 따라서 당류가 낮거나 제로슈거라고 해서 탄수화물도 전혀 없다고 볼 수는 없습니다. 영양성분표에서 탄수화물과 당류를 각각 같은 표시 기준량으로 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "carbohydrate_sugars"
+  ]
+}

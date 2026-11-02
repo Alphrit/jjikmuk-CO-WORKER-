@@ -28,7 +28,7 @@ def offline_review_date(monkeypatch):
             return cls(2026, 10, 1)
 
     monkeypatch.setattr(released, "date", ReviewDate)
-    monkeypatch.setattr(recipe, "generate_text", lambda _prompt: None)
+    monkeypatch.setattr(recipe, "generate_text", lambda _prompt, **_kwargs: None)
 
 
 def fingerprints(variants):
@@ -215,7 +215,7 @@ def test_review_revocation_before_publication_removes_recipe_and_citation(monkey
 
 def test_source_amounts_never_enter_legacy_single_serving_llm_prompt(monkeypatch):
     prompts = []
-    monkeypatch.setattr(recipe, "generate_text", lambda prompt: prompts.append(prompt))
+    monkeypatch.setattr(recipe, "generate_text", lambda prompt, **_kwargs: prompts.append(prompt))
     result = recipe.build_recipe_response(Profile(allergies=[]), None, "레시피 추천해줘")
     assert result.recipe.servings == "1인분" and not result.sources
     assert len(prompts) == 1

@@ -54,6 +54,22 @@ class _RecipeDraft(BaseModel):
     substitutions: list[str] = Field(default_factory=list, max_length=10)
 
 
+def _recipe_output_schema(product_name: str) -> dict:
+    """Provider format constraints supplement, never replace, food validation."""
+    schema = _RecipeDraft.model_json_schema()
+    schema["required"] = list(schema["properties"])
+    schema["properties"]["servings"]["enum"] = ["1인분"]
+    schema["properties"]["product_name"]["enum"] = [product_name]
+    schema["properties"]["ingredients"]["items"] = {
+        "type": "object", "additionalProperties": False,
+        "properties": {"name": {"type": "string"}, "amount": {"type": "string"}},
+        "required": ["name", "amount"],
+    }
+    schema["properties"]["substitutions"].pop("default", None)
+    schema["properties"]["substitutions"]["maxItems"] = 0
+    return schema
+
+
 _PACKAGED_FOOD_MARKERS = (
     "소스", "드레싱", "육수", "스프", "통조림", "파우더",
     "페이스트", "두유", "두부", "햄", "치즈", "요거트",
@@ -502,7 +518,8 @@ def _requested_diets(
 ) -> list[str]:
     from app.services.diet_goal_context import read_diet_goal_update
     update = read_diet_goal_update(message)
-    current_diets = update.apply((conversation_state or {}).get("recipe_requested_diets", []) if update.removed else ())
+    additive = bool(re.search(r"(?:도\s*(?:같이|함께|추가|적용)|추가(?:해|로)|포함|더한|더해|유지|까지|(?:같이|함께)\s*적용)", message))
+    current_diets = update.apply((conversation_state or {}).get("recipe_requested_diets", []) if update.removed or additive else ())
     if not update.touched and not current_diets and any(cue in message for cue in ("다른", "더", "또", "하나")):
         current_diets = list((conversation_state or {}).get("recipe_requested_diets", []))
         for item in reversed(chat_history or []):
@@ -950,15 +967,22 @@ def build_recipe_response(
         )
     )
     prompt += (
-        "\n1인분만 작성하세요. 아래 검토된 재료명·사용량 조합만 사용하세요. "
+        '\nservings는 숫자가 아닌 문자열 "1인분"으로 작성하세요. '
+        "아래 검토된 재료명·사용량 조합만 사용하세요. "
         "제목은 재료명과 요리명, 단계는 해당 재료를 썰기·섞기·익히기 등 간단한 조리 동작만 "
         "적으세요. 안전·영양 설명, 새 재료, 임의 분량이나 조리 수치를 추가하지 마세요. "
+        "제목의 요리명은 샐러드, 덮밥, 볼, 컵, 수프, 쌈, 스무디, 귀리죽, 토핑 중에서 고르세요. "
+        "단계는 정확한 재료명에 조사와 동작만 붙인 짧은 문장으로 쓰세요. "
+        "동작 문장은 '썰어요', '섞어요', '담아요', '올려요', '넣어요', '뿌려요', "
+        "'씻어요', '끓여요', '익혀요', '부숴요', '갈아요' 같은 해요체로 끝내세요. "
+        "예: '오이를 썰어요.', '오이와 양배추를 섞어요.', '레몬즙을 넣어요.' "
+        "예시 재료도 실제 재료 목록에 있을 때만 사용할 수 있어요. "
         "substitutions는 빈 배열로 두세요.\n검토된 재료·양: "
         + json.dumps([v["ingredients"] for v in draft_variants], ensure_ascii=False)
     )
     from app.infrastructure.llm_trace import llm_purpose
     with llm_purpose("recipe_draft"):
-        raw_draft = generate_text(prompt)
+        raw_draft = generate_text(prompt, json_schema=_recipe_output_schema(product_name))
     if raw_draft is None:
         return _with_recipe_history(response, prior_fingerprints)
     draft = _parse_recipe_draft(raw_draft)

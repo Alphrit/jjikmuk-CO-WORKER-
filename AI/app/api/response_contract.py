@@ -28,6 +28,7 @@ PUBLIC_CHAT_FIELDS = (
     "conversation_id", "conversation_title", "conversation_revision", "turn_id",
     "recommended_questions", "product_candidates", "recommended_products", "recipe",
     "comparison_products", "ui_guidance", "sources", "safety_guidance", "external_ai_processing",
+    "backend_analysis",
 )
 
 

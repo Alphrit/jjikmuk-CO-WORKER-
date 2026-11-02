@@ -134,9 +134,12 @@ def attach_result_semantics(
         # would erase a real conflict found in another comparison target.
         return response
     if response.intent in {"out_of_domain", "emergency_safety", "unknown"}:
+        # Failure to classify the requested action cannot erase an already
+        # verified label conflict shown by attach_profile_allergy_alert.
+        allergy = _allergy_status(product, profiles) if response.intent == "unknown" else "unknown"
         return response.model_copy(update={
-            "overall_decision": "check_required",
-            "allergy_status": "unknown",
+            "overall_decision": {"conflict": "avoid", "cross_contact": "caution"}.get(allergy, "check_required"),
+            "allergy_status": allergy if allergy in {"conflict", "cross_contact"} else "unknown",
             "diet_match": "unknown",
             "preference_match": "unknown",
         })
@@ -156,6 +159,13 @@ def attach_result_semantics(
             resolve_profile_diets(profile, message) for profile in profiles or [None]
         ):
             overall_decision = "check_required"
+    # Label matching is only one axis. It must not promote an incomplete
+    # assessment (including missing provenance) to a completed overall result.
+    if (overall_decision == "no_known_conflict"
+            and response.assessment_summary is not None
+            and response.assessment_summary.safety_assessed
+            and response.assessment_summary.decision == "insufficient_information"):
+        overall_decision = "check_required"
     missing_information = list(response.missing_information)
     if product is not None and not product.facts_verified:
         missing_information.append("DB에서 확인된 제품 정보가 없어요.")

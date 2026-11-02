@@ -65,6 +65,10 @@ def _scope(response: ChatResponse) -> str:
     # supported check that happens to have missing data.
     if response.assessment_status == "unsupported":
         return "unsupported"
+    if response.intent == "unknown" and response.allergy_status in {"conflict", "cross_contact"}:
+        # The requested action can be unclear while a verified label conflict
+        # is already known. Describe that limited ingredient assessment.
+        return "ingredient"
     if response.intent == "recipe_recommend":
         return "recipe"
     if response.intent == "food_compare":
@@ -471,6 +475,10 @@ def attach_response_assessment(
         and decision == "insufficient_information"
     ):
         updates.update({
+            "overall_decision": (
+                "check_required" if response.overall_decision == "no_known_conflict"
+                else response.overall_decision
+            ),
             "risk_level": (
                 "unknown"
                 if response.risk_level == "low"
@@ -491,6 +499,10 @@ def attach_response_assessment(
             "per_profile_results": [
                 {
                     **result,
+                    "overall_decision": (
+                        "check_required" if result.get("overall_decision") == "no_known_conflict"
+                        else result.get("overall_decision", "check_required")
+                    ),
                     "risk_level": (
                         "unknown" if result.get("risk_level") == "low"
                         else result.get("risk_level")

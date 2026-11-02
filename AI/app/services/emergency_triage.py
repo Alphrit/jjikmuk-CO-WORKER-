@@ -22,11 +22,11 @@ KDCA_ANAPHYLAXIS_URL = (
 
 
 _CURRENT_PATTERN = re.compile(
-    r"(?:지금|현재|방금|아까|갑자기|먹고|먹었는데|"
-    r"먹은\s*(?:뒤|후)|섭취\s*후|섭취하고|섭취한\s*(?:뒤|후))"
+    r"(?:지금|현재|방금|아까|갑자기|먹고|먹었|마시고|마셨|"
+    r"(?:먹은|마신)\s*(?:직후|뒤|후)|들이켰|오늘|섭취\s*후|섭취하고|섭취한\s*(?:뒤|후))"
 )
 _PAST_OR_HYPOTHETICAL_PATTERN = re.compile(
-    r"(?:예전|과거|작년|지난달|지난\s*주|어릴\s*때|"
+    r"(?:예전|과거|어제|그제|지난밤|지난번|당시|그때|작년|지난달|지난\s*주|어릴\s*때|"
     r"만약|가정|증상은|증상이\s*뭐|어떻게\s*대처)"
 )
 _ALLERGY_CONTEXT_PATTERN = re.compile(
@@ -35,20 +35,60 @@ _ALLERGY_CONTEXT_PATTERN = re.compile(
 )
 _SEVERE_PATTERN = re.compile(
     r"(?:숨(?:이|을)?\s*(?:잘\s*)?(?:안|못)\s*쉬|"
-    r"숨\s*쉬(?:기|기가)?\s*(?:힘들|어렵)|"
-    r"호흡(?:이|가)?\s*(?:힘들|어렵)|호흡곤란|"
-    r"목(?:이|가)?\s*(?:붓|부어|조여|막혀)|"
-    r"혀(?:가|도)?\s*(?:붓|부어)|의식(?:이|가)?\s*(?:흐리|없)|"
-    r"쓰러|실신|기절|입술(?:이|가)?\s*(?:붓|부어|파래|푸르)|"
+    r"숨(?:을)?\s*쉬(?:기|기가|는\s*게|는\s*것이)?\s*(?:힘들|어렵|어려)|숨(?:이)?\s*(?:차|찹|찬)|"
+    r"호흡(?:이|가)?\s*(?:힘들|어렵|어려|가빠|가쁘)|호흡곤란|"
+    r"목(?:이|가)?\s*(?:(?:꽉|점점|많이|갑자기)\s*)?(?:붓|부어|부었|부은|조여|조이|조인|막혀|막히|막힌)|"
+    r"혀(?:가|도)?\s*(?:(?:점점|많이|갑자기)\s*)?(?:붓|부어|부었|부은)|의식(?:이|가)?\s*(?:흐리|없)|"
+    r"쓰러|실신|기절|입술(?:이|가)?\s*(?:붓|부어|부었|부은|파래|푸르)|"
     r"침(?:을|도)?\s*(?:못|안)\s*삼키)"
 )
 _EXPOSURE_PATTERN = re.compile(
-    r"(?:먹고|먹었는데|먹은\s*(?:뒤|후)|섭취\s*후|"
+    r"(?:먹고|먹었|마시고|마셨|들이켰|(?:먹은|마신)\s*(?:직후|뒤|후)|섭취\s*후|"
     r"섭취하고|섭취한\s*(?:뒤|후))"
 )
 _FOOD_EXPOSURE_PATTERN = re.compile(
-    r"(?:음식|식품|간식|요리|제품).{0,12}(?:먹|섭취)"
+    r"(?:음식|식품|간식|과자|식사|음료|요리|제품|생선|고기|두부|밥).{0,12}(?:먹|마시|마신|마셨|섭취)|"
+    r"(?:먹은|마신)\s*(?:음식|식품|간식|과자|식사|음료|요리|제품)"
 )
+
+
+def _symptom_clauses(message):
+    """Scope time/negation to a symptom clause, not to the whole message.
+
+    Explicit current-time markers can start a new report after past history.
+    Conditional questions remain conditional even when they contain '지금'.
+    Food exposure can be supplied by the preceding clause.
+    """
+    for sentence in re.split(r"[.!?;\n]+|(?:하지만|그런데|근데)\s*", message):
+        if re.search(r"만약|가정|(?:으면|다면|일\s*때).*(?:어떻게|대처|해야|하면)", sentence):
+            continue
+        for clause in re.split(r"(?<![가-힣])(?=지금|현재|방금|오늘)", sentence):
+            if not _PAST_OR_HYPOTHETICAL_PATTERN.search(clause):
+                yield clause
+
+
+def _affirmed_severe_symptom(text):
+    for match in _SEVERE_PATTERN.finditer(text):
+        # Negation belongs to this symptom only. Another affirmed symptom in
+        # the same message must still take the emergency path.
+        suffix = text[match.end():]
+        # Check each occurrence: hypothetical/quoted symptoms must not hide a
+        # separate current report, or become one themselves.
+        if re.match(r"^[가-힣]{0,6}(?:면|다면|는다면)(?=\s|[?？])", suffix):
+            continue
+        if re.match(r"^[가-힣]{0,6}(?:다는|라는)\s*(?:문장|표현|예문|말).*(?:뜻|의미|설명|번역|해석)", suffix):
+            continue
+        if re.match(r"^[가-힣]{0,6}\s*적(?:은|이|도)?\s*(?:있|없)", suffix):
+            continue
+        # Negated absence is an affirmed symptom ('없는 건 아니에요').
+        if re.match(r"^(?:은|는|이|가|도)?\s*없(?:는|다고)\s*(?:건|것은|것이|말은)?\s*(?:아니|아닌)", suffix):
+            return True
+        if re.match(r"^[가-힣]{0,6}\s*(?:(?:건|것은|것이|게|것도)\s*(?:아니|아닌)|지\s*않|적(?:은|이|도)?\s*없)", suffix):
+            continue
+        if re.match(r"^(?:은|는|이|가|도)?\s*(?:(?:전혀|아직|별로|하나도|조금도|거의)\s*)?(?:없|아니|아닌)", suffix):
+            continue
+        return True
+    return False
 
 
 def _profile_allergen_mentioned(message: str, profiles: Sequence[Profile]) -> bool:
@@ -63,18 +103,26 @@ def _profile_allergen_mentioned(message: str, profiles: Sequence[Profile]) -> bo
 def _is_current_severe_allergic_reaction(
     message: str,
     profiles: Sequence[Profile],
+    has_food_context: bool = False,
 ) -> bool:
     text = " ".join(message.strip().split())
-    if not text or _PAST_OR_HYPOTHETICAL_PATTERN.search(text):
+    if not text:
         return False
-    if not _CURRENT_PATTERN.search(text) or not _SEVERE_PATTERN.search(text):
+    # A quotation being translated/explained is not a reported symptom.
+    # Remove that quotation only; a separate current report still has priority.
+    text = re.sub(r'''["“‘'].*?["”’']\s*(?:라는|이란|이라는)?\s*(?:예문|문장|표현).*?(?:번역|해석|설명)[^.!?]*''', "", text)
+    if not _CURRENT_PATTERN.search(text) or not any(_affirmed_severe_symptom(clause) for clause in _symptom_clauses(text)):
         return False
     has_allergy_context = (
         bool(_ALLERGY_CONTEXT_PATTERN.search(text))
         or bool(_FOOD_EXPOSURE_PATTERN.search(text))
         or (
             bool(_EXPOSURE_PATTERN.search(text))
-            and _profile_allergen_mentioned(text, profiles)
+            # A reported ingestion immediately followed by a severe symptom
+            # does not require the food to occur in a fixed allergen list.
+            # This is emergency routing, never an allergy diagnosis.
+            and (has_food_context or _profile_allergen_mentioned(text, profiles)
+                 or re.search(r"[가-힣A-Za-z]+(?:을|를)\s*(?:먹|마셨|마신|마시|들이켰|섭취)", text))
         )
     )
     return has_allergy_context
@@ -84,11 +132,12 @@ def build_emergency_triage_response(
     message: str,
     *,
     profiles: Optional[Sequence[Profile]] = None,
+    has_food_context: bool = False,
 ) -> Optional[ChatResponse]:
     """Return fixed guidance only for a clear, current allergic emergency."""
 
     effective_profiles = list(profiles or [])
-    if not _is_current_severe_allergic_reaction(message, effective_profiles):
+    if not _is_current_severe_allergic_reaction(message, effective_profiles, has_food_context):
         return None
 
     headline = "심한 알레르기 반응일 수 있어 즉시 응급 대응이 필요해요."

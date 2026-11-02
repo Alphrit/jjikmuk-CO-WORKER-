@@ -1,0 +1,2177 @@
+{
+  "scope": "Fresh acceptance journeys using synthetic products and profiles. Known gaps intentionally fail. HTTP success is separate from completeness, context, target selection, and usability. No real DB or external AI.",
+  "products": {
+    "880000009001": {
+      "product_id": 9001,
+      "product_name": "검사우유",
+      "food_code": null,
+      "report_number": "202600009001",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009001",
+      "rawmtrl_nm": "원유 100%",
+      "allergy": [
+        "우유"
+      ],
+      "ingredients": [],
+      "allergy_info": [
+        "우유"
+      ],
+      "nutrition": {
+        "sodium": 40.0,
+        "protein": 3.0,
+        "kcal": 60.0
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100ml",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009001"
+      }
+    },
+    "880000009002": {
+      "product_id": 9002,
+      "product_name": "검사귀리음료",
+      "food_code": null,
+      "report_number": "202600009002",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009002",
+      "rawmtrl_nm": "귀리, 정제수",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [],
+      "nutrition": {
+        "sodium": 20.0,
+        "protein": 1.0,
+        "kcal": 30.0
+      },
+      "nutrition_basis": {
+        "basis_type": "per_100ml",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009002"
+      }
+    },
+    "880000009003": {
+      "product_id": 9003,
+      "product_name": "검사새우스낵",
+      "food_code": null,
+      "report_number": "202600009003",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009003",
+      "rawmtrl_nm": "밀가루, 새우, 소금",
+      "allergy": [
+        "새우",
+        "밀"
+      ],
+      "ingredients": [],
+      "allergy_info": [
+        "새우",
+        "밀"
+      ],
+      "nutrition": {},
+      "nutrition_basis": {
+        "basis_type": "unknown",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009003"
+      }
+    },
+    "880000009004": {
+      "product_id": 9004,
+      "product_name": "검사쌀스낵",
+      "food_code": null,
+      "report_number": "202600009004",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": null,
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009004",
+      "rawmtrl_nm": "쌀, 소금",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [],
+      "nutrition": {},
+      "nutrition_basis": {
+        "basis_type": "unknown",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009004"
+      }
+    },
+    "880000009005": {
+      "product_id": 9005,
+      "product_name": "검사혼입스낵",
+      "food_code": null,
+      "report_number": "202600009005",
+      "manufacturer_name": null,
+      "company_name": null,
+      "source": null,
+      "nutrient_text": null,
+      "allergy_warning": "우유를 사용한 제품과 같은 제조시설에서 제조",
+      "weight": null,
+      "image_url": null,
+      "clean_product_name": null,
+      "total_weight": null,
+      "category_large": null,
+      "category_medium": null,
+      "category_small": null,
+      "category_detail": null,
+      "prdlst_dcnm": "과자",
+      "barcode": "880000009005",
+      "rawmtrl_nm": "쌀, 소금",
+      "allergy": [],
+      "ingredients": [],
+      "allergy_info": [
+        "우유를 사용한 제품과 같은 제조시설에서 제조"
+      ],
+      "nutrition": {},
+      "nutrition_basis": {
+        "basis_type": "unknown",
+        "serving_size_value": null,
+        "serving_size_unit": null,
+        "package_size_value": null,
+        "package_size_unit": null,
+        "servings_per_package": null,
+        "basis_source": null
+      },
+      "nutrition_percent": {},
+      "macro_percent": {},
+      "match_confidence": null,
+      "product_found": true,
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-880000009005"
+      }
+    },
+    "880000009006": {
+      "product_id": 9006,
+      "product_name": "검사영양음료",
+      "barcode": "880000009006",
+      "raw_materials": "정제수, 소금",
+      "allergy": [],
+      "sodium_mg": 125,
+      "sodium_g": 0.125,
+      "cholesterol_mg": 1.5,
+      "cholesterol_g": 0.0015,
+      "nutrition_basis": {
+        "basis_type": "per_100ml"
+      },
+      "evaluation_label_fixture": {
+        "source_record_id": "ux-mass-not-percent"
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "help_0",
+      "category": "help",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "어떤 질문을 할 수 있어?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "질문 뜻을 아직 정확히 잡지 못했어요"
+          ],
+          "description": "구체적인 후속 요청에 일반적인 질문 이해 실패 문구를 반복하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "help_1",
+      "category": "help",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "사용법을 짧게 알려줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "질문 뜻을 아직 정확히 잡지 못했어요"
+          ],
+          "description": "구체적인 후속 요청에 일반적인 질문 이해 실패 문구를 반복하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "milk_conflict_control",
+      "category": "safety",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "overall_decision",
+          "value": "avoid",
+          "description": "overall_decision: eq avoid"
+        },
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "엄마",
+            "우유"
+          ],
+          "description": "answer: contains_all ['엄마', '우유']"
+        }
+      ]
+    },
+    {
+      "id": "all_off_control",
+      "category": "profiles",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "그럼 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "active_profile_names",
+          "value": [],
+          "description": "active_profile_names: eq []"
+        },
+        {
+          "kind": "eq",
+          "field": "overall_decision",
+          "value": "check_required",
+          "description": "overall_decision: eq check_required"
+        }
+      ]
+    },
+    {
+      "id": "profile_switch_control",
+      "category": "profiles",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "그럼 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "active_profile_names",
+          "value": [
+            "아빠"
+          ],
+          "description": "active_profile_names: eq ['아빠']"
+        },
+        {
+          "kind": "eq",
+          "field": "allergy_status",
+          "value": "no_known_match",
+          "description": "allergy_status: eq no_known_match"
+        }
+      ]
+    },
+    {
+      "id": "off_explicit_control",
+      "category": "profiles",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "아빠한테는 먹어도 괜찮아?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "아빠",
+            "ON"
+          ],
+          "description": "answer: contains_all ['아빠', 'ON']"
+        },
+        {
+          "kind": "eq",
+          "field": "per_profile_results",
+          "value": [],
+          "description": "per_profile_results: eq []"
+        }
+      ]
+    },
+    {
+      "id": "off_short_0",
+      "category": "profiles",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "아빠한테도?? 🙂",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "아빠",
+            "ON"
+          ],
+          "description": "answer: contains_all ['아빠', 'ON']"
+        },
+        {
+          "kind": "eq",
+          "field": "per_profile_results",
+          "value": [],
+          "description": "per_profile_results: eq []"
+        }
+      ]
+    },
+    {
+      "id": "off_short_1",
+      "category": "profiles",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "아빠도? 🙂",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "아빠",
+            "ON"
+          ],
+          "description": "answer: contains_all ['아빠', 'ON']"
+        },
+        {
+          "kind": "eq",
+          "field": "per_profile_results",
+          "value": [],
+          "description": "per_profile_results: eq []"
+        }
+      ]
+    },
+    {
+      "id": "off_short_2",
+      "category": "profiles",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "아빠에게는?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "아빠",
+            "ON"
+          ],
+          "description": "answer: contains_all ['아빠', 'ON']"
+        },
+        {
+          "kind": "eq",
+          "field": "per_profile_results",
+          "value": [],
+          "description": "per_profile_results: eq []"
+        }
+      ]
+    },
+    {
+      "id": "off_short_3",
+      "category": "profiles",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "그럼 아빠만은?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "아빠",
+            "ON"
+          ],
+          "description": "answer: contains_all ['아빠', 'ON']"
+        },
+        {
+          "kind": "eq",
+          "field": "per_profile_results",
+          "value": [],
+          "description": "per_profile_results: eq []"
+        }
+      ]
+    },
+    {
+      "id": "explain_reason",
+      "category": "wording",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "왜 안 되는지 쉽게 알려줘",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "엄마",
+            "우유"
+          ],
+          "description": "answer: contains_all ['엄마', '우유']"
+        },
+        {
+          "kind": "max_chars",
+          "field": "answer",
+          "value": 220,
+          "description": "answer: max_chars 220"
+        }
+      ]
+    },
+    {
+      "id": "one_line_product",
+      "category": "wording",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "한 줄로 요약해줘",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "max_lines",
+          "field": "answer",
+          "value": 1,
+          "description": "answer: max_lines 1"
+        },
+        {
+          "kind": "max_chars",
+          "field": "answer",
+          "value": 180,
+          "description": "answer: max_chars 180"
+        },
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "우유"
+          ],
+          "description": "answer: contains_all ['우유']"
+        }
+      ]
+    },
+    {
+      "id": "two_nutrients",
+      "category": "completeness",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유의 나트륨과 단백질은 각각 얼마야?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ],
+          "barcode": "880000009001"
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "40mg",
+            "3g"
+          ],
+          "description": "answer: contains_all ['40mg', '3g']"
+        },
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "단백질는"
+          ],
+          "description": "answer: not_contains ['단백질는']"
+        }
+      ]
+    },
+    {
+      "id": "nutrition_basis_followup",
+      "category": "context",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유의 나트륨 알려줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "100ml 기준으로 정리해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "current_product.barcode",
+          "value": "880000009001",
+          "description": "current_product.barcode: eq 880000009001"
+        },
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "40mg"
+          ],
+          "description": "answer: contains_all ['40mg']"
+        }
+      ]
+    },
+    {
+      "id": "ingredients_and_nutrition",
+      "category": "completeness",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사우유 원재료랑 영양성분 둘 다 알려줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ],
+          "barcode": "880000009001"
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "원유",
+            "40mg",
+            "3g"
+          ],
+          "description": "answer: contains_all ['원유', '40mg', '3g']"
+        }
+      ]
+    },
+    {
+      "id": "ingredient_and_sodium",
+      "category": "completeness",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "우유가 들어가고 나트륨은 얼마야?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ],
+          "barcode": "880000009001"
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "우유",
+            "40mg"
+          ],
+          "description": "answer: contains_all ['우유', '40mg']"
+        }
+      ]
+    },
+    {
+      "id": "assessment_and_protein",
+      "category": "completeness",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "아빠 기준으로 먹어도 되는지랑 단백질도 알려줘",
+          "profiles": [
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        }
+      ],
+      "checks": [
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "아빠",
+            "3g"
+          ],
+          "description": "answer: contains_all ['아빠', '3g']"
+        }
+      ]
+    },
+    {
+      "id": "comparison_control",
+      "category": "comparison",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유와 검사귀리음료 나트륨 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "length",
+          "field": "comparison_products",
+          "value": 2,
+          "description": "comparison_products: length 2"
+        },
+        {
+          "kind": "contains_all",
+          "field": "answer",
+          "value": [
+            "40mg",
+            "20mg"
+          ],
+          "description": "answer: contains_all ['40mg', '20mg']"
+        }
+      ]
+    },
+    {
+      "id": "comparison_followup_0",
+      "category": "comparison",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유와 검사귀리음료 나트륨 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "당류도 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "length",
+          "field": "comparison_products",
+          "value": 2,
+          "description": "comparison_products: length 2"
+        },
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "비교할 제품 두 개를 알려"
+          ],
+          "description": "answer: not_contains ['비교할 제품 두 개를 알려']"
+        }
+      ]
+    },
+    {
+      "id": "comparison_followup_1",
+      "category": "comparison",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유와 검사귀리음료 나트륨 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "단백질도 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "length",
+          "field": "comparison_products",
+          "value": 2,
+          "description": "comparison_products: length 2"
+        },
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "비교할 제품 두 개를 알려"
+          ],
+          "description": "answer: not_contains ['비교할 제품 두 개를 알려']"
+        }
+      ]
+    },
+    {
+      "id": "comparison_followup_2",
+      "category": "comparison",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유와 검사귀리음료 나트륨 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "그럼 당류는?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "length",
+          "field": "comparison_products",
+          "value": 2,
+          "description": "comparison_products: length 2"
+        },
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "비교할 제품 두 개를 알려"
+          ],
+          "description": "answer: not_contains ['비교할 제품 두 개를 알려']"
+        }
+      ]
+    },
+    {
+      "id": "comparison_followup_3",
+      "category": "comparison",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유와 검사귀리음료 나트륨 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "당류로 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "length",
+          "field": "comparison_products",
+          "value": 2,
+          "description": "comparison_products: length 2"
+        },
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "비교할 제품 두 개를 알려"
+          ],
+          "description": "answer: not_contains ['비교할 제품 두 개를 알려']"
+        }
+      ]
+    },
+    {
+      "id": "comparison_switch_control",
+      "category": "context",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사우유와 검사귀리음료 나트륨 비교해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "비교 그만하고 검사새우스낵 원재료 알려줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "current_product.barcode",
+          "value": "880000009003",
+          "description": "current_product.barcode: eq 880000009003"
+        },
+        {
+          "kind": "length",
+          "field": "comparison_products",
+          "value": 0,
+          "description": "comparison_products: length 0"
+        }
+      ]
+    },
+    {
+      "id": "candidate_selection_0",
+      "category": "recovery",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사 스낵 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "마지막 거",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "candidate_selected",
+          "field": "current_product",
+          "value": -1,
+          "description": "지정한 후보가 실제 선택됨"
+        }
+      ]
+    },
+    {
+      "id": "candidate_selection_1",
+      "category": "recovery",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사 스낵 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "아니 두 번째 걸로",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "candidate_selected",
+          "field": "current_product",
+          "value": 1,
+          "description": "지정한 후보가 실제 선택됨"
+        }
+      ]
+    },
+    {
+      "id": "candidate_selection_2",
+      "category": "recovery",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사 스낵 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "맨 위에 있는 거",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "candidate_selected",
+          "field": "current_product",
+          "value": 0,
+          "description": "지정한 후보가 실제 선택됨"
+        }
+      ]
+    },
+    {
+      "id": "candidate_selection_3",
+      "category": "recovery",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사 스낵 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "두 번째요",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "candidate_selected",
+          "field": "current_product",
+          "value": 1,
+          "description": "지정한 후보가 실제 선택됨"
+        }
+      ]
+    },
+    {
+      "id": "candidate_selection_4",
+      "category": "recovery",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사 스낵 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "첫 번째",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "candidate_selected",
+          "field": "current_product",
+          "value": 0,
+          "description": "지정한 후보가 실제 선택됨"
+        }
+      ]
+    },
+    {
+      "id": "invalid_candidate_control",
+      "category": "recovery",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "검사 스낵 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "99번",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "current_product",
+          "value": null,
+          "description": "current_product: eq None"
+        },
+        {
+          "kind": "length",
+          "field": "product_candidates",
+          "value": 3,
+          "description": "product_candidates: length 3"
+        }
+      ]
+    },
+    {
+      "id": "recipe_control",
+      "category": "recipe",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "간단한 저염 레시피 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "intent",
+          "value": "recipe_recommend",
+          "description": "intent: eq recipe_recommend"
+        },
+        {
+          "kind": "eq",
+          "field": "recipe.servings",
+          "value": "1인분",
+          "description": "recipe.servings: eq 1인분"
+        },
+        {
+          "kind": "eq",
+          "field": "recipe.requested_diets",
+          "value": [
+            "저염식"
+          ],
+          "description": "recipe.requested_diets: eq ['저염식']"
+        }
+      ]
+    },
+    {
+      "id": "recipe_summary",
+      "category": "recipe",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "간단한 저염 레시피 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "방금 레시피에서 조리 순서만 보여줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "same_as_first",
+          "field": "recipe.title",
+          "value": null,
+          "description": "기존 레시피 요약 요청이 새 레시피를 만들지 않음"
+        },
+        {
+          "kind": "eq",
+          "field": "recipe.requested_diets",
+          "value": [
+            "저염식"
+          ],
+          "description": "recipe.requested_diets: eq ['저염식']"
+        }
+      ]
+    },
+    {
+      "id": "recipe_steps_after_detour",
+      "category": "recipe",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "간단한 저염 레시피 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "오이는 빼고 해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "조리법만 짧게 정리해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "same_as_first",
+          "field": "recipe.title",
+          "value": null,
+          "description": "후속 요약 요청에서 이전 레시피를 임의 교체하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "recipe_servings_limit",
+      "category": "recipe",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "간단한 저염 레시피 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "2인분으로 해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "질문 뜻을 아직 정확히 잡지 못했어요"
+          ],
+          "description": "구체적인 후속 요청에 일반적인 질문 이해 실패 문구를 반복하지 않음"
+        },
+        {
+          "kind": "contains_any",
+          "field": "answer",
+          "value": [
+            "1인분",
+            "분량",
+            "지원"
+          ],
+          "description": "answer: contains_any ['1인분', '분량', '지원']"
+        }
+      ]
+    },
+    {
+      "id": "recipe_ingredient_edit",
+      "category": "recipe",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "간단한 저염 레시피 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "오이는 빼고 해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "질문 뜻을 아직 정확히 잡지 못했어요"
+          ],
+          "description": "구체적인 후속 요청에 일반적인 질문 이해 실패 문구를 반복하지 않음"
+        },
+        {
+          "kind": "contains_any",
+          "field": "answer",
+          "value": [
+            "오이",
+            "재료",
+            "수정"
+          ],
+          "description": "answer: contains_any ['오이', '재료', '수정']"
+        }
+      ]
+    },
+    {
+      "id": "recipe_other_control",
+      "category": "recipe",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "간단한 저염 레시피 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "다른 레시피 추천해줘",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "intent",
+          "value": "recipe_recommend",
+          "description": "intent: eq recipe_recommend"
+        },
+        {
+          "kind": "eq",
+          "field": "recipe.requested_diets",
+          "value": [
+            "저염식"
+          ],
+          "description": "recipe.requested_diets: eq ['저염식']"
+        }
+      ]
+    },
+    {
+      "id": "context_reset",
+      "category": "context",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사우유 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "이전 얘기는 잊고 처음부터 시작하자",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        },
+        {
+          "message": "이거 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "current_product",
+          "value": null,
+          "description": "current_product: eq None"
+        },
+        {
+          "kind": "eq",
+          "field": "intent",
+          "value": "missing_product",
+          "description": "intent: eq missing_product"
+        }
+      ]
+    },
+    {
+      "id": "typo_eat",
+      "category": "wording",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "검사우유 먹어두 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "overall_decision",
+          "value": "avoid",
+          "description": "overall_decision: eq avoid"
+        },
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "질문 뜻을 아직 정확히 잡지 못했어요"
+          ],
+          "description": "구체적인 후속 요청에 일반적인 질문 이해 실패 문구를 반복하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "spacing_control",
+      "category": "wording",
+      "priority": "P2",
+      "turns": [
+        {
+          "message": "먹어도되나요??",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "overall_decision",
+          "value": "avoid",
+          "description": "overall_decision: eq avoid"
+        },
+        {
+          "kind": "not_contains",
+          "field": "answer",
+          "value": [
+            "질문 뜻을 아직 정확히 잡지 못했어요"
+          ],
+          "description": "구체적인 후속 요청에 일반적인 질문 이해 실패 문구를 반복하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "off_recovery_keeps_reference",
+      "category": "recovery",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "엄마랑 아빠 모두 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ],
+          "barcode": "880000009001"
+        },
+        {
+          "message": "엄마는 빼고 아빠만",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "message": "그럼 먹어도 돼?",
+          "profiles": [
+            {
+              "profile_id": 11,
+              "nickname": "엄마",
+              "allergies": [
+                "우유"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": false
+            },
+            {
+              "profile_id": 12,
+              "nickname": "아빠",
+              "allergies": [
+                "땅콩"
+              ],
+              "conditions": [],
+              "special_diets": [],
+              "is_active": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "current_product.barcode",
+          "value": "880000009001",
+          "description": "current_product.barcode: eq 880000009001"
+        },
+        {
+          "kind": "eq",
+          "field": "active_profile_names",
+          "value": [
+            "아빠"
+          ],
+          "description": "active_profile_names: eq ['아빠']"
+        }
+      ]
+    },
+    {
+      "id": "mass_not_percent",
+      "category": "data_contract",
+      "priority": "P1",
+      "turns": [
+        {
+          "message": "나트륨은 얼마야?",
+          "barcode": "880000009006",
+          "profiles": [
+            {
+              "profile_id": 13,
+              "nickname": "나",
+              "allergies": [],
+              "conditions": [],
+              "special_diets": []
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "kind": "eq",
+          "field": "current_product.nutrition.sodium",
+          "value": 125,
+          "description": "나트륨 함량 125mg 보존"
+        },
+        {
+          "kind": "eq",
+          "field": "current_product.nutrition_percent.sodium",
+          "value": null,
+          "description": "0.125g을 0.125%로 전달하지 않음"
+        },
+        {
+          "kind": "eq",
+          "field": "current_product.nutrition_percent.cholesterol",
+          "value": null,
+          "description": "콜레스테롤 g 값도 퍼센트로 전달하지 않음"
+        }
+      ]
+    }
+  ]
+}

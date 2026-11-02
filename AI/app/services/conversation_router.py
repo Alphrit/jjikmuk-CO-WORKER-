@@ -2,7 +2,7 @@ import re
 from typing import Optional
 
 from app.core.models import ChatResponse, Product, Profile
-from app.core.public_product import internal_product_reference, public_product_payload
+from app.core.public_product import internal_product_reference, public_product_payload, public_conversation_state
 from app.data.dictionaries import (
     EATABILITY_KEYWORDS,
     INCLUSION_KEYWORDS,
@@ -524,6 +524,7 @@ def _has_unresolved_product_confirmation(chat_history) -> bool:
             "해당하는 제품이 여러 개",
             "아직 어느 제품도 선택하지 않았",
             "아직 한 제품을 확정하지 않았",
+            "요청하신 새 제품을 확인하지 못했어요",
         ]):
             unresolved = True
         elif "으로 선택했어요" in content:
@@ -694,6 +695,9 @@ def has_product_reference(message: str, product: Optional[Product], chat_history
     if product and product.product_name and product.product_name.strip().lower() in text:
         return True
 
+    if product and re.fullmatch(r"\d+(?:\.\d+)?\s*(?:g|ml)\s*기준으로\s*(?:정리|알려|보여)\s*(?:해)?\s*줘[.!?]*", text):
+        return True
+
     if product and should_search_products_from_message(text):
         candidates = find_product_candidates_from_message(text, limit=3)
         if any(same_product(product, candidate) for candidate in candidates):
@@ -742,6 +746,19 @@ def looks_like_general_topic_shift(message: str, profile: Optional[Profile], pro
     text = normalize_message(message)
     if not text:
         return False
+    from app.intent.request_semantics import package_amount, missing_nutrient_check
+    if product is not None and (package_amount(message) or missing_nutrient_check(message)):
+        return False
+    from app.intent.explanation_topics import resolve_explanation_question, explanation_intent
+    if explanation_intent(message) and re.search(r"뜻|의미|개념|정의|차이|무엇|이란", message):
+        if product is None or not explicitly_mentions_product(message, product):
+            return True
+    if re.fullmatch(r"(?:(?:그럼|그러면|이번에는|이제)\s*)?(?:(?:두|세|네|모든|선택한)\s*(?:사람|명|프로필)|둘\s*다|모두|가족)(?:의)?\s*(?:기준|조건)(?:으로)?\s*(?:알려줘|봐줘|부탁해(?:요)?|다시\s*확인해줘)[.!?\s]*", message):
+        return False
+    if resolve_explanation_question(message, chat_history) != message:
+        # Catalog names can themselves contain general topic words, such as
+        # "저염 두부스낵". A real user product mention still owns its follow-up.
+        return find_product_from_history(chat_history) is None
 
     current_context_intent = rule_based_classify_intent(
         message=text,
@@ -839,29 +856,7 @@ def enrich_product_from_repository(
         if value is not None and value != ""
     ]
 
-    resolved_products = []
-    every_reference_resolved = bool(references)
-    for kind, value in references:
-        if kind == "barcode":
-            resolved = find_product_by_barcode(str(value))
-        elif kind == "report_number":
-            resolved = find_product_by_report_number(str(value))
-        else:
-            resolved = find_product_by_product_id(value)
-        if resolved is None:
-            every_reference_resolved = False
-            break
-        resolved_products.append(resolved)
-
-    references_consistent = bool(resolved_products) and all(
-        _same_authoritative_product_record(resolved_products[0], candidate)
-        for candidate in resolved_products[1:]
-    )
-    enriched_product = (
-        resolved_products[0]
-        if every_reference_resolved and references_consistent
-        else None
-    )
+    enriched_product = _resolve_product_identifiers(dict(references))
 
     if enriched_product is not None:
         return enriched_product.model_copy(update={"facts_verified": True})
@@ -882,14 +877,29 @@ def enrich_product_from_repository(
     return product.model_copy(update={"facts_verified": False})
 
 
-def _same_authoritative_product_record(left: Product, right: Product) -> bool:
-    shared_identifiers = []
-    for field_name in ["product_id", "barcode", "report_number", "food_code"]:
-        left_value = getattr(left, field_name)
-        right_value = getattr(right, field_name)
-        if left_value is not None and right_value is not None:
-            shared_identifiers.append(left_value == right_value)
-    return bool(shared_identifiers) and all(shared_identifiers)
+def _resolve_product_identifiers(references: dict) -> Optional[Product]:
+    """Resolve a precise identity, then verify every supplied ID on that row.
+
+    A report number may be shared by multiple package sizes/barcodes. Looking
+    each identifier up separately would compare an arbitrary package returned
+    by report lookup with the explicitly selected barcode. Missing or conflicting
+    identifiers still fail closed; a failed barcode never falls back to a report.
+    """
+    lookups = (
+        ("barcode", find_product_by_barcode),
+        ("product_id", find_product_by_product_id),
+        ("report_number", find_product_by_report_number),
+    )
+    for kind, lookup in lookups:
+        if kind not in references:
+            continue
+        product = lookup(references[kind])
+        if product is None:
+            return None
+        return product if all(
+            getattr(product, field) == value for field, value in references.items()
+        ) else None
+    return None
 
 
 def resolve_clarification_product(
@@ -947,24 +957,9 @@ def _resolve_authoritative_product_reference(
         for kind, value in references
         if value is not None
     ]
-    resolved_products = []
-    for kind, value in references:
-        if kind == "barcode":
-            resolved = find_product_by_barcode(value)
-        elif kind == "report_number":
-            resolved = find_product_by_report_number(value)
-        else:
-            resolved = find_product_by_product_id(value)
-        if resolved is None:
-            return None, None, None
-        resolved_products.append(resolved)
-
-    if not resolved_products or any(
-        not _same_authoritative_product_record(resolved_products[0], candidate)
-        for candidate in resolved_products[1:]
-    ):
+    product = _resolve_product_identifiers(dict(references))
+    if product is None:
         return None, None, None
-    product = resolved_products[0]
     return product, product.barcode or barcode, product.report_number or report_number
 
 
@@ -1131,6 +1126,15 @@ def _pending_candidate_reference(
 
     selection_message, _ = comparison_pick_parts(message, conversation_state)
     text = normalize_message(selection_message)
+    if re.search(r"(?:마이너스|음수|[-−])\s*\d+\s*번", text):
+        return None
+    position = _positional_candidate_index(text, len(candidates))
+    if position is not None:
+        reference = candidates[position]
+        return reference if isinstance(reference, dict) else None
+    # A standalone correction followed by one positive pick is unambiguous.
+    # Rejection predicates such as '싫은 건 두 번째' remain fail-closed.
+    text = re.sub(r"^아니[,，\s]+(?=(?:첫|두|세)\s*번째\s*(?:걸로|거로)(?:요)?[.!?\s]*$)", "", text)
     raw_occurrences = sorted(
         (
             match.start(),
@@ -1404,14 +1408,29 @@ def _build_pending_candidate_response(
     )
 
 
+def _positional_candidate_index(message: str, count: int):
+    from app.intent.request_semantics import command_text
+    message = command_text(message)
+    message = re.sub(r"걸로\s*할게(?:요)?[.!?\s]*$", "거로", message)
+    ending = r"(?:로|으로|요)?\s*(?:(?:선택|골라)해?줘|골랐어(?:요)?|선택할게(?:요)?|할게(?:요)?)?[.!?\s]*"
+    if count and re.fullmatch(r"\s*(?:(?:맨\s*)?마지막\s*(?:거|것|후보|상품|제품)|맨\s*아래(?:에)?\s*(?:있는\s*)?(?:거|것))" + ending, message):
+        return count - 1
+    if count and re.fullmatch(r"\s*맨\s*위(?:에)?\s*(?:있는\s*)?(?:거|것|상품|제품)" + ending, message):
+        return 0
+    return None
+
+
 def _is_candidate_selection_only(message: str) -> bool:
+    if _positional_candidate_index(message, 3) is not None:
+        return True
+    message = re.sub(r"^아니[,，\s]+(?=(?:첫|두|세)\s*번째\s*(?:걸로|거로)(?:요)?[.!?\s]*$)", "", message.strip())
     compact = re.sub(r"[\s?!.,]", "", normalize_message(message))
     selection_phrases = {
         "첫번째", "첫째", "1번", "1번째",
         "두번째", "둘째", "2번", "2번째",
         "세번째", "셋째", "3번", "3번째",
     }
-    suffixes = ["", "이거", "맞아", "맞아요", "선택", "선택할게", "로할게", "으로할게"]
+    suffixes = ["", "요", "걸로", "거로", "걸로요", "이거", "맞아", "맞아요", "선택", "선택할게", "로할게", "으로할게", "제품으로할게", "제품으로할게요"]
     if any(
         compact == f"{phrase}{suffix}"
         for phrase in selection_phrases
@@ -1496,6 +1515,90 @@ def _build_candidate_selected_response(product: Product) -> ChatResponse:
     )
 
 
+def _explicit_named_product_query(message, profile):
+    """Separate a named target from an attribute, profile or deictic reply.
+
+    A lookup miss is a result of this target, never permission to restore an
+    older target. Reuse the catalog query boundary rather than catalog success
+    to decide whether the user actually supplied a name.
+    """
+    from app.intent.request_semantics import command_text
+    from app.services.condition_subject import profile_is_named
+    from app.intent.rules import is_out_of_domain_question
+    text = command_text(message)
+    if is_out_of_domain_question(text, None):
+        return None
+    if _is_candidate_selection_only(text):
+        return None
+    clauses = [clause.strip() for clause in re.split(r"[.!?;](?!\d)\s*", text) if clause.strip()]
+    if len(clauses) > 1:
+        # '아이 거야. 이 제품 먹어도 돼?' contains an owner reply and a
+        # deictic task, not a new catalog name spanning both sentences.
+        named = [_explicit_named_product_query(clause, profile) for clause in clauses]
+        return next((query for query in reversed(named) if query), None)
+    query = extract_product_search_query(text)
+    if not query or compact_search_text(query) == compact_search_text(text):
+        return None
+    if re.search(r"(?:첫|두|세)\s*번째|(?:맨\s*)?(?:위|아래|마지막|처음)\s*(?:제품|상품|거|것)", query):
+        return None
+    from app.services.comparison_language import comparison_axis_reply
+    if comparison_axis_reply(text):
+        return None
+    from app.intent.request_semantics import food_recommendation_request
+    if food_recommendation_request(text):
+        return None
+    if re.match(r"(?:나트륨|단백질|당류|당분|칼로리|열량|지방|탄수화물|콜레스테롤)(?:\s+|하고|과|와)", query):
+        return None
+    if detect_nutrition_keyword(query) and re.fullmatch(
+        r"(?:(?:나트륨|단백질|당류|당분|칼로리|열량|포화지방|지방|탄수화물|콜레스테롤)(?:과|와|하고|이랑|랑|[,/·\s])?\s*)+", query,
+    ):
+        return None
+    if re.match(r"(?:한|두|세|네|반|\d+(?:\.\d+)?)\s*(?:팩|봉지|통|병|개|g|ml|kg|l)(?:\s|[을를의은는도만]|$)", query, re.I):
+        return None
+    if re.search(r"비교|레시피|요리|알레르기|알러지", text):
+        return None
+    if profile and profile_is_named(profile, query):
+        return None
+    if re.search(r"(?:^|\s)(?:엄마|아빠|어머니|아버지)(?:를|을|는|은)?\s*(?:빼면|빼고|말고|제외)", query):
+        return None
+    if re.search(r"(?:^|\s)(?:엄마|아빠|어머니|아버지|그럼|그러면|이번|두|세|모든|선택한)(?:\s|한테|에게|기준|조건|$)", query):
+        return None
+    if re.search(r"기준|조건|대상|사람|프로필|둘|현재|이전", query):
+        return None
+    if re.search(r"(?:같이|함께|순서|선택된|먹은\s*양|마신\s*양)", query):
+        return None
+    if re.fullmatch(r"(?:(?:이|그|해당)\s*)?(?:제품|상품|거|것|성분|원재료|영양|나트륨|당류|단백질|칼로리|열량)(?:은|는|도)?", query):
+        return None
+    if re.search(r"뜻|의미|개념|정의|차이|단위|총\s*당류.*첨가당|첨가당.*총\s*당류|비건.*표시(?:돼|되어|라고)", text):
+        return None
+    from app.intent.explanation_topics import requested_topics
+    if requested_topics(text) and re.search(r"영양\s*표시|(?:이면|라면|과자면)|짠\s*맛|안\s*짠", text):
+        return None
+    if requested_topics(query) and query.endswith("면"):
+        # A conditional about a recognized label claim ('제로칼로리면')
+        # is not a catalog name. Unknown named products still retain their
+        # own unresolved target rather than falling back to the old product.
+        return None
+    if not re.search(r"먹어도|먹을\s*수|마셔도|섭취해도|어때|괜찮|바꿨어|바꿨|변경했|선택했|골랐|찾아|검색|원재료|성분|나트륨|당류|단백질|열량|칼로리|콜레스테롤", text):
+        return None
+    return query
+
+
+def _missing_named_product_response(query, state):
+    from app.core.conversation_context_fields import carry_task_context
+    context = carry_task_context(state, {
+        "version": 1, "last_intent": "missing_product", "last_task_type": "product_chat",
+        "unresolved_product_query": query[:256],
+    })
+    return ChatResponse(
+        intent="missing_product", task_type="product_chat", answer_source="rules",
+        answer=f"요청하신 새 제품을 확인하지 못했어요: {query[:256]}. 정확한 제품명이나 바코드를 알려 주세요. 제품을 확인한 뒤 성분과 영양정보를 안내할게요.",
+        risk_level="unknown", assessment_status="incomplete", overall_decision="check_required",
+        missing_information=["요청 제품의 정확한 제품명 또는 바코드"],
+        conversation_state=public_conversation_state(context), internal_conversation_state=context,
+    )
+
+
 def resolve_product_context(
     message: str,
     profile: Optional[Profile],
@@ -1521,7 +1624,47 @@ def resolve_product_context(
         if isinstance(conversation_state, dict)
         else None
     )
+    independent_target = not authoritative_request_reference_provided and not embedded_request_reference_provided
+    if independent_target:
+        from app.intent.rules import is_out_of_domain_question
+        if is_out_of_domain_question(message, None):
+            return None, None, None, None
+        query = _explicit_named_product_query(message, profile)
+        if query:
+            # An explicit object wins over a broad nutrition/general topic,
+            # even while a previous product candidate is awaiting a choice.
+            found, confirmation = find_product_from_request_text(query + " 찾아줘", [], use_history=False)
+            if confirmation is not None and confirmation.product_candidates:
+                # Lookup uses the isolated name; the pending task retains the
+                # user's actual question, including its requested attributes.
+                pending = dict(confirmation.internal_conversation_state or {})
+                pending["pending_user_message"] = message
+                public = confirmation.conversation_state.model_dump(mode="json", exclude_none=True)
+                public["pending_user_message"] = message
+                confirmation = confirmation.model_copy(update={
+                    "internal_conversation_state": pending,
+                    "conversation_state": public_conversation_state(public),
+                })
+            if found is not None or confirmation is not None:
+                return found, found.barcode if found else None, found.report_number if found else None, confirmation
+            return None, None, None, _missing_named_product_response(query, conversation_state)
+        unresolved = (conversation_state or {}).get("unresolved_product_query")
+        if unresolved:
+            if not looks_like_general_topic_shift(message, profile, None, chat_history):
+                return None, None, None, _missing_named_product_response(unresolved, conversation_state)
+            # An independent general question may proceed without recovering
+            # any catalog target from the older transcript.
+            return None, None, None, None
     source_query = recipe_source_query(message)
+    from app.services.comparison_language import comparison_axis_reply, comparison_relative_reply
+    comparison_owns_axis = (conversation_state or {}).get("last_intent") in (None, "food_compare", "unknown")
+    comparison_followup = (comparison_owns_axis and comparison_axis_reply(message)) or comparison_relative_reply(message)
+    if ((conversation_state or {}).get("comparison_status") in {"cleared", "active"}
+            and not authoritative_request_reference_provided and not embedded_request_reference_provided
+            and (comparison_followup or rule_based_classify_intent(message, None, profile, []) == "food_compare")):
+        # Comparison targets are resolved by the comparison handler. A cleared
+        # task must not restore a single old product from assistant history.
+        return None, None, None, None
     if (source_query and compact_search_text(source_query) not in PRODUCT_REFERENCE_ONLY_TOKENS
             and not authoritative_request_reference_provided and not embedded_request_reference_provided
             and product is None and not pending_references):
@@ -1658,7 +1801,7 @@ def resolve_product_context(
             recipe_followup = "레시피" in message and any(cue in message for cue in ("다른", "더", "또"))
             product, barcode, report_number = _resolve_authoritative_product_reference(
                 conversation_state.get("recipe_product") if recipe_followup
-                else conversation_state.get("last_confirmed_product")
+                else conversation_state.get("pending_target_product") or conversation_state.get("last_confirmed_product")
             )
             if recipe_followup and product is not None:
                 authoritative_request_reference_provided = True

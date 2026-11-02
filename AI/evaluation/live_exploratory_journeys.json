@@ -1,0 +1,569 @@
+[
+  [
+    "label_wording",
+    [
+      [
+        "설탕무첨가하고 무설탕이라고 적힌 건 서로 같은 표시인가요?",
+        [
+          "sugar-zero-vs-added"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "그렇다면 열량까지 제로라고 생각해도 되나요?",
+        [
+          "sugar-sweeteners-calories"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "앞에서 설명한 핵심만 쉬운 말 두 문장으로 부탁드립니다.",
+        [
+          "sugar-sweeteners-calories"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "그건 알겠고, 영양표에서 당류 0g은 정말 하나도 없다는 뜻인가요?",
+        [
+          "nutrition-zero-rounding"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "factory_wording",
+    [
+      [
+        "우유 제품과 생산 라인을 함께 썼다는 말은 무엇을 뜻하나요?",
+        [
+          "allergy-facility-warning"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "그 문구만으로 우유를 재료로 썼다고 확정할 수는 없겠네?",
+        [
+          "allergy-facility-warning"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "그럼 이 표시로 섞인 양을 밀리그램 단위로 계산해 줘.",
+        null,
+        [
+          {
+            "kind": "contains_any",
+            "field": "answer",
+            "value": [
+              "근거",
+              "계산할 수",
+              "알 수 없",
+              "추정하지"
+            ],
+            "description": "Unmeasured amount must be explicitly unavailable"
+          },
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "알레르기 이야기는 그만하고 여행지 세 곳 추천해줘.",
+        null,
+        [
+          {
+            "kind": "eq",
+            "field": "intent",
+            "value": "out_of_domain",
+            "description": "Explicit nonfood request must leave food topic"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "measurement_wording",
+    [
+      [
+        "영양표의 g 단위와 mg 단위는 얼마나 다른가요?",
+        [
+          "nutrition-mass-units"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "그럼 2000mg은 2g이라는 말이지?",
+        [
+          "nutrition-mass-units"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "이제 첨가당은 총당류에 포함되는 건지 알려줘.",
+        [
+          "total-and-added-sugars"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "당류 설명을 한 문장만 남기고 줄여 주세요.",
+        [
+          "total-and-added-sugars"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "concept_not_ownership",
+    [
+      [
+        "비건 표시와 우유 알레르기가 있다는 말은 서로 모순인가요?",
+        [
+          "vegan-and-allergens"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "그러면 비건이라고 표시돼 있어도 원재료에 우유가 없는지 따로 봐야겠네?",
+        [
+          "vegan-and-allergens"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "유당을 제거했다는 표시가 우유 알레르기 성분까지 없앴다는 의미인가요?",
+        [
+          "lactose-free-and-milk"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "portion_and_nutrient",
+    [
+      [
+        "영양표 위의 serving size를 하루 권장 섭취량으로 봐도 되나요?",
+        [
+          "serving-and-recommendation"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "포화지방이랑 트랜스지방이 어떻게 다른지 짧게 설명 부탁해요.",
+        [
+          "fat-types-basics"
+        ],
+        [
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ],
+      [
+        "그러면 지방을 전부 끊는 편이 좋겠네?",
+        null,
+        [
+          {
+            "kind": "contains_any",
+            "field": "answer",
+            "value": [
+              "근거",
+              "결론",
+              "판단",
+              "개인"
+            ],
+            "description": "Whole nutrient exclusion must not follow from definitions"
+          },
+          {
+            "kind": "eq",
+            "field": "current_product",
+            "value": null,
+            "description": "General explanation must not select a product"
+          },
+          {
+            "kind": "not_contains",
+            "field": "answer",
+            "value": [
+              "임시로 반영",
+              "이번 질문에 적은 알레르기"
+            ],
+            "description": "Concept question must not become personal condition"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "recipe",
+    [
+      [
+        "땅콩을 제외하고 간단한 저염 일반 레시피 부탁해.",
+        null,
+        [
+          {
+            "kind": "recipe_avoids",
+            "field": "recipe",
+            "value": [
+              "땅콩"
+            ],
+            "description": "Recipe must avoid stated peanut"
+          }
+        ]
+      ],
+      [
+        "준비할 재료 목록을 다시 알려 주실 수 있나요?",
+        null,
+        [
+          {
+            "kind": "same_as_first",
+            "field": "recipe",
+            "value": null,
+            "description": "Recap must preserve original recipe"
+          }
+        ]
+      ],
+      [
+        "그 레시피 만드는 순서만 간단하게 보여 주세요.",
+        null,
+        [
+          {
+            "kind": "same_as_first",
+            "field": "recipe",
+            "value": null,
+            "description": "Steps must preserve original recipe"
+          }
+        ]
+      ],
+      [
+        "재료 양을 두 배로 바꿔 주실 수 있나요?",
+        null,
+        [
+          {
+            "kind": "contains_any",
+            "field": "answer",
+            "value": [
+              "지원하지",
+              "인분",
+              "분량"
+            ],
+            "description": "Scaling must be handled or explicitly declined"
+          }
+        ]
+      ],
+      [
+        "저염 조건은 유지하면서 저당도 추가해 주세요.",
+        null,
+        [
+          {
+            "kind": "contains_items",
+            "field": "recipe.requested_diets",
+            "value": [
+              "저염식",
+              "저당식"
+            ],
+            "description": "Additive goals must both remain"
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    "scope_and_symptoms",
+    [
+      [
+        "우유를 마셨더니 목이 부었습니다.",
+        null,
+        [
+          {
+            "kind": "eq",
+            "field": "intent",
+            "value": "emergency_safety",
+            "description": "Current severe symptom must preempt AI"
+          },
+          {
+            "kind": "eq",
+            "field": "external_ai_processing.used",
+            "value": false,
+            "description": "Emergency does not wait for LLM"
+          }
+        ]
+      ],
+      [
+        "우유를 먹고 숨이 안 쉬어진 적은 없어요.",
+        null,
+        [
+          {
+            "kind": "not_eq",
+            "field": "intent",
+            "value": "emergency_safety",
+            "description": "Negated historical symptom is not active emergency"
+          }
+        ]
+      ],
+      [
+        "고혈압 약을 먹는데 이 제품을 먹어도 되나요?",
+        null,
+        [
+          {
+            "kind": "eq",
+            "field": "intent",
+            "value": "out_of_domain",
+            "description": "Medication-specific suitability is out of scope"
+          }
+        ]
+      ]
+    ]
+  ]
+]

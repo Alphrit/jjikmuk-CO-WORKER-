@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "sugars-definition",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 5,
+  "section": "인쇄 7쪽: 당류의 정의 (사실 요약·재구성)",
+  "text": "영양표시에서 당류는 식품에 존재하는 모든 단당류와 이당류의 합을 뜻합니다. 설탕이라는 원재료 이름 하나만 가리키는 말은 아닙니다. 원재료에 설탕을 더했는지 확인하는 것과 영양성분표의 당류 양을 확인하는 것은 서로 다른 정보이므로 함께 살펴보세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "sugar_definition"
+  ]
+}

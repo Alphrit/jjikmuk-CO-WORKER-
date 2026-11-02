@@ -1,0 +1,18 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "fda-sodium-basics",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.fda.gov/food/nutrition-education-resources-materials/sodium-your-diet",
+  "title": "Sodium in Your Diet",
+  "publisher": "미국 식품의약국(FDA)",
+  "checked_at": "2026-10-15",
+  "section": "Table Salt and Sodium: Defined / Sodium as a Food Ingredient",
+  "reviewed_facts": [
+    "소금은 염화나트륨이고 나트륨은 소금을 구성하는 원소.",
+    "소금 외 나트륨 함유 원료도 있고 짠맛만으로 나트륨 함량을 판단할 수 없음."
+  ],
+  "rights": "facts-only-independent-wording",
+  "rights_evidence": "공식 페이지에서 선택한 사실을 독립적인 한국어 문장으로 정리. 원문·그림·표·전체 번역의 복제 허락을 주장하지 않음.",
+  "review_scope": "일반 식품 개념과 표시 해석에 한정. 해외 수치·법적 의무·의료·개인 적합성 제외.",
+  "limitations": "전체 HTML 원본이 아닌 검토 사실 기록. 원격 페이지의 해시나 원문 전체 이용 허락을 뜻하지 않음."
+}

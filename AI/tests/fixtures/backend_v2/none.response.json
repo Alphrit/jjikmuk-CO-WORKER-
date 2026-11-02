@@ -1,0 +1,153 @@
+{
+  "response_id": "0481c158-e3d1-45cf-a4f9-cd625e6bda6e",
+  "generated_at": "2026-11-02T03:15:37.593419Z",
+  "task_type": "product_analysis",
+  "answer_source": "backend",
+  "intent": "can_i_eat",
+  "answer": "합성 시험 우유 기준으로 확인했어요.\n선택한 사람이 없어 개인별 알레르기·식단 조건을 검사하지 않았어요.\n질환이나 개인별 섭취 가능량은 이 판정에 포함되지 않아요.",
+  "risk_level": "unknown",
+  "overall_decision": "check_required",
+  "allergy_status": "unknown",
+  "diet_match": "unknown",
+  "preference_match": "unknown",
+  "nutrition_facts": {
+    "kcal": 60.0,
+    "protein": 3.0,
+    "fat": null,
+    "carbohydrate": null,
+    "sugars": null,
+    "sodium": 40.0,
+    "saturated_fat": null,
+    "cholesterol": null
+  },
+  "missing_information": [],
+  "assessment_status": "incomplete",
+  "confidence": null,
+  "confidence_reasons": [],
+  "data_completeness": null,
+  "data_completeness_reasons": [],
+  "assessment_summary": {
+    "scope": "overall_intake",
+    "decision": "not_assessed",
+    "evidence_status": "not_applicable",
+    "safety_assessed": false,
+    "personalized": false,
+    "repository_identity_matched": null,
+    "label_lineage_status": null,
+    "label_freshness_status": null,
+    "product_data_verified": null,
+    "explanation": "현재 요청에 포함된 백엔드의 상품·개인별 판정을 설명한 결과입니다. 실제 섭취 안전의 보증은 아닙니다.",
+    "missing_information": []
+  },
+  "product_data_trust": null,
+  "reasons": [
+    "선택한 사람이 없어 개인별 알레르기·식단 조건을 검사하지 않았어요."
+  ],
+  "profile_name": null,
+  "active_profile_names": [],
+  "per_profile_results": [],
+  "current_product": {
+    "product_name": "합성 시험 우유",
+    "food_code": null,
+    "report_number": null,
+    "manufacturer_name": null,
+    "company_name": null,
+    "nutrient_text": null,
+    "allergy_warning": null,
+    "weight": null,
+    "image_url": null,
+    "total_weight": null,
+    "prdlst_dcnm": null,
+    "barcode": "8800000000001",
+    "rawmtrl_nm": "우유",
+    "allergy": [
+      "우유"
+    ],
+    "ingredients": [],
+    "allergy_info": [
+      "우유"
+    ],
+    "nutrition": {
+      "kcal": 60.0,
+      "protein": 3.0,
+      "fat": null,
+      "carbohydrate": null,
+      "sugars": null,
+      "sodium": 40.0,
+      "saturated_fat": null,
+      "cholesterol": null
+    },
+    "nutrition_basis": {
+      "basis_type": "unknown",
+      "serving_size_value": null,
+      "serving_size_unit": null,
+      "package_size_value": null,
+      "package_size_unit": null,
+      "servings_per_package": null
+    },
+    "nutrition_percent": {
+      "carbohydrate": null,
+      "protein": null,
+      "fat": null,
+      "sodium": null,
+      "cholesterol": null
+    },
+    "macro_percent": {
+      "carbohydrate": null,
+      "protein": null,
+      "fat": null
+    },
+    "label_trust": {
+      "lineage_status": "unavailable",
+      "freshness_status": "unavailable",
+      "label_observed_at": null,
+      "content_revision_sha256": "7996c41c7b1c4dccd0257e0b4c236a3ccb352c9ab3330183f6ac9f5775ef3404",
+      "content_revision_binding_status": "ingested_revision_missing",
+      "content_revision_meaning": "normalized_snapshot_identifier_not_freshness_proof"
+    }
+  },
+  "conversation_state": {
+    "version": 1,
+    "last_intent": "can_i_eat",
+    "last_confirmed_product": {
+      "product_name": "합성 시험 우유",
+      "barcode": "8800000000001"
+    }
+  },
+  "conversation_id": null,
+  "conversation_title": null,
+  "conversation_revision": null,
+  "turn_id": null,
+  "recommended_questions": [
+    "이 상품의 원재료를 알려줘",
+    "이 상품의 영양정보를 알려줘",
+    "대체 상품을 추천해줘"
+  ],
+  "product_candidates": [],
+  "recommended_products": [],
+  "recipe": null,
+  "comparison_products": [],
+  "ui_guidance": null,
+  "sources": [],
+  "safety_guidance": null,
+  "external_ai_processing": {
+    "allowed_for_request": false,
+    "used": false,
+    "status": "consent_not_verified",
+    "services": []
+  },
+  "backend_analysis": {
+    "contractVersion": "chat-analysis-v2",
+    "contextId": "v2-example-none",
+    "policyVersion": "recommendation-v2",
+    "decisionAuthority": "BACKEND",
+    "decisionScope": "BARCODE_ROW",
+    "profileSource": "CLIENT_REQUEST",
+    "selectionMode": "none",
+    "productResolution": "FOUND",
+    "barcode": "8800000000001",
+    "status": "NOT_EVALUATED",
+    "dietStatus": "NOT_EVALUATED",
+    "application": "product_decision"
+  }
+}

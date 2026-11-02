@@ -62,9 +62,9 @@ def pick_recommended_questions(intent: str, risk_level: str, product: Optional[P
 
     if intent.startswith("general_"):
         return [
-            "특정 제품 기준으로도 설명해줘",
-            "알레르기나 영양 기준 중에서 하나를 더 구체적으로 설명해줘",
-            "다른 프로필 기준으로 바꿔서 다시 알려줘",
+            "무설탕과 무가당의 차이를 설명해줘",
+            "같은 제조시설이라는 표시의 뜻을 알려줘",
+            "영양성분표의 %는 무슨 뜻이야?",
         ]
 
     return [

@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "vegetarian-definition",
+  "source_id": "nhs-vegetarian-basics",
+  "source_sha256": "474ef22648093fcc7fa89f72c097b0ba4cbb8a2a490807651a4463eebf47dba9",
+  "page": null,
+  "section": "채식과 유제품·달걀 허용 범위 (사실 요약·재구성)",
+  "text": "채식이라는 말만으로 유제품과 달걀을 모두 먹지 않는다고 가정하지 마세요. NHS는 고기와 생선을 제외하면서 유제품과 달걀은 먹는 채식 형태를 설명합니다. 비건과 구분하고, 사람별로 유제품과 달걀을 허용하는지 확인해야 합니다. 이는 일반적인 식사 형태의 설명이며 국내 인증이나 제품 적합성을 정한 기준은 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "vegetarian_definition"
+  ]
+}

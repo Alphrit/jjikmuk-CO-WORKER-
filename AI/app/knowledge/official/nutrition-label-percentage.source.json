@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-label-percentage",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 5,
+  "section": "인쇄 7쪽: 1일 영양성분 기준치의 정의 (사실 요약·재구성)",
+  "text": "영양성분표의 기준치 대비 비율(%)은 표시 기준량에 들어 있는 해당 성분이 1일 영양성분 기준치에서 차지하는 비율입니다. 이 기준치는 하루 식사에서 식품이 차지하는 영양적 가치를 이해하고 제품 사이를 비교하도록 정한 평균적인 표시 기준입니다. 개인에게 맞춰 처방한 하루 권장 섭취량은 아닙니다. 퍼센트만 보지 말고 어떤 영양성분의 비율인지, 그 수치가 총 내용량·100g·한 개 등 어느 양을 기준으로 하는지도 함께 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "nutrition_percentage"
+  ]
+}

@@ -52,9 +52,25 @@ def test_complete_low_result_fails_closed_until_policy_and_product_provenance_ex
     assert any("출처·최신성" in item for item in summary.missing_information)
     assert response.data_completeness == 1.0
     assert response.risk_level == "unknown"
+    assert response.overall_decision == "check_required"
     assert response.assessment_status == "incomplete"
     assert response.confidence is None
     assert "크게 걱정" not in response.answer
+
+
+def test_untraced_family_result_has_no_completed_overall_or_personal_decisions():
+    response = generate_chat_response(
+        profile=None, active_profiles=[
+            Profile(profile_name="엄마", allergies=["우유"]),
+            Profile(profile_name="아빠", allergies=["새우"]),
+        ], product=_complete_product(), message="우리 둘 다 먹어도 돼?",
+    )
+    assert response.assessment_summary.decision == "insufficient_information"
+    assert response.overall_decision == "check_required"
+    assert len(response.per_profile_results) == 2
+    assert all(item["overall_decision"] == "check_required" for item in response.per_profile_results)
+    repeated = attach_response_assessment(response, product=_complete_product())
+    assert repeated.overall_decision == "check_required"
 
 
 def test_known_allergen_conflict_is_an_avoid_decision_even_when_other_data_is_missing():

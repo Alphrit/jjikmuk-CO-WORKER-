@@ -37,24 +37,20 @@ PRODUCT_COMPARE_AXES = {
     "탄수화물": ("carbohydrate", "탄수화물", "g", "lower"),
     "당류": ("sugars", "당류", "g", "lower"),
     "나트륨": ("sodium", "나트륨", "mg", "lower"),
+    "콜레스테롤": ("cholesterol", "콜레스테롤", "mg", "lower"),
 }
 
 
 def _comparison_axis_match(message: str) -> tuple[Optional[str], Optional[str]]:
-    latest_match = None
-    latest_alias = None
-    latest_index = -1
-    for nutrient, aliases in NUTRITION_KEYWORDS.items():
-        if nutrient not in PRODUCT_COMPARE_AXES:
-            continue
-        for alias in aliases:
-            index = message.rfind(alias)
-            if index > latest_index:
-                latest_index = index
-                latest_match = nutrient
-                latest_alias = alias
-
-    return latest_match, latest_alias
+    aliases = {alias: nutrient for nutrient, values in NUTRITION_KEYWORDS.items()
+               if nutrient in PRODUCT_COMPARE_AXES for alias in values}
+    # Longest non-overlapping terms keep 포화지방 separate from 지방.
+    pattern = "|".join(re.escape(alias) for alias in sorted(aliases, key=len, reverse=True))
+    matches = list(re.finditer(pattern, message))
+    if not matches:
+        return None, None
+    alias = matches[-1][0]
+    return aliases[alias], alias
 
 
 def _comparison_axis(message: str) -> Optional[tuple[str, str, str, str]]:
@@ -74,6 +70,13 @@ def _comparison_axis(message: str) -> Optional[tuple[str, str, str, str]]:
     )
 
 
+def _comparison_axes(message: str) -> list[tuple[str, str, str, str]]:
+    from app.services.comparison_language import comparison_axis_names
+    names = comparison_axis_names(message)
+    axes = [_comparison_axis(name) for name in names] if names else [_comparison_axis(message)]
+    return list(dict.fromkeys(axis for axis in axes if axis is not None))
+
+
 def _product_identity(product: Product) -> tuple:
     return (
         product.barcode,
@@ -83,6 +86,11 @@ def _product_identity(product: Product) -> tuple:
 
 
 def _message_product_segments(message: str) -> list[str]:
+    message = re.sub(r"^(?:(?:아까|이전|방금)\s*)?(?:두\s*(?:개|제품)|그\s*둘)(?:은|는|을|를)?\s*말고\s*", "", message)
+    from app.services.comparison_language import comparison_axis_suffix
+    suffix = comparison_axis_suffix(message)
+    if suffix:
+        message = re.sub(r"의$", "", message[:suffix.start()].strip())
     _, axis_alias = _comparison_axis_match(message)
     comparison_diet = (
         "저염식", "저당식", "채식", "글루텐프리",
@@ -146,9 +154,17 @@ def _format_product_comparison_answer(
     product: Optional[Product],
     *,
     products: Optional[Sequence[Product]] = None,
+    axis: Optional[tuple[str, str, str, str]] = None,
 ) -> Optional[tuple[str, list[str]]]:
     products = list(products or _find_products_to_compare(message, product))
-    axis = _comparison_axis(message)
+    axes = [axis] if axis is not None else _comparison_axes(message)
+    if len(axes) > 1:
+        comparisons = [_format_product_comparison_answer(message, product, products=products, axis=item) for item in axes]
+        if any(item is None for item in comparisons):
+            return None
+        return ("\n\n".join(item[0] for item in comparisons),
+                [reason for item in comparisons for reason in item[1]])
+    axis = axes[0] if axes else None
     if len(products) < 2 or axis is None:
         return None
 
@@ -541,6 +557,16 @@ def _comparison_allergy_summary(
 
 
 def handle_general_allergy_guide(profile: Optional[Profile], product: Optional[Product], message: str) -> ChatResponse:
+    from app.intent.explanation_topics import unsupported_allergy_quantity_question
+    if product is None and unsupported_allergy_quantity_question(message):
+        return build_response(
+            intent="general_allergy_guide",
+            answer=("현재 확인한 자료에는 실제 혼입 확률이나 혼입량을 계산할 근거가 없어요. "
+                    "따라서 숫자나 퍼센트로 추정해서 안내하지 않아요."),
+            risk_level="unknown",
+            reasons=["혼입 확률·혼입량의 정량 근거 부족"],
+            profile=profile,
+        ).model_copy(update={"fallback_reason": "rag_question_outside_evidence_scope"})
     return build_response(
         intent="general_allergy_guide",
         answer=format_general_answer(
@@ -579,6 +605,13 @@ def handle_general_diet_guide(profile: Optional[Profile], product: Optional[Prod
 
 
 def handle_general_nutrition_guide(profile: Optional[Profile], product: Optional[Product], message: str) -> ChatResponse:
+    from app.intent.request_semantics import nutrient_exclusion_question
+    if product is None and nutrient_exclusion_question(message):
+        return build_response(
+            intent="general_nutrition_guide", profile=profile, risk_level="unknown",
+            answer="앞의 설명만으로 특정 영양소를 모두 없애야 한다고 결론 내릴 수는 없어요. 현재 검토 자료는 영양소의 종류와 표시를 설명하는 범위이며, 개인의 섭취량이나 식단에서 완전히 제외할지를 판단할 근거는 없어요.",
+            reasons=["영양소 전체 제외 판단은 검토 자료 범위 밖"],
+        ).model_copy(update={"fallback_reason": "rag_question_outside_evidence_scope"})
     return build_response(
         intent="general_nutrition_guide",
         answer=format_general_answer(
@@ -663,14 +696,17 @@ def handle_food_compare(
             product,
             products=compared_products,
         )
-        axis = _comparison_axis(message)
-        if axis is None:
+        axes = _comparison_axes(message)
+        allergy_only = not axes and "알레르기" in message
+        if allergy_only:
+            comparison = ("", [])
+        elif not axes:
             missing_information.append("비교할 영양 기준을 선택해 주세요.")
         else:
-            key, label, _, _ = axis
-            for candidate in compared_products:
-                if candidate.nutrition.get(key) is None:
-                    missing_information.append(f"{candidate.product_name}의 {label} 수치가 필요해요.")
+            for key, label, _, _ in axes:
+                for candidate in compared_products:
+                    if candidate.nutrition.get(key) is None:
+                        missing_information.append(f"{candidate.product_name}의 {label} 수치가 필요해요.")
             if not products_have_comparable_nutrition_basis(compared_products):
                 missing_information.append("비교 제품의 동일한 영양 기준량과 해당 표시의 출처 정보가 필요해요.")
         if comparison is None:

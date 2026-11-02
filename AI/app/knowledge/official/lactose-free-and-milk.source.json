@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "lactose-free-and-milk",
+  "source_id": "fda-lactose-label-basics",
+  "source_sha256": "7e7509cff0abbd01df1cf1eeaab24e3a9bfa5e273c56c501d9f3907635192f64",
+  "page": null,
+  "section": "락토프리와 우유 성분의 구분 (사실 요약·재구성)",
+  "text": "락토프리·유당 제거는 유당에 관한 정보입니다. 우유 알레르기 유발성분의 유무와 구분해야 합니다. FDA는 유당 제거 정보만으로 우유 알레르기 유발성분의 유무를 판단할 수 없다고 설명합니다. 제품을 볼 때 락토프리 표시와 원재료·우유 함유 정보를 각각 확인하세요. 이는 표시를 해석하는 설명이며 개인별 섭취 판정을 대신하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "lactose_free"
+  ]
+}

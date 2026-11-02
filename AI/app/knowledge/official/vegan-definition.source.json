@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "vegan-definition",
+  "source_id": "nhs-vegan-basics",
+  "source_sha256": "472e904f77947d8bfc4bae41d5fe91829889da38915cc7d29f8a7fe11eec0083",
+  "page": null,
+  "section": "비건 식사의 일반 의미 (사실 요약·재구성)",
+  "text": "비건 식사는 채소·곡물·견과류·과일 등 식물과 식물 유래 식품을 바탕으로 하며 유제품과 달걀을 포함한 동물성 식품을 제외합니다. 원재료에서 동물성 식품이 사용되었는지를 확인하는 관점입니다. NHS의 일반 개념 설명이며 국내 인증이나 특정 제품의 비건 여부를 확인한 결과는 아닙니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "vegan_definition"
+  ]
+}

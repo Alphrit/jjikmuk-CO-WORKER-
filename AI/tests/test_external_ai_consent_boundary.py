@@ -24,11 +24,61 @@ from app.infrastructure.external_ai_consent import (
 )
 from app.infrastructure.repository import InMemoryActivityRepository
 from app.services.activity import get_activity_repository, set_activity_repository
+from test_released_knowledge import packaged_sources
 
 
 CONSENT_SECRET = "consent-" + "s" * 40
 USER_ID = "user-42"
 NONCE = "nonce-0123456789abcdef"
+
+
+@pytest.mark.parametrize("signed", [False, True])
+def test_general_followup_rag_generation_keeps_request_consent_boundary(packaged_sources, monkeypatch, signed):
+    from rag_test_helpers import grounding_review
+
+    monkeypatch.setenv("RAG_GENERAL_RESPONSE_MODE", "generated")
+    document = next(d for d in rag._load_documents()
+                    if d.metadata["source"] == "sugar-sweeteners-calories.source.json")
+    answer = "무가당 표시는 열량이 없다는 뜻은 아니에요."
+    searches, outputs = [], []
+
+    class Store:
+        def similarity_search(self, query, k, **kwargs):
+            searches.append((query, kwargs))
+            return [document]
+
+    monkeypatch.setattr(rag, "build_vectorstore", lambda: Store())
+    monkeypatch.setattr(rag, "_require_current_index", lambda _path: {})
+    replies = iter([answer, grounding_review(answer, [document.page_content])])
+
+    def provider(*_args):
+        outputs.append(True)
+        return {"output_text": next(replies)}
+
+    monkeypatch.setattr(llm, "_post_json", provider)
+    body = _json_body({
+        "message": "그럼 칼로리는?",
+        "chat_history": [
+            {"role": "user", "content": "무설탕과 무가당의 차이가 뭐야?"},
+            {"role": "assistant", "content": "무당과 무가당은 다른 표시예요."},
+        ],
+    })
+    response = TestClient(api_main.app).post(
+        "/chat", content=body,
+        headers=_signed_headers(body) if signed else {"Content-Type": "application/json"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload.get("current_product") is None
+    if signed:
+        assert len(searches) == 1 and len(outputs) == 2
+        from app.intent.explanation_topics import requested_topics
+        assert "무가당" in searches[0][0] and requested_topics(searches[0][0]) == {"sugar_energy"}
+        assert payload["answer"] == answer and payload["answer_source"] == "rag"
+        assert payload["external_ai_processing"]["services"] == ["rag", "llm"]
+    else:
+        assert searches == outputs == []
+        assert payload["answer_source"] == "rules" and not payload["sources"]
 
 
 @pytest.fixture(autouse=True)

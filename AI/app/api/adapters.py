@@ -334,8 +334,8 @@ def normalize_product_payload(
                 "carbohydrate": _to_float(_pick_first(payload, ["carbs_percent", "carbsPercent"]), expected_unit="%"),
                 "protein": _to_float(_pick_first(payload, ["protein_percent", "proteinPercent"]), expected_unit="%"),
                 "fat": _to_float(_pick_first(payload, ["fat_percent", "fatPercent"]), expected_unit="%"),
-                "sodium": _to_float(_pick_first(payload, ["sodium_g", "sodiumG"]), expected_unit="%"),
-                "cholesterol": _to_float(_pick_first(payload, ["cholesterol_g", "cholesterolG"]), expected_unit="%"),
+                "sodium": _to_float(_pick_first(payload, ["sodium_percent", "sodiumPercent"]), expected_unit="%"),
+                "cholesterol": _to_float(_pick_first(payload, ["cholesterol_percent", "cholesterolPercent"]), expected_unit="%"),
             }.items()
             if value is not None
         },

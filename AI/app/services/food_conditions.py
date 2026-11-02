@@ -50,7 +50,8 @@ def prepare_food_conditions(message, profiles, state=None, known_profiles=None, 
     condition_message = current_condition_message if current_condition_message is not None else message
     parsed = _message_allergens(condition_message)
     allergy_message = condition_message
-    task_message = resumed_product_message or message
+    from app.services.diet_goal_context import recipe_goal_request
+    task_message = resumed_product_message or recipe_goal_request(message, state) or message
     owner = resolve_condition_subject(condition_message, profiles, known_profiles)
     original = message
     owner_unresolved = False

@@ -35,11 +35,12 @@ AI_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(dotenv_path=AI_DIR / ".env")
 
 DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
-DEFAULT_LLM_MODEL = "gpt-4o-mini"
-DEFAULT_LLM_TIMEOUT_SECONDS = 30.0
+DEFAULT_LLM_MODEL = "gpt-6-sol"
+DEFAULT_LLM_TIMEOUT_SECONDS = 120.0
 DEFAULT_LLM_TEMPERATURE = 0.2
-DEFAULT_LLM_MAX_OUTPUT_TOKENS = 1_500
-MAX_LLM_OUTPUT_TOKENS = 4_096
+DEFAULT_LLM_REASONING_EFFORT = "high"
+DEFAULT_LLM_MAX_OUTPUT_TOKENS = 8_192
+MAX_LLM_OUTPUT_TOKENS = 32_768
 DEFAULT_LLM_MAX_RESPONSE_BYTES = 2_097_152
 MAX_CONFIGURABLE_LLM_RESPONSE_BYTES = 10_485_760
 _TRUE_ENV_VALUES = {"1", "true", "yes", "on"}
@@ -246,6 +247,11 @@ def _post_json(url: str, payload: dict, headers: dict) -> Optional[dict]:
 
 
 def _extract_output_text(body: dict) -> Optional[str]:
+    if body.get("status") not in (None, "completed"):
+        # A reasoning/token budget may be exhausted after a partial answer.
+        # Never treat an unfinished draft as a successful generation.
+        logger.warning("OpenAI response did not complete; keeping rule fallback.")
+        return None
     direct = body.get("output_text")
     if isinstance(direct, str) and direct.strip():
         return direct.strip()
@@ -270,37 +276,51 @@ def _extract_output_text(body: dict) -> Optional[str]:
     return "\n".join(parts) or None
 
 
-def _generate_openai(prompt: str) -> Optional[str]:
+def _generate_openai(prompt: str, *, json_schema: Optional[dict] = None) -> Optional[str]:
     api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
     endpoint = _endpoint_decision()
     if not api_key or not endpoint.allowed or not endpoint.canonical_url:
         return None
+    model = get_llm_model()
+    payload = {
+        "model": model,
+        "instructions": (
+            "You are a concise Korean assistant inside an allergy-first food "
+            "chatbot. Use only the supplied product facts and rule result. "
+            "Never invent product ingredients, allergy safety, or nutrition facts."
+        ),
+        "input": prompt,
+        "max_output_tokens": _bounded_int(
+            "LLM_MAX_OUTPUT_TOKENS",
+            default=DEFAULT_LLM_MAX_OUTPUT_TOKENS,
+            minimum=1,
+            maximum=MAX_LLM_OUTPUT_TOKENS,
+        ),
+        # The application owns chat retention; do not create a second provider
+        # conversation store for these requests.
+        "store": False,
+    }
+    if json_schema is not None:
+        payload["text"] = {"format": {
+            "type": "json_schema", "name": "food_chatbot_output",
+            "strict": True, "schema": json_schema,
+        }}
+    if model.startswith(("gpt-6-", "gpt-6.")):
+        effort = (os.getenv("LLM_REASONING_EFFORT") or "").strip().lower()
+        if effort not in {"low", "medium", "high", "xhigh", "max"}:
+            effort = DEFAULT_LLM_REASONING_EFFORT
+        # GPT-6 reasoning requests reject incompatible sampling parameters.
+        payload["reasoning"] = {"effort": effort}
+    else:
+        payload["temperature"] = _bounded_float(
+            "LLM_TEMPERATURE",
+            default=DEFAULT_LLM_TEMPERATURE,
+            minimum=0.0,
+            maximum=2.0,
+        )
     body = _post_json(
         endpoint.canonical_url,
-        {
-            "model": get_llm_model(),
-            "instructions": (
-                "You are a concise Korean assistant inside an allergy-first food "
-                "chatbot. Use only the supplied product facts and rule result. "
-                "Never invent product ingredients, allergy safety, or nutrition facts."
-            ),
-            "input": prompt,
-            "temperature": _bounded_float(
-                "LLM_TEMPERATURE",
-                default=DEFAULT_LLM_TEMPERATURE,
-                minimum=0.0,
-                maximum=2.0,
-            ),
-            "max_output_tokens": _bounded_int(
-                "LLM_MAX_OUTPUT_TOKENS",
-                default=DEFAULT_LLM_MAX_OUTPUT_TOKENS,
-                minimum=1,
-                maximum=MAX_LLM_OUTPUT_TOKENS,
-            ),
-            # The application owns chat retention; do not create a second provider
-            # conversation store for these requests.
-            "store": False,
-        },
+        payload,
         {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
@@ -309,7 +329,7 @@ def _generate_openai(prompt: str) -> Optional[str]:
     return _extract_output_text(body) if body else None
 
 
-def generate_text(prompt: str) -> Optional[str]:
+def generate_text(prompt: str, *, json_schema: Optional[dict] = None) -> Optional[str]:
     if not isinstance(prompt, str) or not prompt.strip():
         return None
     if _override_client is not None:
@@ -324,7 +344,10 @@ def generate_text(prompt: str) -> Optional[str]:
     if not is_llm_enabled():
         return None
     mark_external_ai_used("llm")
-    return observe_llm_call(lambda: _generate_openai(prompt), provider="openai")
+    return observe_llm_call(
+        lambda: _generate_openai(prompt, json_schema=json_schema) if json_schema is not None else _generate_openai(prompt),
+        provider="openai",
+    )
 
 
 __all__ = [

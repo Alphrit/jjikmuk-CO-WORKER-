@@ -68,6 +68,7 @@ RAG_INDEX_MARKER_FILENAME = ".jjikmuk-rag-index"
 RAG_INDEX_MARKER_CONTENT = "jjikmuk-rag-index-v3\n"
 RAG_INDEX_METADATA_VERSION = 3
 DEFAULT_OPENAI_EMBEDDING_BASE_URL = "https://api.openai.com/v1"
+DEFAULT_EMBEDDING_MODEL = "text-embedding-3-large"
 MAX_RAG_KNOWLEDGE_DOCUMENTS = 256
 MAX_RAG_KNOWLEDGE_FILE_BYTES = 1024 * 1024
 MAX_RAG_KNOWLEDGE_TOTAL_BYTES = 16 * 1024 * 1024
@@ -227,7 +228,7 @@ def _acquire_rebuild_lock(chroma_dir: Path) -> Iterator[None]:
 
 
 def _get_index_settings() -> Dict[str, object]:
-    embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small").strip()
+    embedding_model = os.getenv("EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL).strip()
     if not embedding_model:
         raise ValueError("EMBEDDING_MODEL must not be empty")
 
@@ -1158,7 +1159,7 @@ def get_rag_status(verify_retriever: bool = False) -> Dict[str, object]:
         "rag_last_error": _last_rag_error,
         "embedding_model": inspection["settings"].get(
             "embedding_model",
-            os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
+            os.getenv("EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL),
         ),
         "openai_api_key_set": bool(os.getenv("OPENAI_API_KEY")),
         "embedding_endpoint_policy": endpoint_status,
@@ -1276,11 +1277,20 @@ def _official_reference_from_file(raw_source: str, digest: str) -> dict[str, str
     if hashlib.sha256(content).hexdigest() != digest:
         raise ValueError("Official source changed after retrieval verification.")
     excerpt = parse_released_excerpt(text)
-    return {**excerpt_reference(excerpt), "excerpt_content": excerpt.text}
+    return {
+        **excerpt_reference(excerpt), "excerpt_content": excerpt.text,
+        "topics": ",".join(excerpt.topics),
+    }
 
 
 def official_citation_from_entry(entry: dict[str, str]) -> Optional[str]:
     """Recheck local approval at final response assembly, not just retrieval."""
+    reference = verified_official_reference(entry)
+    return reference["citation"] if reference else None
+
+
+def verified_official_reference(entry: dict[str, str]) -> Optional[dict[str, str]]:
+    """Return only content and scope re-read from the currently approved file."""
     try:
         reference = _official_reference_from_file(entry["source_file"], entry["source_sha256"])
         if (
@@ -1288,7 +1298,7 @@ def official_citation_from_entry(entry: dict[str, str]) -> Optional[str]:
             or entry.get("content") != " ".join(reference["excerpt_content"].split())
         ):
             return None
-        return reference["citation"]
+        return reference
     except (KeyError, TypeError, ValueError, OSError):
         return None
 
@@ -1298,6 +1308,9 @@ def get_rag_context_entries(
     profile: Optional[Profile] = None,
     product: Optional[Product] = None,
     top_k: int = 3,
+    *,
+    official_only: bool = False,
+    source_topics: Optional[set[str]] = None,
 ) -> List[Dict[str, str]]:
     # Similarity search uses OpenAIEmbeddings for the user/profile/product query.
     # Do not even build that query unless both the operator gate and this exact
@@ -1340,9 +1353,30 @@ def get_rag_context_entries(
             failure_stage = "search"
             query = _build_query(message=message, profile=profile, product=product)
 
-            # A failed/timeout search can still have disclosed its query.
-            mark_external_ai_used("rag")
-            docs = vectorstore.similarity_search(query, k=top_k)
+            if official_only:
+                search_filter = {"source_kind": "official_excerpt"}
+                if source_topics:
+                    # Resolve scope from current approved local files, not
+                    # provider metadata. Existing index source paths suffice.
+                    eligible_sources = [
+                        entry["path"] for entry in _build_document_manifest()
+                        if entry["path"].endswith(".source.json") and source_topics.intersection(
+                            _official_reference_from_file(entry["path"], entry["sha256"])["topics"].split(",")
+                        )
+                    ]
+                    if not eligible_sources:
+                        return []
+                    search_filter = {"$and": [
+                        {"source_kind": "official_excerpt"}, {"source": {"$in": eligible_sources}},
+                    ]}
+                # A failed/timeout search can still have disclosed its query.
+                mark_external_ai_used("rag")
+                docs = vectorstore.similarity_search(
+                    query, k=top_k, filter=search_filter,
+                )
+            else:
+                mark_external_ai_used("rag")
+                docs = vectorstore.similarity_search(query, k=top_k)
             verified_chunk_keys = _verified_rag_chunk_keys()
 
             results = []

@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-front-claims",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 5,
+  "section": "인쇄 6~7쪽: 영양성분 표시와 영양강조표시 (사실 요약·재구성)",
+  "text": "영양성분표는 일정량에 들어 있는 성분의 양을 보여 주고, 영양강조표시는 특정 성분의 많고 적음 등을 강조합니다. 무·저·고·함유는 함량을 강조하는 표현이고, 덜·더·강화·첨가 등은 같은 유형의 제품과 비교하는 표현입니다. 앞면에 강조한 한 성분만으로 다른 영양성분의 양까지 알 수는 없습니다. 고를 때는 강조한 성분의 실제 함량과 표시 기준량을 영양성분표에서 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-10-15",
+  "review_due": "2027-01-15",
+  "topics": [
+    "nutrition_claims"
+  ]
+}
