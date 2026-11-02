@@ -17,6 +17,7 @@ from urllib import error, request as urllib_request
 
 from dotenv import load_dotenv
 from app.infrastructure.llm_trace import observe_llm_call
+from app.infrastructure.external_ai_state import reserve_call, required as persistent_state_required
 
 from app.infrastructure.external_ai_consent import (
     external_ai_request_allowed,
@@ -207,6 +208,9 @@ def _post_json(url: str, payload: dict, headers: dict) -> Optional[dict]:
         method="POST",
     )
     try:
+        reserve_call('generation')
+        if persistent_state_required():
+            mark_external_ai_used('llm')
         with request.urlopen(
             req,
             timeout=_bounded_float(
@@ -343,7 +347,8 @@ def generate_text(prompt: str, *, json_schema: Optional[dict] = None) -> Optiona
         return result.strip() if isinstance(result, str) and result.strip() else None
     if not is_llm_enabled():
         return None
-    mark_external_ai_used("llm")
+    if not persistent_state_required():
+        mark_external_ai_used("llm")
     return observe_llm_call(
         lambda: _generate_openai(prompt, json_schema=json_schema) if json_schema is not None else _generate_openai(prompt),
         provider="openai",
