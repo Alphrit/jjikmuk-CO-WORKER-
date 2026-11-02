@@ -19,6 +19,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, replace
 from typing import Iterator, Mapping, Optional
+from app.infrastructure import external_ai_state
 
 
 CONSENT_HEADER = "x-food-chatbot-external-ai-consent"
@@ -46,10 +47,9 @@ _VALID_USAGE_SERVICES = {"llm", "rag"}
 class _ConsentNonceRegistry:
     """Bounded, process-local one-time assertion registry.
 
-    This prevents a captured, otherwise valid consent proof from causing the
-    same health context to be disclosed twice in one worker. Multi-worker and
-    multi-instance deployments still require an atomic shared replay boundary
-    at the trusted backend or gateway.
+    Development fallback only. Production or an explicitly configured ledger
+    uses the persistent SQLite registry instead. Separate hosts still require
+    an atomic shared replay boundary at the trusted backend or gateway.
     """
 
     def __init__(self, max_keys: int = MAX_CONSENT_NONCE_KEYS) -> None:
@@ -173,7 +173,11 @@ def external_ai_consent_boundary_status() -> dict[str, object]:
         "secret_distinct": distinct,
         "max_age_valid": ttl["valid"],
         "max_age_seconds": ttl["seconds"],
-        "replay_scope": "process_local",
+        "replay_scope": (
+            "persistent_sqlite" if external_ai_state.status()["configured"]
+            else "persistent_unavailable" if external_ai_state.required()
+            else "process_local"
+        ),
     }
 
 
@@ -312,7 +316,9 @@ def verify_external_ai_consent(
     replay_key = hashlib.sha256(
         f"external_ai_consent\0{user_id}\0{nonce}".encode("utf-8")
     ).digest()
-    if not _consent_nonce_registry.consume(
+    consume = (external_ai_state.consume_nonce if external_ai_state.required()
+               else _consent_nonce_registry.consume)
+    if not consume(
         replay_key,
         expires_at=max(float(current_time), float(timestamp))
         + max_age

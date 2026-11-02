@@ -53,6 +53,7 @@ from app.infrastructure.external_endpoint_policy import (
     validate_external_ai_url,
 )
 from app.infrastructure.llm import external_ai_processing_enabled
+from app.infrastructure.external_ai_state import required as persistent_state_required
 from app.infrastructure.knowledge_review import parse_released_excerpt, excerpt_reference
 
 
@@ -588,19 +589,33 @@ def _get_embeddings() -> OpenAIEmbeddings:
             f"reason={endpoint.reason}"
         )
 
+    from app.infrastructure.budgeted_embedding_transport import (
+        BudgetedEmbeddingTransport, BudgetedAsyncEmbeddingTransport,
+    )
+    from app.infrastructure.external_ai_state import required
+    model = str(_get_index_settings()["embedding_model"])
+    transport_args = dict(endpoint=endpoint.canonical_url.rstrip('/') + '/embeddings', model=model)
+    budgeted = required()
     return OpenAIEmbeddings(
-        model=str(_get_index_settings()["embedding_model"]),
+        model=model,
         api_key=api_key,
         base_url=endpoint.canonical_url,
         # OpenAI's default HTTP clients follow redirects. Explicit clients keep
         # both sync user searches and any async caller on the same no-redirect,
         # no-environment-proxy transport boundary.
-        http_client=httpx.Client(follow_redirects=False, trust_env=False),
+        http_client=httpx.Client(follow_redirects=False, trust_env=False,
+            **({'transport': BudgetedEmbeddingTransport(**transport_args)} if budgeted else {})),
         http_async_client=httpx.AsyncClient(
             follow_redirects=False,
             trust_env=False,
+            **({'transport': BudgetedAsyncEmbeddingTransport(**transport_args)} if budgeted else {}),
         ),
         openai_proxy=None,
+        # At most 2 x 4,000 characters (including six-byte JSON escapes) plus
+        # envelope fits the 64 KiB transport limit. Released excerpts <=3,000.
+        # Count every batch separately; normal non-budgeted SDK settings stay.
+        **(dict(chunk_size=2, max_retries=0, request_timeout=10.0,
+                check_embedding_ctx_length=False) if budgeted else {}),
     )
 
 
@@ -1370,12 +1385,14 @@ def get_rag_context_entries(
                         {"source_kind": "official_excerpt"}, {"source": {"$in": eligible_sources}},
                     ]}
                 # A failed/timeout search can still have disclosed its query.
-                mark_external_ai_used("rag")
+                if not persistent_state_required():
+                    mark_external_ai_used("rag")
                 docs = vectorstore.similarity_search(
                     query, k=top_k, filter=search_filter,
                 )
             else:
-                mark_external_ai_used("rag")
+                if not persistent_state_required():
+                    mark_external_ai_used("rag")
                 docs = vectorstore.similarity_search(query, k=top_k)
             verified_chunk_keys = _verified_rag_chunk_keys()
 
