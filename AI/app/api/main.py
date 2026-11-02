@@ -168,6 +168,11 @@ def _shared_replay_protection_asserted() -> bool:
     return _env_flag("FOOD_CHATBOT_SHARED_REPLAY_PROTECTION", default=False)
 
 
+def _team_unverified_catalog() -> bool:
+    from app.services.operational_policy import unverified_catalog_enabled
+    return unverified_catalog_enabled()
+
+
 def _has_minimum_utf8_bytes(value: str, *, minimum: int) -> bool:
     return len(value.strip().encode("utf-8")) >= minimum
 
@@ -203,8 +208,11 @@ def _deployment_boundary_status() -> dict:
         provider = _configured_db_provider()
         if product_label_max_age_days() is None:
             errors.append("production_product_label_max_age_invalid")
-        if not product_label_source_registry_ready():
+        if not _team_unverified_catalog() and not product_label_source_registry_ready():
             errors.append("production_product_label_source_registry_invalid")
+        from app.services.operational_policy import deployment_errors
+        errors.extend(deployment_errors(external_enabled=external_ai_processing_enabled(),
+                                        conversations_enabled=_conversations_enabled()))
         if provider in {"memory", "sqlite", "unconfigured"}:
             errors.append("production_persistent_mysql_required")
         elif provider == "mysql":
@@ -658,7 +666,7 @@ def readiness():
             or (
                 product_label_lineage_schema_ready
                 and product_label_freshness_policy_ready
-                and product_label_source_registry_configured
+                and (product_label_source_registry_configured or _team_unverified_catalog())
             )
         )
         and activity_available
@@ -688,6 +696,7 @@ def readiness():
         "product_label_source_registry_configured": (
             product_label_source_registry_configured
         ),
+        "team_unverified_catalog": _team_unverified_catalog(),
         "activity_repository_available": activity_available,
         "conversation_repository_available": conversation_available,
         "conversation_storage_enabled": _conversations_enabled(),
@@ -1101,6 +1110,12 @@ def _response_product_label_trace(
     )
 
 
+def _team_catalog_response(response: ChatResponse, *, resolved_product=None) -> ChatResponse:
+    from app.services.team_catalog import restrict_team_catalog_response
+    return restrict_team_catalog_response(response, resolved_product=resolved_product,
+                                          external_enabled=external_ai_processing_enabled())
+
+
 def _stateless_chat_response(
     req: ChatRequest,
     *,
@@ -1112,8 +1127,14 @@ def _stateless_chat_response(
         )
     response, _resolved_product, _activity_context = _run_chat_pipeline(
         req,
+        log_activity=False,
         trusted_user_id=trusted_user_id,
     )
+    if _team_unverified_catalog():
+        response = _team_catalog_response(response, resolved_product=_resolved_product)
+    _log_pipeline_response(response, activity_context=_activity_context,
+                           allow_raw_audit_message=True,
+                           trusted_user_id=trusted_user_id)
     return response.model_copy(
         update={
             "external_ai_processing": ExternalAIProcessingSummary.model_validate(
