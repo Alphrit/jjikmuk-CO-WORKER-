@@ -66,6 +66,9 @@ def _message_allergens(message: str) -> MessageAllergies:
     uncertain: set[str] = set()
     denied: set[str] = set()
     concept_spans = []
+    # '이거 알레르기 있어?' / '새우깡 알레르기 있어?' ask about a product.
+    product_subject = bool(re.search(
+        r"(?:이거|이건|이것|그거|그건|저거|얘|이\s*제품|이\s*상품)(?:에|에는|는|은|도)?\s*(?:알레르기|알러지)", message))
     for index, match in enumerate(mentions):
         from app.intent.request_semantics import concept_allergy_mention
         if concept_allergy_mention(message, match.start(), match.end()):
@@ -80,7 +83,8 @@ def _message_allergens(message: str) -> MessageAllergies:
                 continue
             if name in {"내", "제", "나는", "저는", "나", "저", "아이는", "아이가",
                         "등록된", "등록한", "저장된", "저장한", "프로필", "프로필의",
-                        "어떤", "무슨", "다른", "새로운", "새", "음식", "식품", "그리고", "제품"}:
+                        "어떤", "무슨", "다른", "새로운", "새", "음식", "식품", "그리고", "제품",
+                        "이거", "이건", "이것", "그거", "그건", "저거", "얘", "이제품", "이상품", "상품"}:
                 continue
             if re.fullmatch(r"(?:성분|원재료|원료|재료|영양\s*성분|영양\s*정보|영양)(?:과|와|이랑|랑|하고|및|의)?", name):
                 # '성분과 알레르기 주의사항' lists label fields, not an allergen.
@@ -178,6 +182,12 @@ def _message_allergens(message: str) -> MessageAllergies:
             uncertain.update(names)
         elif re.match(r"\s*(?:은|는|이|가|도)?\s*(?:전혀\s*)?(?:없|아니)", predicate):
             denied.update(names)
+        elif (re.match(r"\s*(?:이|가)?\s*있(?:어|나요|니|어요)?\s*[?？]", message[match.end():end])
+              and not names & ALLERGEN_CANONICAL_ALIASES.keys()):
+            # '새우깡 알레르기 있어?' asks about a product's label, not about
+            # the speaker; only a known allergen stays a personal question.
+            product_subject = True
+            continue
         elif re.match(r"\s*(?:이|가)?\s*있(?:어|나요)\s*\?", message[match.end():end]):
             uncertain.update(names)
         else:
@@ -191,7 +201,8 @@ def _message_allergens(message: str) -> MessageAllergies:
             unspecified_text = unspecified_text[:start] + " " + unspecified_text[end:]
         unspecified_text = _HYPOTHETICAL_PERSON_PATTERN.sub("", unspecified_text)
     has_unspecified = bool(_UNSPECIFIED_ALLERGY_STATEMENT.search(unspecified_text)
-                           and not (canonical_names or uncertain or denied) and not references_saved)
+                           and not (canonical_names or uncertain or denied) and not references_saved
+                           and not product_subject)
     # Contradictory statements about one allergen need clarification, too.
     # Certainty about a different allergen must never cancel this uncertainty.
     uncertain.update(canonical_names & denied)

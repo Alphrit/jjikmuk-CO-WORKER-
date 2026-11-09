@@ -188,6 +188,22 @@ def same_product_name(query, product):
             or candidate_matches_product_query(query, product))
 
 
+def _bare_label_field(text):
+    """'칼로리', '한봉지 칼로리', '대두' (product name already removed) → its intent."""
+    from app.intent.text import detect_ingredient_keyword, detect_nutrition_keyword
+    words = re.sub(r"[?？!.~]+", " ", text).split()
+    filler = {"한봉지", "한", "봉지", "1회", "제공량", "얼마", "얼마야", "얼마나", "알려줘", "있어", "들어있어", "포함", "함량", "기준"}
+    rest = [w for w in words if w not in filler]
+    if not rest or len(rest) > 2:
+        return None
+    joined = " ".join(rest)
+    if detect_nutrition_keyword(joined) or joined in {"트랜스지방", "식이섬유"}:
+        return "nutrition_explain"
+    if detect_ingredient_keyword(joined):
+        return "ingredient_check"
+    return None
+
+
 def run_backend_pipeline(req, legacy_pipeline):
     """Return (response, product, audit context), logging only in the API wrapper."""
     from app.api.adapters import normalize_active_profiles
@@ -219,6 +235,10 @@ def run_backend_pipeline(req, legacy_pipeline):
     intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, req.chat_history)
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
         intent = "can_i_eat"
+    elif intent in {"unknown", "ambiguous"} and req.product and _bare_label_field(intent_message):
+        # '새우깡 칼로리', '새우깡 대두' right after picking the card: the
+        # remaining words name a label field of the selected product.
+        intent = _bare_label_field(intent_message)
     elif intent in {"unknown", "ambiguous"} and req.product and re.fullmatch(r"\s*\S+(?:은|는|도)\s*[?？]*\s*", intent_message):
         from app.intent.text import detect_ingredient_keyword
         if detect_ingredient_keyword(intent_message):

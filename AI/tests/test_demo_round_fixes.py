@@ -381,3 +381,102 @@ def test_product_questions_are_not_general_food_fallbacks(message):
 @pytest.mark.parametrize("message", ["콜레스테롤 0 표시 무슨 뜻이야?", "콜레스테롤 5mg 미만 표시 뜻"])
 def test_cholesterol_zero_display_uses_the_zero_rule(message):
     assert requested_topics(message) == {"nutrition_zero"}
+
+
+# Full-code review, priority 1.
+@pytest.mark.parametrize("message, urgency", [
+    ("새우깡 먹고 숨이 막혀요", "emergency"), ("땅콩 먹고 숨을 쉴 수가 없어", "emergency"),
+    ("우유 마시고 입술이 퉁퉁 부었어", "emergency"), ("애가 새우 먹고 토하고 축 늘어졌어", "emergency"),
+    ("숨이 막히고 목이 부어요", "emergency"), ("호두 먹었는데 목이 간지러워", "urgent"),
+    ("오늘 달리기했더니 숨이 차는데 어떻게 해?", None), ("숨이 막히는 영화 추천해줘", None),
+    ("목이 부으면 어떻게 해?", None),
+])
+def test_emergency_phrases(message, urgency):
+    from app.services.emergency_triage import build_emergency_triage_response
+    response = build_emergency_triage_response(message, profiles=[], has_food_context=False)
+    assert (response.safety_guidance.urgency if response else None) == urgency
+
+
+def test_quoted_text_does_not_stall_triage():
+    import time
+    from app.services.emergency_triage import build_emergency_triage_response
+    started = time.perf_counter()
+    build_emergency_triage_response("'예문" * 1000, profiles=[], has_food_context=False)
+    assert time.perf_counter() - started < 0.5
+
+
+@pytest.mark.parametrize("allergen, canonical", [
+    ("buckwheat", "메밀"), ("pork", "돼지고기"), ("chicken", "닭고기"), ("beef", "쇠고기"), ("squid", "오징어"),
+    ("mackerel", "고등어"), ("peach", "복숭아"), ("tomato", "토마토"), ("sulfites", "아황산류"),
+    ("shellfish", "조개류"), ("pine_nut", "잣"),
+])
+def test_app_allergen_ids_resolve(allergen, canonical):
+    from app.services.response_helpers import canonical_allergen_name
+    assert canonical_allergen_name(allergen) == canonical
+
+
+@pytest.mark.parametrize("raw, allergen", [
+    ("산성아황산나트륨", "아황산류"), ("치킨엑기스", "닭고기"), ("식용우지", "쇠고기"), ("게농축액", "게"),
+    ("밀글루텐", "밀"), ("밀함유", "밀"), ("피넛버터", "땅콩"), ("연유", "우유"),
+])
+def test_label_aliases_found(raw, allergen):
+    from app.services.response_helpers import find_matching_aliases
+    assert find_matching_aliases(Product(product_name="x", barcode="1", rawmtrl_nm=raw), allergen)
+
+
+def test_unknown_guidance_never_reassures_on_parent_category_or_cross_contact():
+    from app.core.models import Profile
+    from app.services.product_facts import unknown_allergy_guidance
+    assert unknown_allergy_guidance(Product(product_name="아몬드빼빼로", barcode="1"),
+                                    Profile(name="나", allergies=["견과류"])).startswith("피하는 게 좋아요")
+    shared = unknown_allergy_guidance(Product(product_name="과자", barcode="2", rawmtrl_nm="밀가루, 같은 제조시설에서 우유 사용"),
+                                      Profile(name="나", allergies=["milk"]))
+    assert "섞일 수 있다" in shared
+    assert unknown_allergy_guidance(Product(product_name="과자", barcode="3"), Profile(name="나", allergies=["키위"])) is None
+
+
+@pytest.mark.parametrize("text, intent", [(" 칼로리", "nutrition_explain"), (" 한봉지 칼로리", "nutrition_explain"),
+                                          (" 대두", "ingredient_check"), (" 맛있어?", None)])
+def test_bare_label_field_after_a_pick(text, intent):
+    from app.services.backend_analysis import _bare_label_field
+    assert _bare_label_field(text) == intent
+
+
+def test_unsent_nutrients_are_not_answered_with_fat():
+    from app.services.product_facts import product_facts_text
+    text = product_facts_text(Product(product_name="새우깡", barcode="1", nutrition={"fat": 12.5}), "트랜스지방은?", "nutrition_explain")
+    assert "트랜스지방: 정보 없음" in text and "지방: 12.5" not in text
+
+
+@pytest.mark.parametrize("message, expected", [("새우깡 글루텐 있어?", "새우깡"), ("새우깡 맛있어?", "새우깡"),
+                                               ("새우깡 알레르기 성분", "새우깡"), ("새우깡 성분표", "새우깡")])
+def test_field_words_end_the_product_name(message, expected):
+    assert extract_product_search_query(message) == expected
+
+
+def test_product_name_words_are_not_asked_ingredients():
+    from app.services.product_facts import asked_ingredient_text
+    product = Product(product_name="농심 새우깡 90G", barcode="1", rawmtrl_nm="소맥분, 새우")
+    assert asked_ingredient_text(product, "새우깡 트랜스지방 있어?") == ""
+    assert "새우" in asked_ingredient_text(product, "새우 들어있어?")
+
+
+@pytest.mark.parametrize("message", ["이거 알레르기 있어?", "새우깡 알레르기 있어?"])
+def test_product_allergy_questions_are_not_personal_statements(message):
+    from app.services.message_constraint_guard import _message_allergens
+    parsed = _message_allergens(message)
+    assert not parsed.uncertain and not parsed.confirmed and not parsed.unspecified
+
+
+def test_same_name_from_different_makers_stays_separate():
+    from app.infrastructure.product_storage.common import _product_candidate_key
+    a = Product(product_name="바나나맛우유", barcode="1", manufacturer_name="빙그레")
+    b = Product(product_name="바나나맛우유", barcode="2", manufacturer_name="롯데")
+    assert _product_candidate_key(a) != _product_candidate_key(b)
+
+
+def test_gluten_question_checks_wheat_label():
+    from app.services.product_facts import asked_ingredient_text
+    product = Product(product_name="새우깡", barcode="1", rawmtrl_nm="소맥분, 새우")
+    text = asked_ingredient_text(product, "새우깡 글루텐 있어?")
+    assert text.startswith("글루텐은") and "밀 관련 표기가 확인돼요" in text

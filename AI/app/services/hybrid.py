@@ -1052,8 +1052,10 @@ def local_reviewed_excerpt_response(
     # An excerpt that never names the allergen the question is about (e.g. a
     # purchase-check note for '"우유 알레르기가 있다"의 뜻') is off-target.
     body = " ".join(context)
+    from app.services.response_helpers import _alias_in_text
     for allergen, aliases in ALLERGY_MAP.items():
-        if any(alias in question for alias in aliases) and not any(alias in body for alias in aliases):
+        # Word-level matching: '어떻게' is not 게, '완두콩' is not 콩.
+        if any(_alias_in_text(alias, question) for alias in aliases) and not any(alias in body for alias in aliases):
             return None
     sources = _sources_from_entries(selected)
     if len(sources) != len(selected):

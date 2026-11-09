@@ -535,7 +535,12 @@ def _product_candidate_key(product: Product) -> str:
     brand_removed = _brand_removed_text(name)
     normalized_name = _normalize_search_text(brand_removed or name).replace(" ", "")
     if normalized_name:
-        return normalized_name
+        # Same name from different makers (빙그레/롯데 바나나맛우유) can carry
+        # different allergen labels; keep both cards so the user picks one.
+        maker = _normalize_search_text(product.manufacturer_name or product.company_name or "").replace(" ", "")
+        if maker in {"알수없음", "unknown", "미상"}:
+            maker = ""
+        return f"{normalized_name}|{maker}"
     if product.report_number:
         return f"report:{product.report_number}"
     if product.barcode:
