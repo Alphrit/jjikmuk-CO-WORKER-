@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: KW-coworker/JJIKMUK-Backend
-          ref: bdbb02b164381ef3d13aee413a627fdb5057c3be
+          ref: f6a7eeeb17de526c17920a01ecfbb86cfaacab78
           persist-credentials: false
       - name: Verify actual chatbot OIDC without AWS
         env:
