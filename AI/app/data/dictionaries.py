@@ -271,8 +271,11 @@ SPECIAL_DIET_RESTRICTIONS: Mapping[
             "소고기", "쇠고기", "돼지고기", "닭고기", "오리고기",
             "햄", "베이컨", "젤라틴", "생선", "참치", "멸치",
             "새우", "게", "오징어", "조개",
+            # Label words for meat and fish that the list above missed.
+            "돈육", "계육", "우육", "닭", "치킨", "우지", "돈지", "라드", "사골",
+            "식육추출가공품", "굴소스", "가쓰오", "가다랑어", "명태", "어묵", "젓갈", "액젓",
         ),
-        "blocked_allergens": ("새우", "게", "오징어", "조개류"),
+        "blocked_allergens": ("새우", "게", "오징어", "조개류", "고등어", "굴", "돼지고기", "닭고기", "쇠고기"),
     }),
     "글루텐프리": MappingProxyType({
         "blocked_ingredients": (

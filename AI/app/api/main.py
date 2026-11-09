@@ -12,6 +12,8 @@ ENV_PATH = AI_DIR / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.api.request_guard import (
     ChatRequestGuardMiddleware,
@@ -561,6 +563,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Food Chatbot MVP", lifespan=lifespan)
 app.add_middleware(ChatRequestGuardMiddleware)
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error_without_input(_request: Request, exc: RequestValidationError) -> JSONResponse:
+    # FastAPI echoes the rejected body ('input'), including profiles and
+    # allergies, into 422 responses that end up in backend logs.
+    detail = [{key: value for key, value in error.items() if key not in {"input", "ctx", "url"}}
+              for error in exc.errors()]
+    return JSONResponse(status_code=422, content={"detail": jsonable_encoder(detail)})
 
 
 @app.middleware("http")
@@ -1599,6 +1610,11 @@ def _chat_persisted(req: ChatRequest, *, user_id: int) -> ChatResponse:
             log_activity=False,
             allow_raw_audit_message=False,
         )
+        # Same post-processing as the stateless path: team bounds and chips.
+        if _team_unverified_catalog():
+            response = _team_catalog_response(response, resolved_product=resolved_product)
+        from app.services.followup_questions import tidy_followups
+        response = tidy_followups(response, processing_req.message, team_mode=_team_unverified_catalog())
         response = response.model_copy(update={
             "external_ai_processing": ExternalAIProcessingSummary.model_validate(
                 current_external_ai_processing_summary()
