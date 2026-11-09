@@ -8,6 +8,8 @@ os.environ["OPENAI_API_KEY"] = ""
 os.environ["FOOD_CHATBOT_ENABLE_EXTERNAL_AI"] = "false"
 os.environ["FOOD_CHATBOT_EXTERNAL_AI_CONSENT_SECRET"] = ""
 os.environ["FOOD_CHATBOT_EXTERNAL_AI_CONSENT_MAX_AGE_SECONDS"] = "60"
+# Consent tests check the strict boundary; the assumed-consent default has its own tests.
+os.environ["FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT"] = "false"
 os.environ["FOOD_CHATBOT_ENV"] = "test"
 os.environ["FOOD_CHATBOT_API_TOKEN"] = ""
 os.environ["FOOD_CHATBOT_ENABLE_RATE_LIMIT"] = "false"

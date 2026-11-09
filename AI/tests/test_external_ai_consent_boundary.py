@@ -462,9 +462,13 @@ def test_user_query_rag_cannot_search_without_request_consent(monkeypatch):
     assert external_ai_request_allowed() is False
 
 
-@pytest.mark.parametrize("assume, allowed", [("", False), ("true", True)])
+@pytest.mark.parametrize("assume, allowed", [(None, True), ("true", True), ("false", False)])
 def test_assume_consent_setting_turns_a_signed_denial_into_consent(monkeypatch, assume, allowed):
-    monkeypatch.setenv("FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT", assume)
+    # Unset means assumed: the app never asks for consent.
+    if assume is None:
+        monkeypatch.delenv("FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT", raising=False)
+    else:
+        monkeypatch.setenv("FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT", assume)
     now = int(time.time())
     body = _json_body({"message": "테스트"})
     headers = {key.lower(): value for key, value in _signed_headers(body, timestamp=now, consent="denied").items()}

@@ -29,8 +29,9 @@ SIGNATURE_HEADER = "x-food-chatbot-external-ai-signature"
 USER_ID_HEADER = "x-food-chatbot-user-id"
 
 CONSENT_SECRET_ENV = "FOOD_CHATBOT_EXTERNAL_AI_CONSENT_SECRET"
-# Demo deployments with test accounts only: a backend-signed 'denied' counts as
-# granted, because the app never asks. Unsigned requests still never reach OpenAI.
+# The app (a graduation demo with test accounts) never asks for consent, so a
+# backend-signed 'denied' counts as granted unless this is set to false.
+# Unsigned requests still never reach OpenAI.
 ASSUME_CONSENT_ENV = "FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT"
 CONSENT_MAX_AGE_ENV = "FOOD_CHATBOT_EXTERNAL_AI_CONSENT_MAX_AGE_SECONDS"
 DEFAULT_CONSENT_MAX_AGE_SECONDS = 60
@@ -340,7 +341,7 @@ def verify_external_ai_consent(
 
 
 def _consent_assumed() -> bool:
-    return (os.getenv(ASSUME_CONSENT_ENV) or "").strip().lower() in {"1", "true", "yes", "on"}
+    return (os.getenv(ASSUME_CONSENT_ENV) or "true").strip().lower() not in {"0", "false", "no", "off"}
 
 
 def set_external_ai_request_context(
