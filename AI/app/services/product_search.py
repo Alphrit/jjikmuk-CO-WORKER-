@@ -97,7 +97,23 @@ _LEADING_PERSONAL_ALLERGY_PATTERN = re.compile(
 # These patterns identify where a product mention ends and the user's request begins.
 # A boundary must include a conversational predicate or a product-attribute clause so
 # product names containing words such as "단백질" or "우유" are preserved.
+def _asked_ingredient_boundary():
+    """'새우깡에 대두 들어있어?': a named ingredient + a containment verb ends the product name.
+
+    The verb must follow the ingredient directly, so names such as '땅콩버터'
+    stay intact.
+    """
+    from app.data.dictionaries import INGREDIENT_KEYWORDS
+    names = "|".join(re.escape(name) for name in sorted(set(INGREDIENT_KEYWORDS), key=len, reverse=True))
+    return re.compile(
+        rf"(?:에는|에도|에|엔)?\s+(?:{names})(?:이|가|은|는|도|을|를)?\s*"
+        r"(?:들어|포함|함유|있|없|안\s*들어|성분)",
+        re.IGNORECASE,
+    )
+
+
 _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
+    _asked_ingredient_boundary(),
     re.compile(
         r"\s+(?:제품(?:을|으로)?\s*)?(?:이용|활용)(?:한|해서|해)\s*"
         r"(?:레시피|요리|조리법)",

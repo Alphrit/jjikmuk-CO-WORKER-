@@ -18,10 +18,14 @@ def product_facts_text(product, message, intent):
     if intent == "nutrition_explain":
         from app.intent.text import detect_nutrition_keywords
         from app.services.handlers import NUTRITION_LABELS, NUTRITION_UNITS
-        requested = detect_nutrition_keywords(message)
-        # detect_nutrition_keywords returns display names; expose only requested
-        # nutrients, or all registered values for a broad nutrition request.
-        keys = [key for key, label in NUTRITION_LABELS.items() if label in requested] if requested else list(NUTRITION_LABELS)
+        from app.data.dictionaries import NUTRITION_KEYWORDS
+        requested = set(detect_nutrition_keywords(message))
+        # The detector names nutrients by NUTRITION_KEYWORDS ('칼로리'), the
+        # labels by display name ('열량'); match through the aliases. Show the
+        # requested nutrients, or all of them when none matched (never an
+        # empty list, which printed '등록된 영양정보 — .').
+        keys = [key for key, label in NUTRITION_LABELS.items()
+                if any(label in NUTRITION_KEYWORDS.get(name, (name,)) for name in requested)] or list(NUTRITION_LABELS)
         lines = [f"{NUTRITION_LABELS[key]}: {product.nutrition[key]:g}{NUTRITION_UNITS[key]}"
                  if key in product.nutrition else f"{NUTRITION_LABELS[key]}: 정보 없음" for key in keys]
         return "등록된 영양정보 — " + ", ".join(lines) + ". 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요.\n"

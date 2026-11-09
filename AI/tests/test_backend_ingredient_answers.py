@@ -69,3 +69,25 @@ def test_turn_local_allergy_keeps_the_saved_profile_verdict_and_shows_the_label_
     assert "피해주세요" in data["answer"]
     assert "새우 관련 표기가 확인돼요" in data["answer"]
     assert "아래 프로필 기준 판정에 반영되지 않았어요" in data["answer"]
+
+
+@pytest.mark.parametrize("message, expected", [
+    ("새우깡에 대두 들어있어?", "새우깡"), ("새우깡 대두 들어있어?", "새우깡"), ("새우깡에는 우유 포함돼?", "새우깡"),
+    ("쌀새우깡에 밀 들어가?", "쌀새우깡"), ("새우깡에 콩 들어있어?", "새우깡"),
+    # Ingredient words inside a product name stay part of the name.
+    ("땅콩버터 먹어도 돼?", "땅콩버터"), ("콩국수 먹어도 돼?", "콩국수"), ("서울우유 우유 들어있어?", "서울우유"),
+])
+def test_ingredient_question_keeps_only_the_product_name_as_search_query(message, expected):
+    from app.services.product_search import extract_product_search_query
+    assert extract_product_search_query(message) == expected
+
+
+@pytest.mark.parametrize("message", ["칼로리는?", "열량 알려줘", "kcal 얼마야?"])
+def test_calorie_question_shows_the_energy_value(client, message):
+    payload = request_payload(statuses=("DANGER",))
+    payload["message"] = message
+    payload["product"]["nutrition"] = {"kcal": 410.4, "sodium": 460}
+    data = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert data["intent"] == "nutrition_explain"
+    assert "열량: 410.4kcal" in data["answer"]
+    assert "영양정보 — ." not in data["answer"]
