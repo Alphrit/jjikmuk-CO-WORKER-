@@ -729,9 +729,12 @@ def handle_food_compare(
         else:
             nutrition_answer, nutrition_reasons = comparison
 
+        picked = comparison_state.pop("comparison_auto_picked", None)
+        used = (f"비교에 사용한 제품: {', '.join(item.product_name or '이 제품' for item in compared_products)}. "
+                "다른 제품이면 이름을 더 정확히 알려 주세요.\n") if picked else ""
         response = build_response(
             intent="food_compare",
-            answer=f"{allergy_answer}\n\n{nutrition_answer}",
+            answer=f"{used}{allergy_answer}\n\n{nutrition_answer}",
             risk_level=risk_level,
             assessment_status=(
                 "incomplete" if missing_information else "complete"

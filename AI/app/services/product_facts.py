@@ -65,6 +65,13 @@ def ingredient_label_text(product, ingredient):
     matched = find_matching_aliases(product, ingredient)
     if matched:
         return f"등록된 표시에서 {ingredient} 관련 표기가 확인돼요: {', '.join(matched[:3])}.\n"
+    from app.services.response_helpers import allergy_terms_from_product_name, object_particle
+    if ingredient in allergy_terms_from_product_name(product):
+        # '땅콩빼빼로' with no 땅콩 in its registered label: the name itself is
+        # evidence, so never let a missing label field read as reassurance.
+        subject = "이" if object_particle(ingredient) == "을" else "가"
+        return (f"제품명에 '{ingredient}'{subject} 들어 있어요. 등록된 표시에는 없지만 들어 있을 가능성이 높으니 "
+                "포장지의 알레르기 표시를 꼭 확인하고, 확인 전에는 피하는 편이 안전해요.\n")
     shared = find_cross_contamination_aliases(product, ingredient)
     if shared:
         return f"{ingredient}의 직접 함유 표기는 찾지 못했지만 교차오염 가능성 표시가 있어요: {', '.join(shared[:3])}.\n"

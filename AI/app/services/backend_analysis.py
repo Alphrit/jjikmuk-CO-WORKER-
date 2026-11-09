@@ -195,10 +195,15 @@ def run_backend_pipeline(req, legacy_pipeline):
                  or conversation_control_response(req.message, state)
                  or standalone_cancellation_response(req.message, state, profiles=profiles, known_profiles=profiles)
                  or unresolved_profile_target_response(req.message, profiles, profiles, state))
-    intent = rule_based_classify_intent(req.message, req.product, profile, req.chat_history)
+    named_query = _explicit_named_product_query(req.message, profile)
+    # '바나나맛우유 먹어도 돼?' asks about the product, not about 우유: classify
+    # without the product's own name.
+    intent_message = req.message
+    for name in dict.fromkeys(filter(None, [named_query, req.product.product_name if req.product else None])):
+        intent_message = intent_message.replace(name, " ")
+    intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, req.chat_history)
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
         intent = "can_i_eat"
-    named_query = _explicit_named_product_query(req.message, profile)
     same_product = bool(req.product and (not named_query or candidate_matches_product_query(named_query, req.product)))
     if intent in {"unknown", "ambiguous"} and named_query and any(word in req.message for word in ("찾아", "검색")):
         intent = "product_summary"

@@ -73,6 +73,11 @@ def resolve_comparison(
     else:
         refs = [None] * min(len(queries), 3)
         queries = queries[:3]
+    if (len(queries) == 1 and selected_product is not None and selected_product.product_name
+            and not _names_target(queries[0], selected_product)):
+        # '진라면이랑 비교해줘' with 신라면 selected compares the two.
+        queries = [selected_product.product_name, queries[0]]
+        refs = [_product_state_reference(selected_product), None]
     if len(queries) < 2:
         return _incomplete(message, {
             "comparison_status": "cleared", "comparison_products": [], "comparison_queries": [],
@@ -85,7 +90,7 @@ def resolve_comparison(
             refs[pending] = selected
     # Keep any newly supplied axis appended when resuming a candidate pick.
     original = message
-    products = []
+    products, auto_picked = [], []
     for index, query in enumerate(queries):
         product = _resolve_authoritative_product_reference(refs[index])[0] if refs[index] else None
         if product is None and selected_product is not None and _same_name(query, selected_product):
@@ -100,6 +105,12 @@ def resolve_comparison(
                 # Stateless clients resend the comparison with the tapped
                 # barcode; that product answers the target it was offered for.
                 candidates, product = [], selected_product
+            elif candidates and _stateless_request():
+                # A v2 client keeps one selection, so tapping a candidate here
+                # would drop the other target. Compare the best match and name
+                # it in the answer instead of asking.
+                product = candidates[0]
+                auto_picked.append(product.product_name or query)
             confirmation = None if product is not None else build_confirmation_if_needed(
                 candidates, search_query=query, original_message=original, pending_intent="food_compare",
             )
@@ -123,6 +134,8 @@ def resolve_comparison(
         refs[index] = _product_state_reference(product)
         products.append(product)
     context = {"version": 1, "comparison_products": refs, "comparison_queries": queries, "comparison_status": "active", "comparison_axes": axes}
+    if auto_picked:
+        context["comparison_auto_picked"] = auto_picked
     return products, None, context, original
 
 
@@ -134,3 +147,8 @@ def _same_name(query, product):
 def _names_target(query, product):
     from app.services.product_search import candidate_matches_product_query
     return _same_name(query, product) or candidate_matches_product_query(query, product)
+
+
+def _stateless_request():
+    from app.core.backend_analysis import backend_analysis_active
+    return backend_analysis_active.get()

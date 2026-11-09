@@ -394,10 +394,10 @@ def find_product_from_request_text(
     text = normalize_message(message)
     from app.services.general_handlers import _message_product_segments
     if (rule_based_classify_intent(message=text, product=None, profile=None, chat_history=[]) == "food_compare"
-            and len(_message_product_segments(message)) >= 2):
-        # '새우깡이랑 쌀새우깡 비교해줘' names two targets; the comparison
-        # handler resolves each. Searching the whole phrase as one product
-        # offered a single-product candidate list instead.
+            and _message_product_segments(message)):
+        # '새우깡이랑 쌀새우깡 비교해줘' (or '진라면이랑 비교해줘' beside the
+        # selected product): the comparison handler resolves each target.
+        # Searching the phrase as one product offered a single-product list.
         return None, None
     history_restore_allowed = use_history and not _has_unresolved_product_confirmation(
         chat_history
@@ -1644,6 +1644,15 @@ def _explicit_named_product_query(message, profile):
         # is not a catalog name. Unknown named products still retain their
         # own unresolved target rather than falling back to the old product.
         return None
+    from app.data.dictionaries import INGREDIENT_KEYWORDS
+    short_switch = (re.fullmatch(rf"\s*{re.escape(query)}\s*(?:은|는)\s*[?？]*\s*", text)
+                    and compact_search_text(query) not in {compact_search_text(word) for word in INGREDIENT_KEYWORDS}
+                    and not detect_nutrition_keyword(query)
+                    and not re.fullmatch(r"(?:엄마|아빠|어머니|아버지|언니|오빠|누나|형|동생|아이|아기|할머니|할아버지)", query))
+    if short_switch:
+        # '새우깡은?' after another product names the next product; '우유는?'
+        # and '칼로리는?' stay questions about the current one.
+        return query
     if not re.search(r"먹어도|먹어두|머거도|먹을\s*수|마셔도|마셔두|섭취해도|어때|괜찮|바꿨어|바꿨|변경했|선택했|골랐|찾아|검색|원재료|성분|나트륨|당류|단백질|열량|칼로리|콜레스테롤", text):
         return None
     return query

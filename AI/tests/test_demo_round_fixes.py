@@ -93,3 +93,64 @@ def test_comparison_answer_gets_no_single_product_allergy_alert():
     response = ChatResponse(intent="food_compare", task_type="product_chat", answer="비교", risk_level="unknown")
     product = Product(product_name="쌀새우깡", barcode="5", allergy=["새우"], product_found=True)
     assert attach_profile_allergy_alert(response, product, Profile(name="검증", allergies=["새우"])) is response
+
+
+def test_ingredient_in_the_product_name_is_never_reported_as_absent():
+    from app.services.product_facts import ingredient_label_text
+    product = Product(product_name="땅콩빼빼로", barcode="9", allergy=["밀", "우유"], rawmtrl_nm="밀가루, 설탕")
+    text = ingredient_label_text(product, "땅콩")
+    assert "제품명에 '땅콩'이 들어 있어요" in text and "피하는 편이 안전해요" in text
+    assert "찾지 못했어요" not in text
+
+
+@pytest.mark.parametrize("message, expected", [
+    ("새우깡 포화지방 얼마야?", "새우깡"), ("새우깡 트랜스지방은?", "새우깡"), ("오레오 식이섬유 알려줘", "오레오"),
+])
+def test_fat_and_fiber_fields_end_the_product_name(message, expected):
+    assert extract_product_search_query(message) == expected
+
+
+@pytest.mark.parametrize("message, expected", [
+    ("새우깡은?", "새우깡"), ("진라면은", "진라면"), ("우유는?", None), ("칼로리는?", None), ("엄마는?", None),
+])
+def test_short_question_switches_only_to_a_product_name(message, expected):
+    assert _explicit_named_product_query(message, None) == expected
+
+
+def test_product_name_words_do_not_turn_an_eat_question_into_an_ingredient_question(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.api import main as api
+    from app.infrastructure.repository import InMemoryActivityRepository, InMemoryProductRepository
+    from app.services import activity, product as product_service
+    from backend_v2_helpers import TOKEN, request_payload, headers
+    monkeypatch.setenv("FOOD_CHATBOT_API_TOKEN", TOKEN)
+    monkeypatch.setenv("FOOD_CHATBOT_ENABLE_EXTERNAL_AI", "false")
+    monkeypatch.setattr(product_service, "_default_repository", InMemoryProductRepository())
+    old = activity.get_activity_repository()
+    activity.set_activity_repository(InMemoryActivityRepository())
+    try:
+        with TestClient(api.app) as test_client:
+            payload = request_payload(statuses=("DANGER",))
+            payload["message"] = "바나나맛우유 먹어도 돼?"
+            payload["product"]["productName"] = "바나나맛우유"
+            data = test_client.post("/chat", json=payload, headers=headers(payload)).json()
+    finally:
+        activity.set_activity_repository(old)
+    assert data["intent"] == "can_i_eat"
+
+
+def test_comparison_against_the_selected_product_in_a_stateless_request(monkeypatch):
+    from app.core.backend_analysis import backend_analysis_active
+    from app.services import comparison_context
+    catalog = {"진라면": [_product("진라면(순한맛)", "3"), _product("진라면 매운맛", "4")]}
+    monkeypatch.setattr(comparison_context, "find_product_candidates_from_message",
+                        lambda query, limit=3: catalog[query.replace(" 찾아줘", "")])
+    token = backend_analysis_active.set(True)
+    try:
+        products, confirmation, state, _ = comparison_context.resolve_comparison(
+            "진라면이랑 비교해줘", _product("신라면", "1", 1.0), {})
+    finally:
+        backend_analysis_active.reset(token)
+    assert confirmation is None
+    assert [product.product_name for product in products] == ["신라면", "진라면(순한맛)"]
+    assert state["comparison_auto_picked"] == ["진라면(순한맛)"]
