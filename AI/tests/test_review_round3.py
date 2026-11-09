@@ -41,3 +41,12 @@ def test_vegetarian_blocks_meat_label_words(word):
     from app.data.dictionaries import SPECIAL_DIET_RESTRICTIONS
     blocked = SPECIAL_DIET_RESTRICTIONS["채식"]["blocked_ingredients"]
     assert any(term in word for term in blocked)
+
+
+def test_policy_version_fits_a_narrow_existing_column():
+    from app.infrastructure.activity_storage.mysql import MySQLActivityRepository
+    repo = MySQLActivityRepository.__new__(MySQLActivityRepository)
+    repo._column_widths = {"policy_version": 32}
+    fitted = repo._fit_column("policy_version", "unified-hard-constraints-purpose-v5.2")
+    assert len(fitted) == 32 and fitted.startswith("unified-hard-constraint") and "~" in fitted
+    assert repo._fit_column("policy_version", "short") == "short"
