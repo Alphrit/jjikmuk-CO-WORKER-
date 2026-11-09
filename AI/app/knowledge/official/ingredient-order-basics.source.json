@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "ingredient-order-basics",
+  "source_id": "foodsafety-processed-food-label-2014",
+  "source_sha256": "f62992b91e917b6ee5336fb444017a303bdd670c1c03c63f1faf67df23d48ae9",
+  "page": null,
+  "section": "원재료명 표시 순서와 첨가물 표시 (사실 요약·재구성)",
+  "text": "식품안전나라의 2014년 가공식품 표시 안내에 따르면 원재료명은 많이 사용한 순서대로 표시합니다. 합성감미료·합성착색료·합성보존료처럼 정해진 용도로 사용한 식품첨가물은 그 명칭과 용도를 함께 표시해야 합니다. 이 설명은 2014년 안내의 일반 원칙이며 세부 예외나 현재의 법적 기준, 첨가물의 안전성을 대신하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-11-09",
+  "review_due": "2027-01-15",
+  "topics": [
+    "ingredient_order"
+  ]
+}

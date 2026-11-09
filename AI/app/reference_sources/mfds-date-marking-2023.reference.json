@@ -1,0 +1,19 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "mfds-date-marking-2023",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=3120&menu_grp=MENU_NEW01&bbs_no=bbs001&ntctxt_no=1093173",
+  "title": "소비자를 위한 식품 '소비기한 표시제'를, 알아보아요!",
+  "publisher": "식품의약품안전처(식품안전나라)",
+  "checked_at": "2026-11-09",
+  "section": "소비기한이란? · 유통기한vs소비기한 · 제도 시행",
+  "reviewed_facts": [
+    "소비기한: 표시된 보관 방법을 준수할 경우 섭취하여도 안전에 이상이 없는 기한(소비자 중심).",
+    "유통기한: 제조일로부터 소비자에게 유통·판매가 허용되는 기간(영업자 중심).",
+    "소비기한 표시제는 2023년 1월 1일 시행, 냉장 보관 우유류는 2031년 1월 1일부터 적용."
+  ],
+  "rights": "facts-only-independent-wording",
+  "rights_evidence": "공식 페이지에서 선택한 사실을 독립적인 한국어 문장으로 정리. 원문·그림·표·전체 번역의 복제 허락을 주장하지 않음. 2023.02.01 게시 카드뉴스 이미지의 문구를 직접 읽음. 공공누리 표시는 확인하지 못함.",
+  "review_scope": "표시 용어의 뜻과 시행 시점에 한정. 기한이 지난 특정 식품의 섭취 가능 여부·보관 방법별 기간 제외.",
+  "limitations": "전체 HTML 원본이 아닌 검토 사실 기록. 원격 페이지의 해시나 원문 전체 이용 허락을 뜻하지 않음."
+}

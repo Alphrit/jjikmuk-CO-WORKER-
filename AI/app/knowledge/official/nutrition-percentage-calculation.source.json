@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "nutrition-percentage-calculation",
+  "source_id": "mfds-nutrition-label-guide-2025-12",
+  "source_sha256": "d10b954559cd3d61f8bffddf0ed2972bd639c0c59238f43eb96364210f27d8e1",
+  "page": 18,
+  "section": "인쇄 32~33쪽: 1일 영양성분 기준치에 대한 비율 계산 (사실 요약·재구성)",
+  "text": "식약처 2025년 12월 안내서에 따르면 영양성분표의 기준치 대비 비율(%)은 영양성분표에 표시한 함량을 그 성분의 1일 영양성분 기준치로 나눈 뒤 100을 곱해 구하고, 반올림해 정수로 표시합니다. 예를 들어 콜레스테롤 표시값이 15mg이면 기준치 300mg에 대한 비율은 5%입니다. 열량과 트랜스지방처럼 1일 영양성분 기준치가 정해지지 않은 성분은 비율 칸을 비워 둡니다. 이 비율은 2,000kcal 기준이어서 개인에게 필요한 열량에 따라 다를 수 있습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-11-09",
+  "review_due": "2027-01-15",
+  "topics": [
+    "percentage_calculation"
+  ]
+}

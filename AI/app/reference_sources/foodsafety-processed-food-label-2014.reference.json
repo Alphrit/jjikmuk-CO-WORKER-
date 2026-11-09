@@ -1,0 +1,18 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "foodsafety-processed-food-label-2014",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?bbs_no=bbs001&menu_grp=MENU_NEW01&menu_no=3120&ntctxt_no=22276",
+  "title": "가공식품 (식품안전 지식)",
+  "publisher": "식품안전나라",
+  "checked_at": "2026-11-09",
+  "section": "원재료명/성분명 및 함량",
+  "reviewed_facts": [
+    "원재료명은 많이 사용한 순서에 따라 표시.",
+    "합성감미료·합성착색료·합성보존료 등의 용도로 사용한 식품첨가물은 명칭과 용도를 함께 표시."
+  ],
+  "rights": "facts-only-independent-wording",
+  "rights_evidence": "공식 페이지에서 선택한 사실을 독립적인 한국어 문장으로 정리. 원문·그림·표·전체 번역의 복제 허락을 주장하지 않음. 2014.12.01 게시. 공공누리 표시는 확인하지 못함.",
+  "review_scope": "원재료명 표시 순서와 첨가물 명칭·용도 병기의 일반 원칙에 한정. 2014년 세부 예외(주원료 우선, 2% 미만 등)와 현재 법적 기준·첨가물 안전성 제외.",
+  "limitations": "전체 HTML 원본이 아닌 검토 사실 기록. 원격 페이지의 해시나 원문 전체 이용 허락을 뜻하지 않음."
+}

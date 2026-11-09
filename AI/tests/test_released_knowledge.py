@@ -28,7 +28,7 @@ def packaged_sources(monkeypatch, tmp_path):
     class ReviewDate(date):
         @classmethod
         def today(cls):
-            return cls(2026, 10, 15)
+            return cls(2026, 11, 9)
 
     monkeypatch.setattr(review, "date", ReviewDate)
     for path in OFFICIAL_DIR.glob("*.source.json"):
@@ -43,7 +43,7 @@ def test_shipped_references_are_traceable_and_excerpts_are_released(packaged_sou
     assert len(SOURCES) == 3  # Offline prepare still requires only the supplied files.
     assert len(ADDITIONAL_PDF_SOURCES) == 4
     assert len(WEB_SOURCES) == 4
-    assert len(EXPLANATION_WEB_SOURCES) == 11
+    assert len(EXPLANATION_WEB_SOURCES) == 16
     for spec in WEB_SOURCES + EXPLANATION_WEB_SOURCES:
         content = (CAPTURE_DIR / spec.filename).read_bytes()
         capture = json.loads(content)
@@ -59,21 +59,21 @@ def test_shipped_references_are_traceable_and_excerpts_are_released(packaged_sou
             assert "전체" in capture["limitations"]
         assert hashlib.sha256(content).hexdigest() == review.SOURCE_REVIEWS[spec.source_id].sha256
     entries = preview_released_sources()
-    assert len(entries) == 40
-    assert sum("웹 본문" in e["citation"] for e in entries) == 18
-    assert sum(" | PDF " in e["citation"] for e in entries) == 22
+    assert len(entries) == 46
+    assert sum("웹 본문" in e["citation"] for e in entries) == 23
+    assert sum(" | PDF " in e["citation"] for e in entries) == 23
     assert all("요약·재구성" in e["citation"] for e in entries)
     assert all(e["runtime_eligible"] for e in entries)
 
 
 def test_capture_notes_raw_medical_content_and_private_paths_do_not_enter_rag(packaged_sources):
     documents = rag._load_documents()
-    assert len(documents) == 40
+    assert len(documents) == 46
     text = " ".join(d.page_content for d in documents)
     for excluded in ("rights", "source_sha256", "reference.json", "진료", "치료", "500g", "법령"):
         assert excluded not in text
     assert all(d.metadata["source_kind"] == "official_excerpt" for d in documents)
-    assert len(rag._split_rag_documents(documents, {"chunk_size": 10, "chunk_overlap": 0})) == 40
+    assert len(rag._split_rag_documents(documents, {"chunk_size": 10, "chunk_overlap": 0})) == 46
 
 
 def test_web_source_must_not_claim_a_pdf_page_even_if_digest_approved(packaged_sources, monkeypatch):
@@ -127,7 +127,7 @@ def test_released_preview_does_not_require_private_files_or_call_models(packaged
     result = json.loads(capsys.readouterr().out)
     assert result["llm_called"] is False
     assert result["index_built"] is False
-    assert len(result["results"]) == 9
+    assert len(result["results"]) == 10
     assert any("kca.go.kr" in entry["citation"] for entry in result["results"])
     assert preview_released_sources("아무관련없는검색어") == []
 

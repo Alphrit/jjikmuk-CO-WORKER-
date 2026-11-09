@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "date-marking-basics",
+  "source_id": "mfds-date-marking-2023",
+  "source_sha256": "a0a337e6f16b892d071c07b7d0059620d4bfd143235918615482bc7935c4ef4a",
+  "page": null,
+  "section": "유통기한과 소비기한의 차이 (사실 요약·재구성)",
+  "text": "식약처의 2023년 2월 소비자 안내에 따르면 유통기한은 제조일부터 소비자에게 유통·판매가 허용되는 기간으로, 영업자 중심의 표시입니다. 소비기한은 표시된 보관 방법을 지켰을 때를 기준으로 정한 섭취 기한으로, 소비자 중심의 표시입니다. 소비기한 표시제는 2023년 1월 1일부터 시행되었고, 냉장 보관하는 우유류는 2031년 1월 1일부터 적용됩니다. 소비기한은 표시된 보관 방법을 지킨다는 전제가 있으므로 보관 방법도 함께 확인하세요. 이 설명은 기한이 지난 특정 식품을 먹어도 되는지 판단하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-11-09",
+  "review_due": "2027-01-15",
+  "topics": [
+    "date_marking"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "fda-cholesterol-basics",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.accessdata.fda.gov/scripts/interactiveNutritionFactsLabel/cholesterol.cfm",
+  "title": "Interactive Nutrition Facts Label: Cholesterol",
+  "publisher": "미국 식품의약국(FDA)",
+  "checked_at": "2026-11-09",
+  "section": "What It Is · Where It Is Found",
+  "reviewed_facts": [
+    "콜레스테롤은 몸의 모든 세포에 있는 밀랍 같은 지방 유사 물질.",
+    "식품의 콜레스테롤은 달걀노른자, 우유·치즈·요구르트 같은 유제품 등 동물성 식품에만 있음."
+  ],
+  "rights": "facts-only-independent-wording",
+  "rights_evidence": "공식 페이지에서 선택한 사실을 독립적인 한국어 문장으로 정리. 원문·그림·표·전체 번역의 복제 허락을 주장하지 않음. 미국 연방정부 저작물이며 라이선스 표시는 없음.",
+  "review_scope": "일반 식품 개념에 한정. 미국 1일 기준치(DV) 수치, 혈중 콜레스테롤·질환(Health Facts, Blood Cholesterol 절), 개인 섭취량 제외.",
+  "limitations": "전체 HTML 원본이 아닌 검토 사실 기록. 원격 페이지의 해시나 원문 전체 이용 허락을 뜻하지 않음."
+}

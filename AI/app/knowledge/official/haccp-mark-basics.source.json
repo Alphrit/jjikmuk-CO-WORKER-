@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "haccp-mark-basics",
+  "source_id": "korea-haccp-2022",
+  "source_sha256": "5f199407827cacb981891cc925a6554f341173f1be33eb0f7e021b78220822f4",
+  "page": null,
+  "section": "해썹(HACCP)의 뜻과 마크 (사실 요약·재구성)",
+  "text": "정책브리핑의 2022년 4월 안내에 따르면 해썹(HACCP)은 식품을 만드는 과정에서 생길 수 있는 위해요소를 미리 분석하고 차단하는 사전 예방형 식품안전관리 체계입니다. 해썹 인증을 받은 업소에서 생산한 제품만 포장에 해썹 마크를 표시할 수 있습니다. 해썹 마크는 제조 과정의 위생·안전 관리에 관한 인증 표시이며 알레르기 유발 성분이 없다는 뜻은 아니므로, 원재료명과 알레르기 표시는 따로 확인하세요.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-11-09",
+  "review_due": "2027-01-15",
+  "topics": [
+    "haccp_mark"
+  ]
+}

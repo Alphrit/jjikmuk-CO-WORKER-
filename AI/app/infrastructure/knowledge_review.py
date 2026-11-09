@@ -106,6 +106,36 @@ SOURCE_REVIEWS = {
         "해외 의무·수치·의료·개인 적합성 제외. 검토 근거는 같은 source_id의 reference.json.",
         reviewed_at="2026-10-15",
     ),
+    'fda-cholesterol-basics': SourceReview(
+        'da16ff7a68721e7891a93138f5a0c241c6b49c0e99996b6166192f5f74bee367', "cleared", "reviewed",
+        "선택한 사실만 새 문장으로 설명. 원문·그림·표·전체 번역의 이용 허락을 주장하지 않음. "
+        "해외 의무·수치·의료·개인 적합성 제외. 검토 근거는 같은 source_id의 reference.json.",
+        reviewed_at="2026-11-09",
+    ),
+    'mfds-date-marking-2023': SourceReview(
+        'a0a337e6f16b892d071c07b7d0059620d4bfd143235918615482bc7935c4ef4a', "cleared", "reviewed",
+        "선택한 사실만 새 문장으로 설명. 원문·그림·표·전체 번역의 이용 허락을 주장하지 않음. "
+        "해외 의무·수치·의료·개인 적합성 제외. 검토 근거는 같은 source_id의 reference.json.",
+        reviewed_at="2026-11-09",
+    ),
+    'korea-haccp-2022': SourceReview(
+        '5f199407827cacb981891cc925a6554f341173f1be33eb0f7e021b78220822f4', "cleared", "reviewed",
+        "선택한 사실만 새 문장으로 설명. 원문·그림·표·전체 번역의 이용 허락을 주장하지 않음. "
+        "해외 의무·수치·의료·개인 적합성 제외. 검토 근거는 같은 source_id의 reference.json.",
+        reviewed_at="2026-11-09",
+    ),
+    'mfds-beverage-caffeine-2021': SourceReview(
+        'f2ed231e752189b6c79288b7fa2a7bed97e0e71d384a39fc86a1336315613448', "cleared", "reviewed",
+        "선택한 사실만 새 문장으로 설명. 원문·그림·표·전체 번역의 이용 허락을 주장하지 않음. "
+        "해외 의무·수치·의료·개인 적합성 제외. 검토 근거는 같은 source_id의 reference.json.",
+        reviewed_at="2026-11-09",
+    ),
+    'foodsafety-processed-food-label-2014': SourceReview(
+        'f62992b91e917b6ee5336fb444017a303bdd670c1c03c63f1faf67df23d48ae9', "cleared", "reviewed",
+        "선택한 사실만 새 문장으로 설명. 원문·그림·표·전체 번역의 이용 허락을 주장하지 않음. "
+        "해외 의무·수치·의료·개인 적합성 제외. 검토 근거는 같은 source_id의 reference.json.",
+        reviewed_at="2026-11-09",
+    ),
     "mfds-allergy-label-reading-2022": SourceReview(
         "1fb3e315408e3493a0421e79e956544db25edbff586df516740598d546b08532",
         "cleared", "reviewed",
@@ -202,12 +232,17 @@ RELEASED_EXCERPT_HASHES: dict[str, str] = {
     "allergy-label-reading": "b0f0f6c40458dcf648e774128c208e5fa190c66bb283ca7223bb7206ed228533",
     "allergy-ordering-check": "eeb89f6dba9b670a282e309aa267b1988957d28cb389ed673057fed42e014fb6",
     "allergy-purchase-check": "4a5f6fe31daef8e19ed17a58b503c34a11d66c4436e3a6eb6c022efbdd12c228",
+    "caffeine-label-basics": "4e4a81576717de9209d33d58d5f2b89b2701e77d6f44ae8099800b7327ce26ff",
     "calories-basics": "96fdd9d8daf4ca60fd8857df58f653ff52f63bbfdee1c88793a5614fe336c95f",
     "carbohydrate-and-sugars": "28d152d4c072b1b66de474f1cbd38d04de18407f1d8eb331de21894bf9662090",
+    "cholesterol-basics": "ddeacbdb314884ae64fb154075d3f638a80848dc20ffe7eb5fd0cb85f27bbae8",
+    "date-marking-basics": "9606d91e54ab8780fa584c4f0a6aacfc6941283dc07f194d489c859fd6e667e2",
     "diet-reduction-direction": "5d5043070dc400881c8300b83762dcf1537ba0ea252de2ac8e1f17ec857faa84",
     "dietary-fiber-basics": "71beefd91c1a0e003b013f7d094e1d9539658985ed7011f3483a2f4b6ff1162b",
     "fat-types-basics": "4c50d4e98743295e444b4d27c820641e6ae613c1418257c3fdf0ee590f33c1f1",
     "gluten-basics": "e7e6492e7b77c1d421d908a26ccbc532bd6a74dae25093c501a2841489f26883",
+    "haccp-mark-basics": "40da9f236c466bb52e7eaf62a03ddc6b4d30a149eedb502d37766e9dbde3b7ab",
+    "ingredient-order-basics": "64e64974f18da5361ee26139ba4538981fc44762b13420d9d5190a8da09126c0",
     "lactose-free-and-milk": "f2950e552247562ccac6c6ea661d456acee79b555455a807b3dba0b9fd89ccc8",
     "nutrition-front-claims": "a54ab4868a539771d3d3e6e9334324df99c2dcfb2256223f0f041b0a15661992",
     "nutrition-high-fiber": "36844b37a91085597d1acf32bed056211a408f4111d80f9631f72cca5fd4a464",
@@ -220,8 +255,9 @@ RELEASED_EXCERPT_HASHES: dict[str, str] = {
     "nutrition-low-sodium": "a6946ff3112d2dd6e41dde4485da117a90e7b568123a51fb97bd791e37ecd8ae",
     "nutrition-low-sugar": "5331796ebd808e4a1ffc1c77a3b68f69489c008826855eeff698bafa9f439183",
     "nutrition-mass-units": "26695c654002d1fc9f13cc8c8d15a5e2c6aa7f6369a7f44eb82e1d0c3794d15f",
+    "nutrition-percentage-calculation": "bacef27b1c973d31263a3f6a5192b58f54a7e287abc4b33a8dfc822791830493",
     "nutrition-zero-energy": "4c776a72e52c0dcd15c9459ad455de4805f8d29cda6823ab80702a75e3a3dc3d",
-    "nutrition-zero-rounding": "4f3d57ad8a730411b9ef34bded33959718bbd15e07a705dab9ea0f56ae3af8ca",
+    "nutrition-zero-rounding": "809f88d875a9b07ce2a1b30374990bb0ab7449710c6f7b37998b0ca30759133f",
     "protein-basics": "6addad19253a533c95d5751775392505399db1989a971534a903d45e3847e170",
     "serving-and-recommendation": "325122ce12516663304a41287083970b5544b3ea9b287685c595f633394b048a",
     "sodium-and-salt": "2003a60a0111ebeeb5fdac5c0cacd43d68a5409f4b6cf1d60cdec253f7d4e576",
@@ -268,6 +304,8 @@ class ReviewedExcerpt(BaseModel):
         "sodium_salt", "sodium_taste", "calories_basics", "serving_portion", "sugars_added",
         "vegan_definition", "vegetarian_definition", "vegan_allergy", "gluten_basics", "lactose_free",
         "nutrition_zero", "nutrition_units", "low_sodium", "low_saturated_fat", "high_fiber", "sugar_definition",
+        "percentage_calculation", "cholesterol_basics", "date_marking", "haccp_mark",
+        "caffeine_label", "ingredient_order", "no_additive_claim",
     ]] = Field(default_factory=list, max_length=64)
 
 

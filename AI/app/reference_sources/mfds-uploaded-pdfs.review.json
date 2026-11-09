@@ -13,6 +13,8 @@
       "extraction": "pypdf text; selected pages visually checked",
       "selected_physical_pages": [
         5,
+        16,
+        18,
         23,
         24,
         25
@@ -110,6 +112,13 @@
       "first_physical_page": 25,
       "section": "인쇄 46쪽: 제로칼로리 문답",
       "topic": "zero_energy"
+    },
+    {
+      "document_id": "nutrition-percentage-calculation",
+      "source_id": "mfds-nutrition-label-guide-2025-12",
+      "first_physical_page": 18,
+      "section": "인쇄 32~33쪽: 1일 영양성분 기준치에 대한 비율 계산",
+      "topic": "percentage_calculation"
     }
   ],
   "excluded": [

@@ -172,6 +172,21 @@ EXPLANATION_WEB_SOURCES = (
     SourceSpec(
         'fda-lactose-label-basics', 'fda-lactose-label-basics.reference.json', 'web', 'FY18/19 Dairy-Free Dark Chocolate Products for Milk Allergen', '미국 식품의약국(FDA)', 'https://www.fda.gov/food/sampling-protect-food-supply/fy1819-sample-collection-and-analysis-domestically-manufactured-dairy-free-dark-chocolate-products', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
     ),
+    SourceSpec(
+        'fda-cholesterol-basics', 'fda-cholesterol-basics.reference.json', 'web', 'Interactive Nutrition Facts Label: Cholesterol', '미국 식품의약국(FDA)', 'https://www.accessdata.fda.gov/scripts/interactiveNutritionFactsLabel/cholesterol.cfm', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'mfds-date-marking-2023', 'mfds-date-marking-2023.reference.json', 'web', "소비자를 위한 식품 '소비기한 표시제'를, 알아보아요!", '식품의약품안전처(식품안전나라)', 'https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?menu_no=3120&menu_grp=MENU_NEW01&bbs_no=bbs001&ntctxt_no=1093173', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'korea-haccp-2022', 'korea-haccp-2022.reference.json', 'web', "'안전한 먹거리' 구매하려면 반드시 이 '표시'를 확인하세요", '대한민국 정책브리핑', 'https://www.korea.kr/news/policyNewsView.do?newsId=148900427', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'mfds-beverage-caffeine-2021', 'mfds-beverage-caffeine-2021.reference.json', 'web', '식품통계로 알아보는 음료류 이야기', '식품의약품안전처·식품안전정보원', 'https://www.mfds.go.kr/brd/m_629/view.do?seq=28', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
+    SourceSpec(
+        'foodsafety-processed-food-label-2014', 'foodsafety-processed-food-label-2014.reference.json', 'web', '가공식품 (식품안전 지식)', '식품안전나라', 'https://www.foodsafetykorea.go.kr/portal/board/boardDetail.do?bbs_no=bbs001&menu_grp=MENU_NEW01&menu_no=3120&ntctxt_no=22276', '일반 개념·표시 해석의 선택된 사실만 사용. 해외 의무·개인별 권장량·의료 판정 제외.',
+    ),
 )
 
 

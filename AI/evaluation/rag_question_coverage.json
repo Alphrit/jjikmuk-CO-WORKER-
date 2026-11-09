@@ -534,12 +534,15 @@
         "당류 0g은 아예 없다는 뜻이야?",
         "영양성분표 반올림은 무슨 뜻이야?",
         "단백질 0g 표시가 완전한 부재라는 의미야?",
-        "지방 0g이면 전혀 없는 뜻이야?"
+        "지방 0g이면 전혀 없는 뜻이야?",
+        "트랜스지방 0g이면 진짜 없는 거야?",
+        "콜레스테롤 0mg이면 아예 없다는 뜻이야?"
       ],
       "must_contain_all": [
         "0.5g 미만",
         "절대적인 부재",
-        "강조표시"
+        "강조표시",
+        "0.2g 미만"
       ]
     },
     {
@@ -618,6 +621,94 @@
         "단당류와 이당류",
         "설탕",
         "서로 다른 정보"
+      ]
+    },
+    {
+      "document_id": "nutrition-percentage-calculation",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "영양성분표 %는 어떻게 계산해?",
+        "기준치 대비 비율은 어떻게 구해?",
+        "열량은 왜 % 칸이 비어 있어?",
+        "트랜스지방은 왜 퍼센트가 없어?"
+      ],
+      "must_contain_all": [
+        "100을 곱해",
+        "비워 둡니다",
+        "2,000kcal"
+      ]
+    },
+    {
+      "document_id": "cholesterol-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "콜레스테롤이 뭐야?",
+        "콜레스테롤은 어떤 식품에 들어 있어?",
+        "콜레스테롤 뜻 알려줘",
+        "콜레스테롤이란 무엇인지 설명해줘"
+      ],
+      "must_contain_all": [
+        "세포",
+        "동물성 식품"
+      ]
+    },
+    {
+      "document_id": "date-marking-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "유통기한이랑 소비기한 차이가 뭐야?",
+        "소비기한이 뭐야?",
+        "소비기한은 언제부터 시행됐어?",
+        "유통기한은 무슨 뜻이야?"
+      ],
+      "must_contain_all": [
+        "유통·판매",
+        "보관 방법",
+        "2023년 1월 1일"
+      ]
+    },
+    {
+      "document_id": "haccp-mark-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "HACCP 마크가 뭐야?",
+        "해썹 인증은 무슨 뜻이야?",
+        "해썹 마크는 어떤 의미야?",
+        "HACCP이 뭔지 설명해줘"
+      ],
+      "must_contain_all": [
+        "위해요소",
+        "해썹 마크",
+        "알레르기"
+      ]
+    },
+    {
+      "document_id": "caffeine-label-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "고카페인 함유가 무슨 뜻이야?",
+        "카페인 표시는 어떻게 봐?",
+        "고카페인 음료 기준이 뭐야?",
+        "카페인 주의 문구는 무슨 의미야?"
+      ],
+      "must_contain_all": [
+        "0.15mg",
+        "총 카페인 함량",
+        "주의"
+      ]
+    },
+    {
+      "document_id": "ingredient-order-basics",
+      "expected_intent": "general_nutrition_guide",
+      "questions": [
+        "원재료는 왜 이 순서로 적혀 있어?",
+        "원재료명 순서는 무슨 의미야?",
+        "감미료 옆에 괄호로 용도가 적힌 건 뭐야?",
+        "첨가물 명칭과 용도 표시는 무슨 뜻이야?"
+      ],
+      "must_contain_all": [
+        "많이 사용한 순서",
+        "명칭과 용도"
       ]
     }
   ],
@@ -729,7 +820,9 @@
     "영양표시의 순탄수 계산법을 알려줘",
     "임산부는 비건 식단을 어떻게 짜야 해?",
     "교차오염 성분을 가열하면 없어져?",
-    "알레르기 표시 대상 목록은 몇 종이야?"
+    "알레르기 표시 대상 목록은 몇 종이야?",
+    "유통기한 지난 우유 먹어도 돼?",
+    "카페인은 하루에 얼마까지 괜찮아?"
   ],
   "unsupported_cases": [
     {

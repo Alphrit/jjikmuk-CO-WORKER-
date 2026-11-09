@@ -73,7 +73,7 @@ def general_label_term_question(message: str) -> bool:
         return True
     # The terms themselves; whether an expired food is still edible stays out of scope.
     return bool(re.search(r"유통\s*기한|소비\s*기한", text)
-                and re.search(r"차이|뜻|의미|뭐|무슨|달라|다르|다른|구분", text)
+                and re.search(r"차이|뜻|의미|뭐|무슨|달라|다르|다른|구분|언제|시행", text)
                 and not re.search(r"지난|지나|넘은|넘었|먹어도|마셔도|상한|상했|버려", text))
 
 

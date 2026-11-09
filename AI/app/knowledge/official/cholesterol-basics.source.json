@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "cholesterol-basics",
+  "source_id": "fda-cholesterol-basics",
+  "source_sha256": "da16ff7a68721e7891a93138f5a0c241c6b49c0e99996b6166192f5f74bee367",
+  "page": null,
+  "section": "콜레스테롤의 개념과 들어 있는 식품 (사실 요약·재구성)",
+  "text": "미국 FDA의 영양표시 설명에 따르면 콜레스테롤은 몸의 모든 세포에 있는 밀랍 같은 지방 유사 물질입니다. 식품으로 먹는 콜레스테롤은 달걀노른자, 우유·치즈·요구르트 같은 유제품 등 동물성 식품에만 들어 있습니다. 이 설명은 식품 성분의 일반 개념이며 혈중 콜레스테롤이나 질환, 개인에게 맞는 섭취량을 판단하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-11-09",
+  "review_due": "2027-01-15",
+  "topics": [
+    "cholesterol_basics"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "format": "food-rag-excerpt-v1",
+  "document_id": "caffeine-label-basics",
+  "source_id": "mfds-beverage-caffeine-2021",
+  "source_sha256": "f2ed231e752189b6c79288b7fa2a7bed97e0e71d384a39fc86a1336315613448",
+  "page": null,
+  "section": "고카페인 음료의 표시 (사실 요약·재구성)",
+  "text": "식약처와 식품안전정보원의 2021년 음료류 안내에 따르면 카페인이 1mL당 0.15mg 이상 들어 있는 음료를 고카페인 음료라고 합니다. 이런 음료에는 총 카페인 함량, '고카페인 함유' 문구, 그리고 어린이·임산부·카페인 민감자는 섭취에 주의하라는 문구가 표시됩니다. 카페인이 신경 쓰인다면 포장의 총 카페인 함량과 주의 문구를 확인하세요. 이 설명은 표시를 읽는 방법이며 개인에게 맞는 카페인 섭취량을 정하지 않습니다.",
+  "content_review": "approved",
+  "usage_scope": "general_food_explanation",
+  "reviewed_at": "2026-11-09",
+  "review_due": "2027-01-15",
+  "topics": [
+    "caffeine_label"
+  ]
+}

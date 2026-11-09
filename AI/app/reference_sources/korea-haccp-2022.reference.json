@@ -1,0 +1,18 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "korea-haccp-2022",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148900427",
+  "title": "'안전한 먹거리' 구매하려면 반드시 이 '표시'를 확인하세요",
+  "publisher": "대한민국 정책브리핑",
+  "checked_at": "2026-11-09",
+  "section": "[알면 도움되는 정책상식] 해썹(HACCP)",
+  "reviewed_facts": [
+    "해썹은 식품 제조 과정에서 발생할 수 있는 위해요소를 사전에 분석하고 차단하는 사전예방 식품안전관리시스템.",
+    "해썹 인증을 받은 업소만 생산한 제품의 포장에 해썹 마크를 표시할 수 있음."
+  ],
+  "rights": "facts-only-independent-wording",
+  "rights_evidence": "텍스트에 한해 공공누리 제1유형(출처표시) 확인. 공식 페이지에서 선택한 사실을 독립적인 한국어 문장으로 정리. 원문·그림·표·전체 번역의 복제 허락을 주장하지 않음.",
+  "review_scope": "해썹의 개념과 마크 표시 조건에 한정. 안전성을 보증한다는 과장 표현, 알레르기 성분 부재, 개별 업소 평가 제외.",
+  "limitations": "전체 HTML 원본이 아닌 검토 사실 기록. 원격 페이지의 해시나 원문 전체 이용 허락을 뜻하지 않음."
+}

@@ -1,0 +1,18 @@
+{
+  "format": "food-web-reference-v1",
+  "source_id": "mfds-beverage-caffeine-2021",
+  "capture_kind": "selected_web_text_not_full_html",
+  "url": "https://www.mfds.go.kr/brd/m_629/view.do?seq=28",
+  "title": "식품통계로 알아보는 음료류 이야기",
+  "publisher": "식품의약품안전처·식품안전정보원",
+  "checked_at": "2026-11-09",
+  "section": "고카페인음료확인법",
+  "reviewed_facts": [
+    "카페인 함량이 mL당 0.15mg 이상인 음료를 고카페인 음료라고 함.",
+    "고카페인 함유 음료에는 총 카페인 함량, '고카페인 함유' 문구, 어린이·임산부·카페인 민감자 섭취 주의 문구가 표시됨."
+  ],
+  "rights": "facts-only-independent-wording",
+  "rights_evidence": "공식 페이지에서 선택한 사실을 독립적인 한국어 문장으로 정리. 원문·그림·표·전체 번역의 복제 허락을 주장하지 않음. 2021-01-21 게시. 공공누리 표시는 확인하지 못함.",
+  "review_scope": "표시를 읽는 방법에 한정. 같은 페이지의 1일 최대 섭취 권고량, 개인별 카페인 섭취량, 건강 영향 제외.",
+  "limitations": "전체 HTML 원본이 아닌 검토 사실 기록. 원격 페이지의 해시나 원문 전체 이용 허락을 뜻하지 않음."
+}

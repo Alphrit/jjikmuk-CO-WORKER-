@@ -248,6 +248,26 @@ def requested_topics(message: str) -> set[str]:
         topics.add("calories_basics")
     if any(term in text for term in ("기준치", "퍼센트", "백분율", "%")) and "low_saturated_fat" not in topics:
         topics.add("nutrition_percentage")
+    if (any(term in text for term in ("기준치", "퍼센트", "백분율", "%", "비율"))
+            and (re.search(r"계산|구해|구하|산출|어떻게나와|어떻게정해|어떻게매겨", text)
+                 or (re.search(r"열량|칼로리|트랜스지방", text) and re.search(r"없|비어|빈칸|공란|안나와|안적", text)))):
+        # How the % is computed, or why 열량·트랜스지방 have none.
+        topics.difference_update({"nutrition_percentage", "fat_types", "calories_basics"})
+        topics.add("percentage_calculation")
+    if "콜레스테롤" in text and not topics.intersection({"nutrition_zero", "nutrition_percentage", "percentage_calculation"}) and re.search(
+            r"뭐|뜻|의미|이란|란|무엇|설명|어디|들어있|들어가|어떤", text):
+        topics.add("cholesterol_basics")
+    if re.search(r"유통기한|소비기한|품질유지기한", text):
+        topics.add("date_marking")
+    if re.search(r"haccp|해썹|안전관리인증", text):
+        topics.add("haccp_mark")
+    if "고카페인" in text or ("카페인" in text and re.search(r"표시|문구|함량|함유|확인", text)):
+        topics.add("caffeine_label")
+    if ("원재료" in text and re.search(r"순서|순으로|차례|앞에|먼저적", text)) or (
+            re.search(r"첨가물|감미료|보존료|착색료", text) and re.search(r"용도|괄호|명칭|이름옆|같이적|함께적", text)):
+        # '감미료(용도) 표시' asks how additives are labelled, not about sweetness.
+        topics.discard("sugar_energy")
+        topics.add("ingredient_order")
     if not topics.intersection({
         "sugar_claims", "sugar_zero", "sugar_energy", "low_sugar", "high_protein",
         "low_fat", "low_energy", "zero_energy", "nutrition_units", "low_sodium", "high_fiber",
