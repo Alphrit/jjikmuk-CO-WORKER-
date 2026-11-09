@@ -309,11 +309,17 @@ def normalize_product_payload(
         image_url=_clean_string(_pick_first(payload, ["image_url", "imageUrl", "img_url", "이미지URL"])),
         clean_product_name=_clean_string(_pick_first(payload, ["clean_product_name", "cleanProductName"])),
         total_weight=_clean_string(_pick_first(payload, ["total_weight", "totalWeight", "식품중량"])),
-        category_large=_clean_string(_pick_first(payload, ["category_large", "categoryLarge", "식품대분류"])),
-        category_medium=_clean_string(_pick_first(payload, ["category_medium", "categoryMedium", "식품중분류"])),
-        category_small=_clean_string(_pick_first(payload, ["category_small", "categorySmall", "식품소분류"])),
+        # Backend rows/DTOs carry app categories as `food_categories` (e.g. "음료",
+        # "과자|스낵") and the label type as `food_type`.
+        category_large=_clean_string(_pick_first(payload, [
+            "category_large", "categoryLarge", "식품대분류", "식품대분류명", "food_categories", "foodCategories",
+        ])),
+        category_medium=_clean_string(_pick_first(payload, ["category_medium", "categoryMedium", "식품중분류", "식품중분류명"])),
+        category_small=_clean_string(_pick_first(payload, ["category_small", "categorySmall", "식품소분류", "식품소분류명"])),
         category_detail=_clean_string(_pick_first(payload, ["category_detail", "categoryDetail", "식품세분류"])),
-        prdlst_dcnm=_clean_string(_pick_first(payload, ["prdlst_dcnm", "PRDLST_DCNM", "유형명"])),
+        prdlst_dcnm=_clean_string(_pick_first(payload, [
+            "prdlst_dcnm", "PRDLST_DCNM", "유형명", "food_type", "foodType", "rw_PRDLST_DCNM",
+        ])),
         barcode=_clean_string(_pick_first(payload, ["barcode", "바코드", "BAR_CD"])),
         rawmtrl_nm=rawmtrl_nm,
         source=_clean_string(_pick_first(payload, ["source", "데이터출처"])),

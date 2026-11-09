@@ -220,7 +220,9 @@ NUTRITION_COLUMNS = [
 ]
 
 
-PRODUCT_TYPE_COLUMNS = ["prdlst_dcnm", "PRDLST_DCNM", "유형명"]
+# `food_type` is the backend products column (JJIKMUK-Backend V5); it holds the
+# first of the raw food type, sub/middle category, representative food or major category.
+PRODUCT_TYPE_COLUMNS = ["prdlst_dcnm", "PRDLST_DCNM", "유형명", "food_type"]
 
 
 MANUFACTURER_COLUMNS = ["manufacturer", "manufacturer_name", "manufacturerName", "BSSH_NM", "제조사명"]
@@ -422,9 +424,13 @@ def _product_text_score(query: str, product: Product) -> float:
             token_identity = identity if any(token.startswith(brand) or brand.startswith(token) for brand in requested_brands) else name_identity.replace(" ", "")
             if token in token_identity:
                 continue
-            if token in _normalize_search_text(product.prdlst_dcnm or ""):
+            if token in _normalize_search_text(" ".join(filter(None, [
+                product.prdlst_dcnm, product.category_large, product.category_medium,
+                product.category_small, product.category_detail,
+            ]))):
                 # A category request can match the catalog category even when
-                # the product's name uses another food-form word (과자/스낵).
+                # the product's name uses another food-form word (과자/스낵) or
+                # none at all ('아몬드브리즈 언스위트' is in category '음료').
                 continue
             # Keep bounded spelling variations, but never drop a qualifier.
             if len(token) >= 3 and any(SequenceMatcher(None, token, word).ratio() >= 0.75 for word in identity_words):
