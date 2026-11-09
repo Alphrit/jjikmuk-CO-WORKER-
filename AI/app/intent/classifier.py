@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 
 from app.intent.common import IntentClassificationResult, LLM_FALLBACK_INTENTS
@@ -72,6 +73,20 @@ def _infer_followup_intent_from_history(
     return "unknown"
 
 
+def _general_food_question(message: str, product: Optional[Product], profile: Optional[Profile]) -> bool:
+    if product is not None:
+        return False
+    from app.services.conversation_router import _explicit_named_product_query
+    from app.services.hybrid import _FOOD_DOMAIN_TERMS
+    if _explicit_named_product_query(message, profile) is not None:
+        # A named product still goes to the candidate search.
+        return False
+    text = message.lower()
+    # Only questions that ask for an explanation; '성분 좀 볼래' wants a product.
+    asks = re.search(r"뭐|뭘|무엇|뜻|의미|차이|어떻게|왜|봐야|고를|고르|기준|설명", text)
+    return bool(asks) and any(term in text for term in _FOOD_DOMAIN_TERMS)
+
+
 def classify_intent_result(
     message: str,
     product: Optional[Product],
@@ -117,6 +132,17 @@ def classify_intent_result(
         return IntentClassificationResult(
             intent=llm_intent,
             source="llm_fallback",
+            rule_intent=rule_intent,
+            llm_intent=llm_intent,
+        )
+
+    if _general_food_question(message, product, profile):
+        # '아이 간식 고를 때 뭘 봐야 해?': a food question with no product name
+        # gets the general-explanation path (evidence or an honest
+        # 'not in the reviewed sources') instead of '질문 뜻을 잡지 못했어요'.
+        return IntentClassificationResult(
+            intent="general_nutrition_guide",
+            source="food_domain_fallback",
             rule_intent=rule_intent,
             llm_intent=llm_intent,
         )

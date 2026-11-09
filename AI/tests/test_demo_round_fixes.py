@@ -328,3 +328,12 @@ def test_expired_food_and_named_products_keep_their_intent(message, expected):
 
 def test_daily_amount_question_names_no_product():
     assert _explicit_named_product_query("카페인은 하루에 얼마까지 괜찮아?", None) is None
+
+
+@pytest.mark.parametrize("message, expected", [
+    ("아이 간식 고를 때 뭘 봐야 해?", "general_nutrition_guide"), ("식품첨가물이 뭐야?", "general_nutrition_guide"),
+    ("성분 좀 볼래", "unknown"), ("안녕 반가워", "unknown"),
+])
+def test_unknown_food_questions_take_the_general_path(message, expected):
+    from app.intent.classifier import classify_intent_result
+    assert classify_intent_result(message, None, None, []).intent == expected
