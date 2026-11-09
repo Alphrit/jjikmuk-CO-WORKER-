@@ -226,7 +226,7 @@ uvicorn app.api.main:app --reload
 7. `20260903_product_label_revision_binding.sql`
 8. `20260909_chatbot_log_product_trace.sql`
 9. `20260910_conversation_no_expiry.sql`
-10. `20261109_chatbot_log_policy_version_length.sql` (선택: 적용하지 않아도 긴 `policy_version`은 열 너비에 맞게 줄여 저장)
+10. `20261109_chatbot_log_policy_version_length.sql`
 
 운영 제품 라벨 판단에는 실제 수집 과정에서 기록한 출처, 관찰 시각, 포함 필드 그룹, 수집 시점 콘텐츠 해시가 필요합니다. 런타임이 기존 행에 출처를 추정해 채우지 않습니다.
 
@@ -235,7 +235,7 @@ uvicorn app.api.main:app --reload
 ## 운영 주의 (2026-11-10 점검)
 
 - **검토 기한:** 승인 설명 대부분의 `review_due`는 2027-01-15입니다. 한 문서라도 기한이 지나면 RAG 색인 전체가 중단되고 일반 설명은 규칙 문구로 돌아갑니다. 기한 전에 재검토해 날짜를 갱신하세요. 정책 manifest 규칙의 가장 이른 기한(2027-03-10)이 지나면 서버가 시작되지 않습니다.
-- **상품 검색 속도:** 상품 테이블에 `migrations/20260729_product_search_keywords.sql`의 FULLTEXT 인덱스가 없으면 검색마다 LIKE 전체 조회(약 2초, 135만 행)가 실행됩니다. 인덱스는 선택 사항이며 없어도 동작합니다. 적용한다면 생성 중 DML이 막힐 수 있으니 별도 시간에 적용하세요.
+- **상품 검색 속도:** 상품 테이블에 `migrations/20260729_product_search_keywords.sql`의 FULLTEXT 인덱스가 없으면 검색마다 LIKE 전체 조회(약 2초, 135만 행)가 실행됩니다. 인덱스 생성은 DML을 막을 수 있으니 운영 DB에는 별도 시간에 적용하세요.
 
 ## RAG 지식 문서
 

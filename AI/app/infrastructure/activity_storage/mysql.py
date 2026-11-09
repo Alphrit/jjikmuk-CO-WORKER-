@@ -3,7 +3,6 @@
 from app.core.models import ActivityRecord
 from threading import Lock
 from typing import Any, Dict, List, Optional
-import hashlib
 import json
 import re
 
@@ -59,8 +58,7 @@ class MySQLActivityRepository(ActivityRepository):
     }
     # Columns whose width must hold what the backend sends. A narrower column
     # fails every such insert with ER_DATA_TOO_LONG while the reply still goes
-    # out, so the loss is silent. Values are now shortened to fit
-    # (_fit_column), so the widening migration is optional.
+    # out, so the loss is silent; startup warns with the migration to apply.
     CHATBOT_LOG_MIN_CHAR_LENGTH = {
         "policy_version": (256, "AI/migrations/20261109_chatbot_log_policy_version_length.sql"),
     }
@@ -87,7 +85,6 @@ class MySQLActivityRepository(ActivityRepository):
             ) from exc
 
         self._pymysql = pymysql
-        self._column_widths: Dict[str, int] = {}
         self.connection_kwargs = {
             "host": host,
             "port": int(port),
@@ -141,24 +138,9 @@ class MySQLActivityRepository(ActivityRepository):
         short = []
         for column, (minimum, _migration) in self.CHATBOT_LOG_MIN_CHAR_LENGTH.items():
             width = re.fullmatch(r"(?:var)?char\((\d+)\)", types.get(column, "").lower())
-            if width:
-                self.__dict__.setdefault("_column_widths", {})[column] = int(width[1])
             if width and int(width[1]) < minimum:
                 short.append(column)
         return short
-
-    def _fit_column(self, column: str, value):
-        """Fit a value into a narrower existing column instead of losing the row.
-
-        Without the widening migration, '…-purpose-v5.2' (37 chars) would fail
-        every audit insert on VARCHAR(32). A shortened value with a hash tail
-        stays distinguishable and needs no DB change.
-        """
-        width = getattr(self, "_column_widths", {}).get(column)
-        if not isinstance(value, str) or width is None or len(value) <= width:
-            return value
-        digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:8]
-        return value[: max(width - 9, 0)] + "~" + digest
 
     def readiness_check(self) -> Dict[str, Any]:
         try:
@@ -288,8 +270,8 @@ class MySQLActivityRepository(ActivityRepository):
         if status.get("available") is True:
             for column in status.get("short_audit_columns") or []:
                 minimum, migration = self.CHATBOT_LOG_MIN_CHAR_LENGTH[column]
-                logger.warning("MySQL chatbot_logs.%s is narrower than %d characters; longer values are "
-                               "shortened to fit. Optional: %s.", column, minimum, migration)
+                logger.warning("MySQL chatbot_logs.%s is narrower than %d characters; rows with longer "
+                               "values will not be saved. Apply %s.", column, minimum, migration)
             return
         reason = status.get("reason") or "mysql_activity_schema_not_ready"
         if reason == "mysql_activity_check_failed":
@@ -325,8 +307,6 @@ class MySQLActivityRepository(ActivityRepository):
         self.ensure_chatbot_log_table()
         chatbot_action_type = "chat" if activity.message or activity.intent else activity.action_type
         with self._connect() as conn:
-            if not getattr(self, "_column_widths", None):
-                self._short_audit_columns(conn)  # learn widths once for _fit_column
             with conn.cursor() as cursor:
                 cursor.execute(
                     f"""
@@ -362,7 +342,7 @@ class MySQLActivityRepository(ActivityRepository):
                         activity.response_id,
                         activity.external_ai_used,
                         json.dumps(activity.external_ai_services, ensure_ascii=False),
-                        self._fit_column("policy_version", activity.policy_version),
+                        activity.policy_version,
                         json.dumps(activity.applied_rule_ids, ensure_ascii=False),
                         json.dumps(activity.source_ids, ensure_ascii=False),
                         _response_product_label_trace_json(activity),
