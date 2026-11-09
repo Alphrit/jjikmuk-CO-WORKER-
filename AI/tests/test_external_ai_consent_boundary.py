@@ -460,3 +460,25 @@ def test_user_query_rag_cannot_search_without_request_consent(monkeypatch):
     assert summary["used"] is True
     assert summary["services"] == ["rag"]
     assert external_ai_request_allowed() is False
+
+
+@pytest.mark.parametrize("assume, allowed", [("", False), ("true", True)])
+def test_assume_consent_setting_turns_a_signed_denial_into_consent(monkeypatch, assume, allowed):
+    monkeypatch.setenv("FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT", assume)
+    now = int(time.time())
+    body = _json_body({"message": "테스트"})
+    headers = {key.lower(): value for key, value in _signed_headers(body, timestamp=now, consent="denied").items()}
+    decision = verify_external_ai_consent(headers=headers, method="POST", path="/chat", body=body,
+                                          operator_enabled=True, now=now)
+    assert decision.allowed is allowed
+
+
+def test_assume_consent_setting_never_trusts_an_unsigned_request(monkeypatch):
+    monkeypatch.setenv("FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT", "true")
+    body = _json_body({"message": "테스트"})
+    for headers in ({}, {CONSENT_HEADER.lower(): "denied"}):
+        decision = verify_external_ai_consent(headers=headers, method="POST", path="/chat", body=body,
+                                              operator_enabled=True)
+        assert decision.allowed is False
+    assert verify_external_ai_consent(headers={}, method="POST", path="/chat", body=body,
+                                      operator_enabled=False).allowed is False
