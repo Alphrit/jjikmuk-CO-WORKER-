@@ -473,3 +473,31 @@ def test_unselected_product_facts_come_only_from_the_backend_path(client, messag
     assert result["backend_analysis"]["application"] == "product_selection_required"
     assert "선택" in result["answer"]
     assert "mg" not in result["answer"] and "원재료:" not in result["answer"]
+
+
+def test_switching_to_another_named_product_offers_selectable_cards(client):
+    # A different product named while one is selected: the reply must carry
+    # cards the app can tap, not just ask for a choice (and say 을/를 right).
+    from app.services.response_helpers import object_particle
+    payload = request_payload(("PASS",), product=False)
+    payload["message"] = "저염 두부스낵 먹어도 돼?"
+    result = send(client, payload)
+    assert result["backend_analysis"]["application"] == "product_selection_required"
+    assert result["product_candidates"]
+    name = result["current_product"]["product_name"]
+    assert result["answer"].startswith(f"{name}{object_particle(name)} 찾았어요.")
+
+
+def test_stale_selection_after_open_choice_reoffers_and_the_choice_itself_is_answered(client):
+    payload = request_payload(("PASS",), product=False)
+    payload["message"] = "저염 두부스낵 먹어도 돼?"
+    offer = send(client, payload)
+    assert offer["product_candidates"]
+    history = [{"role": "user", "content": "저염 두부스낵 먹어도 돼?"}, {"role": "assistant", "content": offer["answer"]}]
+
+    stale = request_payload(("PASS",))  # still carries the earlier selection
+    stale["message"], stale["chat_history"] = "먹어도 되냐고", history
+    reply = send(client, stale)
+    assert reply["backend_analysis"]["application"] == "product_selection_required"
+    assert reply["product_candidates"] and reply["overall_decision"] == "check_required"
+    assert "피해주세요" not in reply["answer"] and "발견되지 않았어요" not in reply["answer"]

@@ -137,6 +137,42 @@ def decision_response(req, intent, *, lead=""):
     )
 
 
+def _candidate_choice(products, search_query, message, intent):
+    """A candidate-card reply (the app resends the question with the tapped barcode)."""
+    from app.services.conversation_router import build_product_confirmation_response
+    return build_product_confirmation_response(
+        products, search_query=search_query, reason="multiple_matches" if len(products) > 1 else "low_confidence",
+        original_message=message, pending_intent=intent,
+    )
+
+
+def _stale_selection_choice(req, named_query, intent):
+    """The sent barcode predates an open candidate list in the history.
+
+    With a fixed app the barcode is the last selection. After '두유 먹어도 돼?'
+    offered 두유 candidates, '먹어도 되냐고' still carries the old 쌀새우깡
+    barcode; answering for it would answer the wrong product. A barcode that is
+    one of the open candidates is the choice itself and is answered normally.
+    """
+    from app.services.candidate_prompts import leaves_choice_open
+    from app.services.product import find_product_candidates_from_message
+    from app.services.product_search import extract_product_search_query
+    if req.product is None or named_query or not req.chat_history:
+        return None
+    last_reply = next((item.content for item in reversed(req.chat_history) if item.role == "assistant"), "")
+    if not leaves_choice_open(last_reply):
+        return None
+    for item in reversed(req.chat_history):
+        candidates = find_product_candidates_from_message(item.content, limit=3) if item.role == "user" else []
+        if candidates:
+            break
+    else:
+        return None
+    if req.product.barcode in {candidate.barcode for candidate in candidates}:
+        return None
+    return _candidate_choice(candidates, extract_product_search_query(item.content), req.message, intent)
+
+
 def run_backend_pipeline(req, legacy_pipeline):
     """Return (response, product, audit context), logging only in the API wrapper."""
     from app.api.adapters import normalize_active_profiles
@@ -166,6 +202,14 @@ def run_backend_pipeline(req, legacy_pipeline):
     same_product = bool(req.product and (not named_query or candidate_matches_product_query(named_query, req.product)))
     if intent in {"unknown", "ambiguous"} and named_query and any(word in req.message for word in ("찾아", "검색")):
         intent = "product_summary"
+    stale = None if interrupt else _stale_selection_choice(req, named_query, intent)
+    if stale is not None:
+        stale = stale.model_copy(update={
+            "backend_analysis": _summary(req, "product_selection_required"),
+            "per_profile_results": _profile_results(req, intent, decisions=False),
+        })
+        return stale, None, dict(profile=profile, product=None, barcode=req.product.barcode,
+                                 report_number=req.product.report_number, message=req.message)
     if not interrupt and same_product and intent in PRODUCT_INTENTS:
         from app.services.food_conditions import prepare_food_conditions
         prepared = prepare_food_conditions(req.message, profiles, state, profiles)
@@ -214,8 +258,20 @@ def run_backend_pipeline(req, legacy_pipeline):
     found_query = bool(named_query and response.intent in {"unknown", "ambiguous"})
     if not interrupt and (response.intent in PRODUCT_INTENTS or found_query) and response.current_product is not None:
         application = "product_selection_required"
-        text = f"{response.current_product.product_name or '찾은 상품'}을 찾았어요. 이 상품을 선택해 현재 프로필의 판정 정보를 받아야 개인 조건을 확인할 수 있어요."
+        from app.services.candidate_prompts import CHOOSE_FROM_CANDIDATES
+        from app.services.product import find_product_candidates_from_message
+        from app.services.response_helpers import object_particle
+        name = response.current_product.product_name or "찾은 상품"
+        text = (f"{name}{object_particle(name)} 찾았어요. {CHOOSE_FROM_CANDIDATES}. "
+                "선택하면 현재 프로필의 판정 정보로 확인할 수 있어요.")
+        # Without cards the reply asked for a choice the app could not make.
+        products = [resolved] if resolved is not None else []
+        products += [candidate for candidate in find_product_candidates_from_message(req.message, limit=3)
+                     if not resolved or candidate.barcode != resolved.barcode]
+        choice = _candidate_choice(products[:3], named_query or "", req.message, response.intent) if products else None
         response = response.model_copy(update={
+            **({"product_candidates": choice.product_candidates, "conversation_state": choice.conversation_state,
+                "internal_conversation_state": choice.internal_conversation_state} if choice else {}),
             **_axes(None), "intent": "product_summary" if found_query else response.intent,
             "answer": text, "reasons": [text], "per_profile_results": _profile_results(req, "product_summary" if found_query else response.intent, decisions=False),
             "assessment_summary": AssessmentSummary(scope="product_selection", decision="not_assessed",
