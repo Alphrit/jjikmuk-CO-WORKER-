@@ -68,7 +68,8 @@ def test_team_mode_preserves_v2_verdicts_people_and_headers(client, monkeypatch,
         assert actual[key] == expected[key]
     assert actual['answer_source'] == 'backend'
     assert actual['answer'].startswith(expected['answer'])
-    assert '출처는 미확인' in actual['answer']
+    from app.services.followup_questions import PRODUCT_REFERENCE_NOTE
+    assert actual['answer'].endswith(PRODUCT_REFERENCE_NOTE)
     assert actual['external_ai_processing']['used'] is False
 
 

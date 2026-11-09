@@ -10,6 +10,7 @@ import re
 from app.core.models import ChatResponse
 from app.intent.common import PRODUCT_INTENTS
 from app.services.candidate_prompts import TEAM_CHOOSE_FROM_CANDIDATES
+from app.services.followup_questions import PRODUCT_REFERENCE_NOTE
 from app.services.conversation_controls import CONVERSATION_CONTROL_REASON
 from app.services.hybrid import LOCAL_EXCERPT_REASON, _contains_reassuring_conclusion
 from app.services.operational_policy import (  # noqa: F401  (re-exported for callers and tests)
@@ -24,7 +25,8 @@ GENERAL_INTENTS = {'general_diet_guide', 'general_allergy_guide', 'general_nutri
 # Replies that only ask which product is meant or explain that the question was
 # unclear; they state no catalog fact.
 NO_PRODUCT_GUIDANCE_INTENTS = {'missing_product', 'unknown'}
-COMPARISON_SOURCE_NOTE = '비교에 쓴 상품 표시 정보는 출처 미확인 상태예요. 섭취 전 실제 포장지 표시를 확인해 주세요.'
+# One closing line for product answers; the final pass adds it where missing.
+COMPARISON_SOURCE_NOTE = PRODUCT_REFERENCE_NOTE
 COMPARISON_NO_CONFLICT_NOTE = '등록 표시에서 충돌을 찾지 못한 제품도 출처 미확인 정보라 안전하다고 판단할 수 없어요.'
 COMPARISON_UNAVAILABLE_ANSWER = (
     '출처가 확인되지 않은 상품 정보로는 알레르기 충돌이 없다고 비교해 드릴 수 없어요. '
@@ -76,7 +78,7 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
         # v2 explains authenticated backend verdicts. Do not silently replace
         # PASS/DANGER/UNKNOWN or discard profileKey/contextId with legacy rules.
         # Backend PASS means no detected conflict, not verified label provenance.
-        note = '상품 표시 출처는 미확인 상태이며, 위 백엔드 판정은 실제 섭취 안전을 보증하지 않습니다.'
+        note = PRODUCT_REFERENCE_NOTE
         return response.model_copy(update={'answer': response.answer + '\n' + note})
     if (response.backend_analysis is not None
             and response.backend_analysis.application in {'context_only', 'product_selection_required'}

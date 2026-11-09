@@ -237,9 +237,14 @@ def test_unknown_allergy_verdict_gets_a_concrete_next_step_per_person():
     snack = Product(product_name="농심 새우깡90G", barcode="1", allergy=[])
     assert unknown_allergy_guidance(snack, Profile(name="나", allergies=["shrimp"])).startswith("피하는 게 좋아요. 제품명에 '새우'가")
     assert unknown_allergy_guidance(snack, Profile(name="엄마", allergies=["milk"])) == (
-        "DB에 이 상품의 알레르기 표시가 없어 판단할 수 없어요. 드시기 전에 포장지 알레르기 표시에 우유가 있는지 확인하세요.")
+        "확인한 결과 등록된 정보에서는 우유 성분이 보이지 않아요. 다만 이 상품은 알레르기 표시가 등록되어 "
+        "있지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
     labelled = Product(product_name="새우깡", barcode="2", allergy=["새우"])
     assert unknown_allergy_guidance(labelled, Profile(name="나", allergies=["shrimp"])) is None
+    chips = Product(product_name="포카칩오리지널", barcode="3", allergy=["대두", "소고기", "우유"])
+    assert unknown_allergy_guidance(chips, Profile(name="나", allergies=["shrimp"])) == (
+        "확인한 결과 등록된 알레르기 표시(대두, 소고기, 우유)에는 새우가 보이지 않아요. "
+        "다만 표시 정보가 완전한지는 확인되지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
 
 
 def test_common_vowel_typos_are_retried_and_curiosity_ends_a_name():
@@ -247,3 +252,16 @@ def test_common_vowel_typos_are_retried_and_curiosity_ends_a_name():
     assert _common_vowel_typos_fixed("빼뺴로") == "빼빼로"
     assert extract_product_search_query("새우깡 영양성분 알고 싶어") == "새우깡"
     assert "궁금" not in extract_product_search_query("초코파이 성분 궁금해")
+
+
+
+def test_every_product_answer_ends_with_the_reference_note_unless_brevity_was_asked():
+    from app.core.public_product import public_product_payload
+    from app.services.followup_questions import PRODUCT_REFERENCE_NOTE, tidy_followups
+    product = public_product_payload(Product(product_name="새우깡", barcode="1"))
+    answer = ChatResponse(intent="ingredient_check", answer="새우깡 기준으로 확인했어요.", risk_level="unknown",
+                          current_product=product)
+    assert tidy_followups(answer, "원재료 알려줘", team_mode=True).answer.endswith(PRODUCT_REFERENCE_NOTE)
+    assert PRODUCT_REFERENCE_NOTE not in tidy_followups(answer, "한 줄로 요약해줘", team_mode=True).answer
+    general = ChatResponse(intent="general_nutrition_guide", answer="당류는 탄수화물의 일부예요.", risk_level="unknown")
+    assert PRODUCT_REFERENCE_NOTE not in tidy_followups(general, "당류랑 탄수화물 차이", team_mode=True).answer

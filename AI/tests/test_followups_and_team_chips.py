@@ -57,8 +57,10 @@ def test_chips_drop_templates_productless_deictics_blocked_features_and_the_same
 
 
 def test_chips_keep_product_and_feature_questions_when_allowed():
+    from app.core.models import Product
+    from app.core.public_product import public_product_payload
     response = _response(recommended_questions=["이 상품의 원재료를 알려줘", "저염 레시피 추천해줘"],
-                         current_product={"product_name": "새우깡"})
+                         current_product=public_product_payload(Product(product_name="새우깡", barcode="1")))
     assert tidy_followups(response, "새우깡 먹어도 돼?", team_mode=False).recommended_questions == [
         "이 상품의 원재료를 알려줘", "저염 레시피 추천해줘"]
 

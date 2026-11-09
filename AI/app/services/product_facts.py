@@ -117,11 +117,19 @@ def unknown_allergy_guidance(product, profile):
         term = named[0]
         return (f"피하는 게 좋아요. 제품명에 '{term}'{subject(term)} 들어 있어 {term}{subject(term)} 들어 있을 가능성이 높아요. "
                 "등록된 알레르기 표시가 없어 DB로는 확인되지 않았어요.")
-    if product.resolved_allergies() or product.rawmtrl_nm or product.ingredients:
-        return None
     names = list(dict.fromkeys(allergen_display_name(item) for item in profile.resolved_allergies()))
     if not names:
         return None
     listed = ", ".join(names)
-    return (f"DB에 이 상품의 알레르기 표시가 없어 판단할 수 없어요. 드시기 전에 포장지 알레르기 표시에 "
-            f"{listed}{subject(names[-1])} 있는지 확인하세요.")
+    labels = product.resolved_allergies()
+    if labels:
+        from app.services.response_helpers import find_matching_aliases
+        if any(find_matching_aliases(product, name) for name in names):
+            return None
+        return (f"확인한 결과 등록된 알레르기 표시({', '.join(labels)})에는 {listed}{subject(names[-1])} 보이지 않아요. "
+                "다만 표시 정보가 완전한지는 확인되지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+    if product.rawmtrl_nm or product.ingredients:
+        return None
+    # Say what was checked and why it is not a 'no': the label is simply absent.
+    return (f"확인한 결과 등록된 정보에서는 {listed} 성분이 보이지 않아요. 다만 이 상품은 알레르기 표시가 등록되어 "
+            "있지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
