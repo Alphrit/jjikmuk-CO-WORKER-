@@ -1,0 +1,16 @@
+name: Chatbot failure notification
+on:
+  workflow_run:
+    workflows: [Chatbot CD]
+    types: [completed]
+    branches: [chatbot]
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  issues: write
+jobs:
+  notify:
+    uses: KW-coworker/JJIKMUK-Backend/.github/workflows/cd-notify.yml@bdbb02b164381ef3d13aee413a627fdb5057c3be
+    with:
+      controller_ref: bdbb02b164381ef3d13aee413a627fdb5057c3be
