@@ -102,7 +102,9 @@ def _message_product_segments(message: str) -> list[str]:
         message,
     )
     cleaned = re.sub(
-        r"(비교해\s*줘|비교해줘|비교|해\s*줘|알려\s*줘|중에|중|뭐야|어느\s*게|어떤\s*게|"
+        r"(비교해\s*(?:줄래(?:요)?|주세요|주실래요|줄\s*수\s*있어(?:요)?|봐(?:\s*줘)?)|"
+        r"해\s*(?:줄래(?:요)?|주세요|주실래요)|"
+        r"비교해\s*줘|비교해줘|비교|해\s*줘|알려\s*줘|중에|중|뭐야|어느\s*게|어떤\s*게|"
         r"더\s*낮은|더\s*높은|더\s*많은|더\s*적은|더\s*낮아|더\s*높아|"
         r"더\s*많아|더\s*적어|(?:^|\s)(?:건|거|것)(?:이야|야)?(?=\s|$))",
         " ",
@@ -116,7 +118,8 @@ def _message_product_segments(message: str) -> list[str]:
             flags=re.IGNORECASE,
         )
     segments = [
-        segment.strip()
+        # A request ending such as '비교해 줄래요?' leaves punctuation behind.
+        re.sub(r"[\s?？!.~]+$", "", segment.strip())
         for segment in re.split(r"\s*(?:이랑|랑|와|과|vs|VS|,|/)\s*", cleaned)
         if segment.strip()
     ]
@@ -358,6 +361,20 @@ def _comparison_allergy_status(
     )
 
 
+def _key_nutrient_overview(products: Sequence[Product]) -> str:
+    """No axis named: list the main registered values side by side, no winner."""
+    rows = []
+    for key, label, unit in (("kcal", "열량", "kcal"), ("sodium", "나트륨", "mg"), ("sugars", "당류", "g")):
+        values = [f"{item.product_name or '이 제품'} {format_measurement(item.nutrition[key], unit)}"
+                  for item in products if item.nutrition.get(key) is not None]
+        if values:
+            rows.append(f"- {label}: {', '.join(values)}")
+    if not rows:
+        return "비교할 영양 수치가 등록되어 있지 않아요. 포장지의 영양성분표를 확인해 주세요."
+    return ("주요 영양 수치예요. 기준량이 확인되지 않아 수치 차이를 그대로 비교하면 안 될 수 있어요.\n"
+            + "\n".join(rows) + "\n특정 기준으로 자세히 보려면 '나트륨 기준으로 비교해줘'처럼 물어봐 주세요.")
+
+
 def _comparison_allergy_summary(
     products: Sequence[Product],
     profiles: Sequence[Profile],
@@ -374,6 +391,18 @@ def _comparison_allergy_summary(
             "unknown",
             "unknown",
             ["활성 프로필의 알레르기 정보가 필요해요."],
+        )
+
+    if not any(profile.resolved_allergies() or profile.resolved_special_diets() or profile.disliked_ingredients
+               or profile._conversation_exclusions for profile in profiles):
+        # No allergy, diet or exclusion to check against: say so instead of
+        # 'label information is missing', and show each product's allergy labels.
+        labels = " / ".join(f"{item.product_name or '이 제품'}: {', '.join(item.resolved_allergies()) or '표시 없음'}"
+                            for item in products)
+        return (
+            f"등록된 알레르기가 없어 개인 알레르기 비교는 하지 않았어요.\n제품별 알레르기 표시 — {labels}",
+            ["프로필 알레르기 미입력"], [], "unknown", "check_required", "unknown", "unknown", "unknown",
+            ["프로필의 알레르기 정보가 필요해요."],
         )
 
     priority = {"conflict": 3, "cross_contact": 2, "unknown": 1, "no_known_match": 0}
@@ -720,12 +749,8 @@ def handle_food_compare(
             if not products_have_comparable_nutrition_basis(compared_products):
                 missing_information.append("비교 제품의 동일한 영양 기준량과 해당 표시의 출처 정보가 필요해요.")
         if comparison is None:
-            nutrition_answer = (
-                "비교할 영양 기준을 아직 정하지 않았어요. "
-                "나트륨·당류·열량·단백질 중 하나를 알려주면 "
-                "같은 기준량으로 확인된 수치만 이어서 비교할게요."
-            )
-            nutrition_reasons = ["영양 비교 기준 미선택"]
+            nutrition_answer = _key_nutrient_overview(compared_products)
+            nutrition_reasons = ["영양 비교 기준 미선택: 주요 수치만 표시"]
         else:
             nutrition_answer, nutrition_reasons = comparison
 

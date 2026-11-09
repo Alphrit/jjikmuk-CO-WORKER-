@@ -325,7 +325,8 @@ def test_product_comparison_reports_allergy_conflict_before_nutrition_axis():
     assert "알레르기 기준으로 먼저" in response.answer
     assert "새우" in response.answer
     assert "피해야" in response.answer
-    assert "비교할 영양 기준을 아직 정하지 않았어요" in response.answer
+    # No axis named: the main values are listed side by side instead of asking.
+    assert "주요 영양 수치예요" in response.answer
     assert response.per_profile_results[0].allergy_status == "conflict"
 
 

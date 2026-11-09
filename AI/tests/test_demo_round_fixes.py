@@ -184,3 +184,31 @@ def test_naming_the_selected_product_never_asks_to_select_it_again(monkeypatch):
     assert not data["product_candidates"]
     assert data["answer"].startswith("새우깡 기준으로 확인했어요.")
     assert data["answer_source"] == "backend"
+
+
+def test_comparison_without_profile_allergies_says_so_and_shows_labels():
+    from app.core.models import Profile
+    from app.services.general_handlers import _comparison_allergy_summary
+    products = [Product(product_name="새우깡", barcode="1", allergy=["대두", "새우"]),
+                Product(product_name="신라면컵", barcode="2", allergy=["밀"])]
+    answer, *_ , missing = _comparison_allergy_summary(products, [Profile(name="웹테스트")], "새우깡이랑 신라면컵 비교")
+    assert answer.startswith("등록된 알레르기가 없어 개인 알레르기 비교는 하지 않았어요.")
+    assert "새우깡: 대두, 새우" in answer and "신라면컵: 밀" in answer
+    assert "판정 정보가 부족" not in answer
+
+
+def test_comparison_without_an_axis_lists_main_values_instead_of_asking():
+    from app.services.general_handlers import _key_nutrient_overview
+    text = _key_nutrient_overview([Product(product_name="신라면컵", nutrition={"kcal": 300.3, "sodium": 1290.25}),
+                                   Product(product_name="진라면", nutrition={"kcal": 500.4, "sodium": 1880.4})])
+    assert "- 열량: 신라면컵 300.3kcal, 진라면 500.4kcal" in text
+    assert "- 나트륨:" in text and "정하지 않았어요" not in text
+
+
+@pytest.mark.parametrize("message, expected", [
+    ("진라면이랑 비교해줄래?", ["진라면"]), ("진라면이랑 비교해주세요", ["진라면"]),
+    ("새우깡이랑 쌀새우깡 비교해 줄래요?", ["새우깡", "쌀새우깡"]), ("새우깡과 포카칩 비교해 줄 수 있어?", ["새우깡", "포카칩"]),
+])
+def test_comparison_targets_drop_polite_request_endings(message, expected):
+    from app.services.general_handlers import _message_product_segments
+    assert _message_product_segments(message) == expected

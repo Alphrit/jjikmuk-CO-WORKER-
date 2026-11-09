@@ -253,7 +253,8 @@ def run_backend_pipeline(req, legacy_pipeline):
                 return response, req.product, activity
             # A PASS without the new condition is outdated: withhold it. Label
             # facts for the stated condition are still shown without a verdict.
-            text = facts + "방금 말씀한 조건은 전달받은 개인별 판정에 반영되지 않았어요. 프로필 조건을 반영해 이 상품을 다시 확인해주세요."
+            text = (f"{req.product.product_name or '선택한 상품'} 기준으로 확인했어요.\n" + facts
+                    + "방금 말씀한 조건은 전달받은 개인별 판정에 반영되지 않았어요. 프로필 조건을 반영해 이 상품을 다시 확인해주세요.")
             response = (prepared.allergy_guard or ChatResponse(intent="profile_based_recheck", answer=text,
                 **_axes(None), active_profile_names=[p.profile_name for p in profiles], reasons=[text]))
             response = response.model_copy(update={"backend_analysis": _summary(req, "context_only")})
