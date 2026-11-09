@@ -45,6 +45,19 @@ def resolve_condition_subject(message, active_profiles, known_profiles=None):
     return active_profiles[0] if len(active_profiles) == 1 else None
 
 
+def _ends_with_topic_particle(message):
+    """'엄마는?', '아빠도요!!': the last word ends in 은/는/도(요), punctuation aside.
+
+    Checked on the last word only; a regex anchored with '$' but searched from
+    every start ('\\S+(?:은|는|도)…$') is quadratic on long unspaced text.
+    """
+    end = len(message)
+    while end and not (message[end - 1].isalnum() or message[end - 1] == "_"):
+        end -= 1
+    words = message[:end].split()
+    return bool(words and re.fullmatch(r"\S+(?:은|는|도)(?:요)?", words[-1]))
+
+
 def unresolved_profile_target_response(message, active_profiles, known_profiles=None, state=None):
     """Ask for selection instead of evaluating an explicitly unselected person.
 
@@ -69,9 +82,7 @@ def unresolved_profile_target_response(message, active_profiles, known_profiles=
     personal_request = personal_assessment_request(message)
     # A named-person fragment may end in repeated punctuation or emoji. The
     # name matcher below still requires a boundary (엄마손파이 is a food).
-    short_followup = re.search(
-        r"\s*(?:그럼\s*|그러면\s*)?\S+(?:은|는|도)(?:요)?[^\w]*$", message,
-    )
+    short_followup = _ends_with_topic_particle(message)
     if not (personal_request or short_followup):
         return None
     profiles = list(active_profiles)

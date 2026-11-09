@@ -60,6 +60,19 @@ def productless_reference_question(message: str) -> bool:
     return bool((deictic and re.search(_LABEL_FIELD, text)) or re.fullmatch(_SHORT_NUTRIENT_FIELD, text))
 
 
+def _halved_amount(text: str) -> bool:
+    """'양을 절반으로': an amount word, then 절반/반으로 later on the same line.
+
+    Written as two searches; '(?:양|분량).*(?:절반|반으로)' rescans the rest of
+    the line from every 양 and is quadratic on repeated text.
+    """
+    for line in text.splitlines():
+        amount = re.search(r"양|분량", line)
+        if amount and re.search(r"절반|반으로", line[amount.end():]):
+            return True
+    return False
+
+
 def personal_assessment_request(message: str) -> bool:
     return bool(re.search(
         r"먹어도|먹을\s*수|드셔도|드실\s*수|줄\s*수|마셔도|섭취|괜찮|기준|조건으로|대상|위한|"
@@ -131,9 +144,8 @@ def recipe_followup_action(message: str) -> str | None:
         return None
     if re.search(r"(?:제품|상품)\s*(?:없이|없는).*?(?:레시피|요리)", text):
         return None
-    if re.search(r"(?:\d+(?:\.\d+)?|한|두|세|네|반)\s*(?:인분|명|사람|배)(?:\s*분량)?|(?:양|분량).*(?:절반|반으로)", text) and re.search(
-        r"늘려|줄여|바꿔|만들|해줘|맞춰|분량|양", text,
-    ):
+    if (re.search(r"(?:(?<!\d)\d+(?:\.\d+)?|한|두|세|네|반)\s*(?:인분|명|사람|배)(?:\s*분량)?", text)
+            or _halved_amount(text)) and re.search(r"늘려|줄여|바꿔|만들|해줘|맞춰|분량|양", text):
         return "servings"
     if re.search(r"빼(?:고|서|줘)|넣지\s*(?:말|마|않)|제외|대신|없이|재료(?:를)?\s*바꿔", text) and re.search(
         r"해줘|만들|말아줘|말아|마|빼줘|넣지|바꿔", text,
