@@ -299,7 +299,7 @@ AI의 `.env`와 백엔드의 Git 제외 파일 `.chat-ai.properties`를 설정�
 python -c "from app.infrastructure.rag import rebuild_rag_index; rebuild_rag_index()"
 ```
 
-`app/chroma_db/`의 로컬 인덱스는 Git 배포물에 포함되지 않습니다. 새 배포 환경에서는 식품 범위 지식 문서와 설정을 먼저 배치하고 위 명령으로 인덱스를 만든 뒤, 아래 준비 상태 확인이 통과해야 RAG를 활성화합니다. 문서 해시나 설정이 달라 오래된 인덱스로 판정되면 검색은 중단되며, 규칙 기반 알레르기 판정은 계속 동작합니다.
+외부 AI가 켜져 있으면(`FOOD_CHATBOT_ENABLE_EXTERNAL_AI=true`와 OpenAI 키) 일반 서버 시작(`uvicorn`)에서도 인덱스가 없거나 오래됐을 때 백그라운드에서 다시 만듭니다. 만드는 동안 요청은 받되 RAG 검색은 쉬고, 끝나면 바로 사용합니다. 끄려면 `FOOD_CHATBOT_RAG_AUTO_REBUILD=false`로 둡니다. `app/chroma_db/`의 로컬 인덱스는 Git 배포물에 포함되지 않습니다. 새 배포 환경에서는 식품 범위 지식 문서와 설정을 먼저 배치하고 위 명령으로 인덱스를 만든 뒤, 아래 준비 상태 확인이 통과해야 RAG를 활성화합니다. 문서 해시나 설정이 달라 오래된 인덱스로 판정되면 검색은 중단되며, 규칙 기반 알레르기 판정은 계속 동작합니다.
 
 ```bash
 python -c "from app.infrastructure.rag import get_rag_status; s = get_rag_status(); assert s['retriever_ready'] and not s['index_stale'], s"

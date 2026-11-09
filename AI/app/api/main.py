@@ -552,6 +552,8 @@ def configure_repositories() -> None:
 async def lifespan(app: FastAPI):
     try:
         configure_repositories()
+        from app.start import rebuild_stale_rag_in_background
+        rebuild_stale_rag_in_background()
         yield
     finally:
         dispose_mysql_connection_pools()
