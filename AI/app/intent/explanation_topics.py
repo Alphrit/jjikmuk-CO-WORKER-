@@ -167,7 +167,9 @@ def requested_topics(message: str) -> set[str]:
 
     facility = any(term in text for term in (
         "같은제조시설", "동일제조시설", "동일한제조시설", "같은제조라인", "같은제조공정",
-    )) or (allergy_context and any(term in text for term in ("같은시설", "같은공장")))
+    )) or (allergy_context and any(term in text for term in ("같은시설", "같은공장"))) or bool(
+        # '같은 시설에서 만든다는 표시는 무슨 뜻이야?' names the label phrase itself.
+        re.search(r"같은(?:시설|공장)에서(?:만든|만들|제조)", text) and any(t in text for t in ("표시", "뜻", "문구", "의미")))
     contact = any(term in text for term in ("교차접촉", "교차오염")) or (
         allergy_context and any(term in text for term in ("공용설비", "공유장비", "공유설비"))
     )

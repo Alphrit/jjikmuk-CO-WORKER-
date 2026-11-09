@@ -265,3 +265,28 @@ def test_every_product_answer_ends_with_the_reference_note_unless_brevity_was_as
     assert PRODUCT_REFERENCE_NOTE not in tidy_followups(answer, "한 줄로 요약해줘", team_mode=True).answer
     general = ChatResponse(intent="general_nutrition_guide", answer="당류는 탄수화물의 일부예요.", risk_level="unknown")
     assert PRODUCT_REFERENCE_NOTE not in tidy_followups(general, "당류랑 탄수화물 차이", team_mode=True).answer
+
+
+@pytest.mark.parametrize("message, expected", [
+    ("오레오 오즈 엄마랑 같이 먹어도 돼?", "오레오 오즈"), ("허니버터칩 한 봉지 칼로리 얼마야?", "허니버터칩"),
+    ("코카콜라 당 얼마나 있어?", "코카콜라"), ("두유에 대두 들어있지?", "두유"),
+])
+def test_round3_product_names(message, expected):
+    assert extract_product_search_query(message) == expected
+
+
+def test_round3_comparison_facility_and_tag_question():
+    from app.services.general_handlers import _message_product_segments
+    assert _message_product_segments("칸쵸랑 빼빼로 뭐가 덜 달아?") == ["칸쵸", "빼빼로"]
+    assert rule_based_classify_intent("칸쵸랑 빼빼로 뭐가 덜 달아?", None, None, []) == "food_compare"
+    assert "allergy_facility_warning" in requested_topics("같은 시설에서 만든다는 표시는 무슨 뜻이야?")
+    assert rule_based_classify_intent("에 대두 들어있지?", Product(product_name="두유", barcode="1", product_found=True),
+                                      None, []) == "ingredient_check"
+
+
+def test_unknown_verdict_with_raw_materials_only_names_what_was_checked():
+    from app.core.models import Profile
+    from app.services.product_facts import unknown_allergy_guidance
+    snack = Product(product_name="꼬깔콘고소한맛", barcode="4", rawmtrl_nm="옥수수, 식물성유지")
+    assert unknown_allergy_guidance(snack, Profile(name="나", allergies=["shrimp"])).startswith(
+        "확인한 결과 등록된 원재료에서는 새우가 보이지 않아요.")
