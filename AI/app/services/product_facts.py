@@ -92,12 +92,36 @@ def name_only_allergens(product, profile):
     return found
 
 
-def name_only_allergen_warning(product, profile):
-    from app.services.response_helpers import object_particle
-    lines = []
-    for term in name_only_allergens(product, profile):
-        subject = "이" if object_particle(term) == "을" else "가"
-        lines.append(f"{profile.profile_name}: 제품명에 '{term}'{subject} 들어 있어요. 등록된 표시에는 없지만 들어 있을 "
-                     "가능성이 높으니 포장지를 확인하기 전에는 드시지 마세요.")
-    return lines
+def allergen_display_name(allergen):
+    """'milk' (a backend ID) → '우유'; unknown terms are returned as given."""
+    from app.data.dictionaries import ALLERGEN_CANONICAL_ALIASES
+    lowered = allergen.lower()
+    for name, aliases in ALLERGEN_CANONICAL_ALIASES.items():
+        if lowered == name or lowered in {alias.lower() for alias in aliases}:
+            return name
+    return allergen
 
+
+def unknown_allergy_guidance(product, profile):
+    """What to do when the backend could not judge allergies for this person.
+
+    The verdict stays UNKNOWN; this only replaces a generic sentence with the
+    person's own next step: avoid when the name states their allergen, else
+    check the package for their allergens by name.
+    """
+    from app.services.response_helpers import object_particle
+    def subject(word):
+        return "이" if object_particle(word) == "을" else "가"
+    named = name_only_allergens(product, profile)
+    if named:
+        term = named[0]
+        return (f"피하는 게 좋아요. 제품명에 '{term}'{subject(term)} 들어 있어 {term}{subject(term)} 들어 있을 가능성이 높아요. "
+                "등록된 알레르기 표시가 없어 DB로는 확인되지 않았어요.")
+    if product.resolved_allergies() or product.rawmtrl_nm or product.ingredients:
+        return None
+    names = list(dict.fromkeys(allergen_display_name(item) for item in profile.resolved_allergies()))
+    if not names:
+        return None
+    listed = ", ".join(names)
+    return (f"DB에 이 상품의 알레르기 표시가 없어 판단할 수 없어요. 드시기 전에 포장지 알레르기 표시에 "
+            f"{listed}{subject(names[-1])} 있는지 확인하세요.")

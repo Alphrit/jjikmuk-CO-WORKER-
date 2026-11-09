@@ -231,12 +231,19 @@ def test_no_reaction_guidance_without_a_current_symptom(message):
     assert build_emergency_triage_response(message) is None
 
 
-def test_allergen_in_the_name_but_not_the_label_is_warned_for_the_profile():
+def test_unknown_allergy_verdict_gets_a_concrete_next_step_per_person():
     from app.core.models import Profile
-    from app.services.product_facts import name_only_allergen_warning
-    lines = name_only_allergen_warning(Product(product_name="바나나맛우유", barcode="1", allergy=[]),
-                                       Profile(name="엄마", allergies=["milk"]))
-    assert lines == ["엄마: 제품명에 '우유'가 들어 있어요. 등록된 표시에는 없지만 들어 있을 가능성이 높으니 "
-                     "포장지를 확인하기 전에는 드시지 마세요."]
-    assert name_only_allergen_warning(Product(product_name="쌀새우깡", barcode="2", allergy=["새우"]),
-                                      Profile(name="나", allergies=["shrimp"])) == []
+    from app.services.product_facts import unknown_allergy_guidance
+    snack = Product(product_name="농심 새우깡90G", barcode="1", allergy=[])
+    assert unknown_allergy_guidance(snack, Profile(name="나", allergies=["shrimp"])).startswith("피하는 게 좋아요. 제품명에 '새우'가")
+    assert unknown_allergy_guidance(snack, Profile(name="엄마", allergies=["milk"])) == (
+        "DB에 이 상품의 알레르기 표시가 없어 판단할 수 없어요. 드시기 전에 포장지 알레르기 표시에 우유가 있는지 확인하세요.")
+    labelled = Product(product_name="새우깡", barcode="2", allergy=["새우"])
+    assert unknown_allergy_guidance(labelled, Profile(name="나", allergies=["shrimp"])) is None
+
+
+def test_common_vowel_typos_are_retried_and_curiosity_ends_a_name():
+    from app.services.product import _common_vowel_typos_fixed
+    assert _common_vowel_typos_fixed("빼뺴로") == "빼빼로"
+    assert extract_product_search_query("새우깡 영양성분 알고 싶어") == "새우깡"
+    assert "궁금" not in extract_product_search_query("초코파이 성분 궁금해")

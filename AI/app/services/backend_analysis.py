@@ -11,7 +11,7 @@ from app.core.models import AssessmentSummary, ChatResponse
 from app.core.public_product import public_product_payload, public_conversation_state
 from app.intent.common import PRODUCT_INTENTS
 from app.services.product_facts import (
-    asked_ingredient_text, ingredient_label_text, intolerance_text, name_only_allergen_warning, product_facts_text,
+    asked_ingredient_text, ingredient_label_text, intolerance_text, product_facts_text, unknown_allergy_guidance,
 )
 
 _SAFETY_TEXT = {
@@ -106,12 +106,14 @@ def decision_response(req, intent, *, lead=""):
         text = (f"{req.product.product_name or '선택한 상품'} 기준으로 확인했어요.\n"
                 + lead + intolerance_text(req.product, req.message) + text)
     if results:
-        text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
         if req.product:
-            # A missing label field must not hide an allergen the name states.
-            warnings = [line for profile in profiles for line in name_only_allergen_warning(req.product, profile)]
-            if warnings:
-                text += "\n" + "\n".join(warnings)
+            for profile, item in zip(profiles, results):
+                guidance = unknown_allergy_guidance(req.product, profile) if item["backend_status"] == "UNKNOWN" else None
+                if guidance:
+                    # Same UNKNOWN verdict, but a concrete next step for this person.
+                    item["answer"] = item["answer"].replace(_SAFETY_TEXT["UNKNOWN"], guidance)
+                    item["reasons"] = [item["answer"][:1000]]
+        text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
         text += _SAFETY_TEXT["NOT_EVALUATED"]
     if ctx.profileSource == "CLIENT_REQUEST" and profiles:

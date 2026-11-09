@@ -142,6 +142,17 @@ def find_product_candidates_from_message(
     filtered = filter_product_candidates_for_query(search_query, candidates)[:limit]
     if filtered:
         return filtered
+    spelled = _common_vowel_typos_fixed(search_query)
+    if spelled != search_query:
+        # '빼뺴로' → '빼빼로': retried only when the typed spelling found nothing.
+        candidates = [
+            product
+            for product in repo.search_candidates(spelled, limit=fetch_limit)
+            if _product_with_valid_public_contract(product, view="candidate") is not None
+        ]
+        filtered = filter_product_candidates_for_query(spelled, candidates)[:limit]
+        if filtered:
+            return filtered
     from app.services.product_search import recipe_query_without_instrumental_particle
     fallback_query = recipe_query_without_instrumental_particle(message, search_query)
     if not fallback_query:
@@ -152,6 +163,19 @@ def find_product_candidates_from_message(
         if _product_with_valid_public_contract(product, view="candidate") is not None
     ]
     return filter_product_candidates_for_query(fallback_query, candidates)[:limit]
+
+
+def _common_vowel_typos_fixed(text: str) -> str:
+    """Map the commonly mistyped vowels ㅒ→ㅐ and ㅖ→ㅔ inside Hangul syllables."""
+    fixed = []
+    for char in text:
+        code = ord(char) - 0xAC00
+        if 0 <= code < 11172:
+            initial, medial, final = code // 588, (code % 588) // 28, code % 28
+            medial = {3: 1, 7: 5}.get(medial, medial)
+            char = chr(0xAC00 + initial * 588 + medial * 28 + final)
+        fixed.append(char)
+    return "".join(fixed)
 
 
 def _history_product_queries(text: str) -> List[str]:
