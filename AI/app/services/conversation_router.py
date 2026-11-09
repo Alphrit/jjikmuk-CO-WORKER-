@@ -39,6 +39,10 @@ from app.services.product_search import (
     tokenize_search_text,
     recipe_source_query,
 )
+from app.services.candidate_prompts import (
+    CHOOSE_FROM_CANDIDATES, NEW_PRODUCT_NOT_FOUND, NONE_SELECTED_YET, NOT_CONFIRMED_YET, SELECTION_CONFIRMED,
+    confirms_choice, leaves_choice_open,
+)
 from app.services.comparison_language import comparison_pick_parts
 from app.services.request_language import refers_only_to_current_product
 
@@ -230,10 +234,10 @@ def build_product_confirmation_response(
         requested_name = search_query or name
         answer = (
             f"질문하신 '{requested_name}'에 해당하는 제품이 여러 개예요. "
-            "아래 후보 중 맞는 제품을 선택해 주세요."
+            f"{CHOOSE_FROM_CANDIDATES}."
         )
     else:
-        answer = f"질문하신 제품이 '{name}'인지 확실하지 않아요. 아래 후보 중 맞는 제품을 선택해 주세요."
+        answer = f"질문하신 제품이 '{name}'인지 확실하지 않아요. {CHOOSE_FROM_CANDIDATES}."
     pending_context = {
         **(
             {"pending_user_message": original_message.strip()}
@@ -552,16 +556,9 @@ def _has_unresolved_product_confirmation(chat_history) -> bool:
         if getattr(item, "role", None) != "assistant":
             continue
         content = normalize_message(getattr(item, "content", ""))
-        if any(marker in content for marker in [
-            "아래 후보 중 맞는 제품을 선택",
-            "검색된 상품 중 질문하려는 제품을 선택",
-            "해당하는 제품이 여러 개",
-            "아직 어느 제품도 선택하지 않았",
-            "아직 한 제품을 확정하지 않았",
-            "요청하신 새 제품을 확인하지 못했어요",
-        ]):
+        if leaves_choice_open(content):
             unresolved = True
-        elif "으로 선택했어요" in content:
+        elif confirms_choice(content):
             unresolved = False
     return unresolved
 
@@ -1406,13 +1403,13 @@ def _build_pending_candidate_response(
         answer = (
             "후보를 구분할 수 있도록 DB에서 확인된 제품 식별 정보만 정리했어요.\n"
             + "\n".join(identity_lines)
-            + "\n아직 어느 제품도 선택하지 않았고, 섭취 안전성도 평가하지 않았어요. "
+            + f"\n{NONE_SELECTED_YET}고, 섭취 안전성도 평가하지 않았어요. "
             "맞는 제품 하나를 선택해 주세요."
         )
         reasons = ["제품 후보 식별 정보 비교", "섭취 안전성 미평가"]
     else:
         answer = (
-            "아직 한 제품을 확정하지 않았어요. 아래 후보 중 맞는 제품 하나를 "
+            f"{NOT_CONFIRMED_YET}. 아래 후보 중 맞는 제품 하나를 "
             "선택해 주세요. 제품을 고르기 전에는 첫 번째 후보를 임의로 사용하거나 "
             "섭취 안전성을 평가하지 않아요."
         )
@@ -1526,7 +1523,7 @@ def _build_candidate_selected_response(product: Product) -> ChatResponse:
         pipeline_stage="rules",
         intent="product_summary",
         answer=(
-            f"'{product.product_name or '선택한 제품'}'으로 선택했어요. "
+            f"'{product.product_name or '선택한 제품'}'{SELECTION_CONFIRMED}. "
             "이제 먹어도 되는지, 알레르기 성분이나 영양정보를 이어서 물어봐 주세요."
         ),
         risk_level="unknown",
@@ -1642,7 +1639,7 @@ def _missing_named_product_response(query, state):
     })
     return ChatResponse(
         intent="missing_product", task_type="product_chat", answer_source="rules",
-        answer=f"요청하신 새 제품을 확인하지 못했어요: {query[:256]}. 정확한 제품명이나 바코드를 알려 주세요. 제품을 확인한 뒤 성분과 영양정보를 안내할게요.",
+        answer=f"{NEW_PRODUCT_NOT_FOUND}: {query[:256]}. 정확한 제품명이나 바코드를 알려 주세요. 제품을 확인한 뒤 성분과 영양정보를 안내할게요.",
         risk_level="unknown", assessment_status="incomplete", overall_decision="check_required",
         missing_information=["요청 제품의 정확한 제품명 또는 바코드"],
         conversation_state=public_conversation_state(context), internal_conversation_state=context,

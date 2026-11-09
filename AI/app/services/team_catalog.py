@@ -8,6 +8,7 @@ grounding checks and request-consent boundary.
 import re
 
 from app.core.models import ChatResponse
+from app.services.candidate_prompts import TEAM_CHOOSE_FROM_CANDIDATES
 from app.services.conversation_controls import CONVERSATION_CONTROL_REASON
 from app.services.hybrid import LOCAL_EXCERPT_REASON, _contains_reassuring_conclusion
 from app.services.product_status_handlers import handle_product_summary
@@ -135,7 +136,7 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
         'reasons': [],
     }) for candidate in response.product_candidates]
     if candidates:
-        answer = '검색된 상품 중 질문하려는 제품을 선택해 주세요. 같은 이름의 다른 제품일 수 있어 제조사와 포장도 확인해 주세요.'
+        answer = f'{TEAM_CHOOSE_FROM_CANDIDATES}. 같은 이름의 다른 제품일 수 있어 제조사와 포장도 확인해 주세요.'
     elif response.intent == 'recipe_recommend' or response.recipe is not None:
         # Stage C stays blocked, but say so instead of asking for a product.
         answer = RECIPE_UNAVAILABLE_ANSWER
