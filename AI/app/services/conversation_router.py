@@ -8,7 +8,7 @@ from app.data.dictionaries import (
     INCLUSION_KEYWORDS,
     SPECIAL_DIET_KEYWORDS,
 )
-from app.intent.common import FOOD_DOMAIN_KEYWORDS, OUT_OF_DOMAIN_KEYWORDS
+from app.intent.common import FOOD_DOMAIN_KEYWORDS, OUT_OF_DOMAIN_KEYWORDS, PRODUCT_INTENTS
 from app.intent.rules import is_nutrition_word_part_of_product_name, rule_based_classify_intent
 from app.intent.text import (
     contains_any,
@@ -515,7 +515,8 @@ def find_product_from_request_text(
     return find_product_from_history(chat_history), None
 
 
-_PRODUCT_FOLLOWUP_INTENTS = {"missing_product", "nutrition_explain", "ingredient_check", "can_i_eat", "product_summary"}
+# A recheck needs the saved selection, so it never reopens a candidate list.
+_PRODUCT_FOLLOWUP_INTENTS = (PRODUCT_INTENTS - {"profile_based_recheck"}) | {"missing_product"}
 
 
 def _reoffer_history_candidates(message: str, chat_history) -> Optional[ChatResponse]:

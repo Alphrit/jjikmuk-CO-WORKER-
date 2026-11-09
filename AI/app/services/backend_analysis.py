@@ -4,13 +4,14 @@ RAG, search, recommendations, comparisons and recipes keep their existing
 pipelines. A BARCODE_ROW verdict never becomes a verdict about another product.
 """
 
-import re
-
 from app.core.backend_analysis import PublicBackendAnalysis
 from app.core.models import AssessmentSummary, ChatResponse
 from app.core.public_product import public_product_payload, public_conversation_state
+from app.intent.common import PRODUCT_INTENTS
+from app.services.product_facts import (
+    asked_ingredient_text, ingredient_label_text, intolerance_text, product_facts_text,
+)
 
-PRODUCT_INTENTS = {"can_i_eat", "profile_based_recheck", "ingredient_check", "nutrition_explain", "product_summary"}
 _SAFETY_TEXT = {
     "PASS": "선택한 알레르기 조건과 표시 정보 사이에서 충돌이 발견되지 않았어요. 섭취 안전을 보장하는 뜻은 아니에요.",
     "DANGER": "선택한 알레르기 조건과 충돌하는 표시가 확인됐어요. 이 상품은 피해주세요.",
@@ -92,76 +93,16 @@ def _profile_results(req, intent, *, decisions=True):
     return results
 
 
-def _facts(req, intent):
-    product = req.product
-    if product is None:
-        return ""
-    if intent == "nutrition_explain":
-        from app.intent.text import detect_nutrition_keywords
-        from app.services.handlers import NUTRITION_LABELS, NUTRITION_UNITS
-        requested = detect_nutrition_keywords(req.message)
-        # detect_nutrition_keywords returns display names; expose only requested
-        # nutrients, or all registered values for a broad nutrition request.
-        keys = [key for key, label in NUTRITION_LABELS.items() if label in requested] if requested else list(NUTRITION_LABELS)
-        lines = [f"{NUTRITION_LABELS[key]}: {product.nutrition[key]:g}{NUTRITION_UNITS[key]}"
-                 if key in product.nutrition else f"{NUTRITION_LABELS[key]}: 정보 없음" for key in keys]
-        return "등록된 영양정보 — " + ", ".join(lines) + ". 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요.\n"
-    if intent in {"ingredient_check", "product_summary"}:
-        ingredients = product.rawmtrl_nm or ", ".join(product.ingredients)
-        allergens = product.resolved_allergies()
-        text = _asked_ingredient_text(product, req.message) if intent == "ingredient_check" else ""
-        text += ("등록된 원재료: " + ingredients[:1500] + "\n") if ingredients else "등록된 원재료 정보가 부족해요.\n"
-        if allergens:
-            text += "등록된 알레르기 표시: " + ", ".join(allergens) + "\n"
-        return text
-    return ""
-
-
-_INTOLERANCE_INGREDIENTS = ((r"(?:유당|락토스|젖당)\s*불내증", "우유"), (r"글루텐\s*불내증|셀리악", "밀"))
-
-
-def _asked_ingredient_text(product, message):
-    """Answer the asked ingredient from registered label text; never assert absence."""
-    from app.intent.text import detect_ingredient_keyword
-    if product.product_name:
-        # '새우깡' must not read as a question about 새우.
-        message = message.replace(product.product_name, " ")
-    ingredient = detect_ingredient_keyword(message)
-    return _ingredient_label_text(product, ingredient) if ingredient else ""
-
-
-def _intolerance_text(product, message):
-    """An intolerance is not a backend allergy axis: say so and show the related label fact."""
-    for pattern, ingredient in _INTOLERANCE_INGREDIENTS:
-        found = re.search(pattern, message)
-        if found:
-            return (f"{found[0]}은 알레르기 판정 항목이 아니어서 아래 판정에 반영되지 않았어요. "
-                    + _ingredient_label_text(product, ingredient))
-    return ""
-
-
-def _ingredient_label_text(product, ingredient):
-    from app.services.response_helpers import find_cross_contamination_aliases, find_matching_aliases
-    matched = find_matching_aliases(product, ingredient)
-    if matched:
-        return f"등록된 표시에서 {ingredient} 관련 표기가 확인돼요: {', '.join(matched[:3])}.\n"
-    shared = find_cross_contamination_aliases(product, ingredient)
-    if shared:
-        return f"{ingredient}의 직접 함유 표기는 찾지 못했지만 교차오염 가능성 표시가 있어요: {', '.join(shared[:3])}.\n"
-    return (f"등록된 원재료·알레르기 표시에서 {ingredient} 관련 표기는 찾지 못했어요. "
-            "표시 정보가 빠졌을 수 있어 들어 있지 않다고 단정할 수는 없어요.\n")
-
-
 def decision_response(req, intent, *, lead=""):
     ctx = req.analysis_context
     profiles = [req.profile] if req.profile else req.profiles
     results = _profile_results(req, intent)
     decision = ctx.analysis
     axes = _axes(decision)
-    text = _facts(req, intent)
+    text = product_facts_text(req.product, req.message, intent)
     if req.product:
         text = (f"{req.product.product_name or '선택한 상품'} 기준으로 확인했어요.\n"
-                + lead + _intolerance_text(req.product, req.message) + text)
+                + lead + intolerance_text(req.product, req.message) + text)
     if results:
         text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
@@ -237,8 +178,8 @@ def run_backend_pipeline(req, legacy_pipeline):
             # never re-label that verdict as a decision for the new condition.
             stated = dict.fromkeys(term for before, after in zip(profiles, prepared.profiles)
                                    for term in after.resolved_allergies() if term not in before.resolved_allergies())
-            facts = ("".join(_ingredient_label_text(req.product, term) for term in stated)
-                     or _asked_ingredient_text(req.product, req.message))
+            facts = ("".join(ingredient_label_text(req.product, term) for term in stated)
+                     or asked_ingredient_text(req.product, req.message))
             results = _profile_results(req, "can_i_eat")
             if (_axes(req.analysis_context.analysis)["overall_decision"] in {"avoid", "caution"}
                     and results and all(item["backend_status"] != "PASS" for item in results)):

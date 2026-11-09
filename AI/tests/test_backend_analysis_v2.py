@@ -461,3 +461,15 @@ def test_malformed_v2_outer_shapes_return_validation_errors(client, field, value
     response = client.post("/chat", json=payload, headers=headers(payload))
     assert response.status_code == 422
     assert CONTRACT_HEADER not in response.headers
+
+
+@pytest.mark.parametrize("message", ["저염 두부스낵 나트륨 얼마야?", "저염 두부스낵 원재료 알려줘"])
+def test_unselected_product_facts_come_only_from_the_backend_path(client, message):
+    # In v2 only backend_analysis states product facts; a legacy handler's
+    # answer about a searched, unselected product is replaced by a selection ask.
+    payload = request_payload(product=False)
+    payload["message"] = message
+    result = send(client, payload)
+    assert result["backend_analysis"]["application"] == "product_selection_required"
+    assert "선택" in result["answer"]
+    assert "mg" not in result["answer"] and "원재료:" not in result["answer"]

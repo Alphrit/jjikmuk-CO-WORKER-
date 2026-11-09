@@ -8,6 +8,7 @@ grounding checks and request-consent boundary.
 import re
 
 from app.core.models import ChatResponse
+from app.intent.common import PRODUCT_INTENTS
 from app.services.candidate_prompts import TEAM_CHOOSE_FROM_CANDIDATES
 from app.services.conversation_controls import CONVERSATION_CONTROL_REASON
 from app.services.hybrid import LOCAL_EXCERPT_REASON, _contains_reassuring_conclusion
@@ -15,10 +16,6 @@ from app.services.product_status_handlers import handle_product_summary
 from app.services.response_assessment import attach_response_assessment
 
 
-PRODUCT_INTENTS = {
-    'product_summary', 'can_i_eat', 'profile_based_recheck',
-    'ingredient_check', 'nutrition_explain',
-}
 GENERAL_INTENTS = {'general_diet_guide', 'general_allergy_guide', 'general_nutrition_guide', 'out_of_domain'}
 # Replies that only ask which product is meant or explain that the question was
 # unclear; they state no catalog fact.

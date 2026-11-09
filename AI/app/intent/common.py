@@ -20,6 +20,10 @@ VALID_INTENTS = {
 }
 
 AMBIGUOUS_INTENT = "ambiguous"
+# Questions about one product's label or suitability. Shared by the backend
+# verdict path, the team filter and follow-up routing; keep a single copy.
+PRODUCT_INTENTS = frozenset({"product_summary", "can_i_eat", "profile_based_recheck", "ingredient_check", "nutrition_explain"})
+
 LLM_FALLBACK_INTENTS = {"unknown", AMBIGUOUS_INTENT}
 
 SUITABILITY_EVAL_KEYWORDS = [
