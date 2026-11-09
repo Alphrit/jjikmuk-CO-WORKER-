@@ -378,8 +378,10 @@ def _product_search_text(product: Product) -> str:
 def _explicit_package_sizes(text: str) -> set[tuple[str, float]]:
     scales = {"ml": ("volume", 1), "l": ("volume", 1000),
               "g": ("mass", 1), "kg": ("mass", 1000)}
+    # Start only at the first digit of a run; restarting inside a long digit
+    # run is quadratic and runs once per scored product.
     return {(scales[unit][0], round(float(value) * scales[unit][1], 6))
-            for value, unit in re.findall(r"(\d+(?:\.\d+)?)\s*(kg|ml|g|l)(?![a-z])", text.lower())}
+            for value, unit in re.findall(r"(?<!\d)(\d+(?:\.\d+)?)\s*(kg|ml|g|l)(?![a-z])", text.lower())}
 
 
 def _product_text_score(query: str, product: Product) -> float:

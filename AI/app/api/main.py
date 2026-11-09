@@ -1132,6 +1132,8 @@ def _stateless_chat_response(
     )
     if _team_unverified_catalog():
         response = _team_catalog_response(response, resolved_product=_resolved_product)
+    from app.services.followup_questions import tidy_followups
+    response = tidy_followups(response, req.message, team_mode=_team_unverified_catalog())
     _log_pipeline_response(response, activity_context=_activity_context,
                            allow_raw_audit_message=True,
                            trusted_user_id=trusted_user_id)

@@ -706,6 +706,13 @@ def rule_based_classify_intent(
     if food_recommendation_request(current_message):
         return "alternative_food_recommend"
 
+    from app.intent.request_semantics import productless_reference_question
+    if product is None and message == current_message and productless_reference_question(current_message):
+        # Without a product these are not general guides: ask which product.
+        # A follow-up to a general explanation ('그럼 칼로리는?') was already
+        # rewritten into that topic above and stays a general question.
+        return "missing_product"
+
     from app.intent.request_semantics import nutrient_exclusion_question
     if product is None and nutrient_exclusion_question(message):
         return "general_nutrition_guide"

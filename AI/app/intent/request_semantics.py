@@ -30,11 +30,34 @@ def current_topic_message(message: str) -> str:
     message = strip_leading_small_talk(message)
     if re.match(r"\s*(?:(?:확인\s*)?질문)(?:은|는|만)?\s*그만", message):
         return message
-    match = re.match(
-        r"^\s*(?:[가-힣A-Za-z]+\s*){0,3}(?:얘기|이야기|설명|질문)(?:는|은|을|를)?\s*"
-        r"(?:됐고|말고|여기까지\s*하고|그만하고)[,，\s]*(.+)$", message,
+    # Find the dismissal first and check the short topic prefix separately: a
+    # '(?:[가-힣]+\s*){0,3}' prefix backtracks cubically on long unspaced text
+    # and, holding the GIL, stalls every other request.
+    match = re.search(
+        r"(?:얘기|이야기|설명|질문)(?:는|은|을|를)?\s*(?:됐고|말고|여기까지\s*하고|그만하고)[,，\s]*", message,
     )
-    return match[1] if match else message
+    if not match:
+        return message
+    prefix = message[:match.start()].split()
+    rest = re.match(r"(.+)$", message[match.end():])
+    if len(prefix) > 3 or not all(re.fullmatch(r"[가-힣A-Za-z]+", word) for word in prefix) or not rest:
+        return message
+    return rest[1]
+
+
+_LABEL_FIELD = r"원재료|원료|성분|알레르기|알러지|영양|나트륨|당류|당분|칼로리|열량|단백질|지방|탄수화물|콜레스테롤|먹어도|마셔도|괜찮"
+_SHORT_NUTRIENT_FIELD = r"(?:그럼\s*)?(?:나트륨|당류|당분|칼로리|열량|단백질|포화지방|지방|탄수화물|콜레스테롤)(?:은|는|도)?\s*[?？]*"
+
+
+def productless_reference_question(message: str) -> bool:
+    """'이 상품의 원재료 알려줘', '칼로리는?': a label fact of a product the turn did not name."""
+    text = " ".join(message.strip().split())
+    if re.search(r"비교|추천|대체|레시피", text):
+        return False
+    # A bare '그건' is also discourse ('그건 알겠고, 당류 0g은…'); only a
+    # deictic with 상품/제품 refers to a product.
+    deictic = re.search(r"(?:^|\s)(?:이|그|저|해당|현재|방금)\s*(?:상품|제품)", text)
+    return bool((deictic and re.search(_LABEL_FIELD, text)) or re.fullmatch(_SHORT_NUTRIENT_FIELD, text))
 
 
 def personal_assessment_request(message: str) -> bool:

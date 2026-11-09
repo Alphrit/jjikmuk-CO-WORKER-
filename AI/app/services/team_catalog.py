@@ -22,6 +22,9 @@ GENERAL_INTENTS = {'general_diet_guide', 'general_allergy_guide', 'general_nutri
 # Replies that only ask which product is meant or explain that the question was
 # unclear; they state no catalog fact.
 NO_PRODUCT_GUIDANCE_INTENTS = {'missing_product', 'unknown'}
+STAGE_C_INTENTS = {'recipe_recommend', 'alternative_food_recommend'}
+# Follow-up chips that would lead into a Stage C reply.
+STAGE_C_QUESTION = re.compile(r'레시피|요리법|만드는\s*법|추천|대체|대안')
 COMPARISON_SOURCE_NOTE = '비교에 쓴 상품 표시 정보는 출처 미확인 상태예요. 섭취 전 실제 포장지 표시를 확인해 주세요.'
 COMPARISON_UNAVAILABLE_ANSWER = (
     '출처가 확인되지 않은 상품 정보로는 알레르기 충돌이 없다고 비교해 드릴 수 없어요. '
@@ -82,9 +85,12 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
     if (response.backend_analysis is not None
             and response.backend_analysis.application in {'context_only', 'product_selection_required'}
             and response.answer_source == 'rules' and _bounded_verdict(response)
+            and response.intent not in STAGE_C_INTENTS
             and not any((response.recommended_products, response.comparison_products, response.recipe))):
         # A new/ambiguous allergy or a different product requires a specific
         # clarification, not a generic request to search the already selected item.
+        # Recipe and recommendation replies stay Stage C even when they found
+        # nothing: their own wording offers features the team filter blocks.
         return response
     summary = response.assessment_summary
     product_resolved = (resolved_product is not None and resolved_product.product_found

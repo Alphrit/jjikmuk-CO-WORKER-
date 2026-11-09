@@ -4,6 +4,8 @@ RAG, search, recommendations, comparisons and recipes keep their existing
 pipelines. A BARCODE_ROW verdict never becomes a verdict about another product.
 """
 
+import re
+
 from app.core.backend_analysis import PublicBackendAnalysis
 from app.core.models import AssessmentSummary, ChatResponse
 from app.core.public_product import public_product_payload, public_conversation_state
@@ -106,11 +108,51 @@ def _facts(req, intent):
         return "등록된 영양정보 — " + ", ".join(lines) + ". 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요.\n"
     if intent in {"ingredient_check", "product_summary"}:
         ingredients = product.rawmtrl_nm or ", ".join(product.ingredients)
-        return ("등록된 원재료: " + ingredients[:1500] + "\n") if ingredients else "등록된 원재료 정보가 부족해요.\n"
+        allergens = product.resolved_allergies()
+        text = _asked_ingredient_text(product, req.message) if intent == "ingredient_check" else ""
+        text += ("등록된 원재료: " + ingredients[:1500] + "\n") if ingredients else "등록된 원재료 정보가 부족해요.\n"
+        if allergens:
+            text += "등록된 알레르기 표시: " + ", ".join(allergens) + "\n"
+        return text
     return ""
 
 
-def decision_response(req, intent):
+_INTOLERANCE_INGREDIENTS = ((r"(?:유당|락토스|젖당)\s*불내증", "우유"), (r"글루텐\s*불내증|셀리악", "밀"))
+
+
+def _asked_ingredient_text(product, message):
+    """Answer the asked ingredient from registered label text; never assert absence."""
+    from app.intent.text import detect_ingredient_keyword
+    if product.product_name:
+        # '새우깡' must not read as a question about 새우.
+        message = message.replace(product.product_name, " ")
+    ingredient = detect_ingredient_keyword(message)
+    return _ingredient_label_text(product, ingredient) if ingredient else ""
+
+
+def _intolerance_text(product, message):
+    """An intolerance is not a backend allergy axis: say so and show the related label fact."""
+    for pattern, ingredient in _INTOLERANCE_INGREDIENTS:
+        found = re.search(pattern, message)
+        if found:
+            return (f"{found[0]}은 알레르기 판정 항목이 아니어서 아래 판정에 반영되지 않았어요. "
+                    + _ingredient_label_text(product, ingredient))
+    return ""
+
+
+def _ingredient_label_text(product, ingredient):
+    from app.services.response_helpers import find_cross_contamination_aliases, find_matching_aliases
+    matched = find_matching_aliases(product, ingredient)
+    if matched:
+        return f"등록된 표시에서 {ingredient} 관련 표기가 확인돼요: {', '.join(matched[:3])}.\n"
+    shared = find_cross_contamination_aliases(product, ingredient)
+    if shared:
+        return f"{ingredient}의 직접 함유 표기는 찾지 못했지만 교차오염 가능성 표시가 있어요: {', '.join(shared[:3])}.\n"
+    return (f"등록된 원재료·알레르기 표시에서 {ingredient} 관련 표기는 찾지 못했어요. "
+            "표시 정보가 빠졌을 수 있어 들어 있지 않다고 단정할 수는 없어요.\n")
+
+
+def decision_response(req, intent, *, lead=""):
     ctx = req.analysis_context
     profiles = [req.profile] if req.profile else req.profiles
     results = _profile_results(req, intent)
@@ -118,7 +160,8 @@ def decision_response(req, intent):
     axes = _axes(decision)
     text = _facts(req, intent)
     if req.product:
-        text = f"{req.product.product_name or '선택한 상품'} 기준으로 확인했어요.\n" + text
+        text = (f"{req.product.product_name or '선택한 상품'} 기준으로 확인했어요.\n"
+                + lead + _intolerance_text(req.product, req.message) + text)
     if results:
         text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
@@ -190,10 +233,27 @@ def run_backend_pipeline(req, legacy_pipeline):
                     p.vegetarian_dairy_allowed, p.vegetarian_egg_allowed, p._conversation_exclusions)
         if (prepared.allergy_guard or prepared.ambiguous_diet
                 or [conditions(p) for p in profiles] != [conditions(p) for p in prepared.profiles]):
-            # A new turn-local condition was not part of the backend verdict.
-            # Preserve the existing parser, but never re-label that old verdict
-            # as a decision for the newly stated conditions.
-            text = "방금 말씀한 조건은 전달받은 개인별 판정에 반영되지 않았어요. 프로필 조건을 반영해 이 상품을 다시 확인해주세요."
+            # A new turn-local condition was not part of the backend verdict:
+            # never re-label that verdict as a decision for the new condition.
+            stated = dict.fromkeys(term for before, after in zip(profiles, prepared.profiles)
+                                   for term in after.resolved_allergies() if term not in before.resolved_allergies())
+            facts = ("".join(_ingredient_label_text(req.product, term) for term in stated)
+                     or _asked_ingredient_text(req.product, req.message))
+            results = _profile_results(req, "can_i_eat")
+            if (_axes(req.analysis_context.analysis)["overall_decision"] in {"avoid", "caution"}
+                    and results and all(item["backend_status"] != "PASS" for item in results)):
+                # A warning for the saved profile conditions still holds and
+                # must stay visible; only the new condition is outside it. Any
+                # PASS line would be outdated, so mixed results are withheld.
+                lead = "새로 말씀한 조건이 누구의 것인지 알려 주시면 그 조건도 확인할게요.\n" if prepared.allergy_guard else ""
+                lead += facts + "방금 말씀한 조건은 아래 프로필 기준 판정에 반영되지 않았어요. 계속 적용하려면 설정에서 프로필 정보를 바꿔 주세요.\n"
+                response = decision_response(req, "profile_based_recheck", lead=lead)
+                activity = dict(profile=profile, product=req.product, barcode=req.product.barcode,
+                                report_number=req.product.report_number, message=req.message)
+                return response, req.product, activity
+            # A PASS without the new condition is outdated: withhold it. Label
+            # facts for the stated condition are still shown without a verdict.
+            text = facts + "방금 말씀한 조건은 전달받은 개인별 판정에 반영되지 않았어요. 프로필 조건을 반영해 이 상품을 다시 확인해주세요."
             response = (prepared.allergy_guard or ChatResponse(intent="profile_based_recheck", answer=text,
                 **_axes(None), active_profile_names=[p.profile_name for p in profiles], reasons=[text]))
             response = response.model_copy(update={"backend_analysis": _summary(req, "context_only")})

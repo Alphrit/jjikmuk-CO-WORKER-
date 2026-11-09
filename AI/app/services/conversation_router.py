@@ -404,6 +404,10 @@ def find_product_from_request_text(
         history_product = find_product_from_history(chat_history)
         if history_product is not None:
             return history_product, None
+    reoffer = (_reoffer_history_candidates(message, chat_history)
+               if use_history and not history_restore_allowed else None)
+    if reoffer is not None:
+        return None, reoffer
 
     if not should_search_products_from_message(message):
         if history_restore_allowed:
@@ -507,6 +511,35 @@ def find_product_from_request_text(
     return find_product_from_history(chat_history), None
 
 
+_PRODUCT_FOLLOWUP_INTENTS = {"missing_product", "nutrition_explain", "ingredient_check", "can_i_eat", "product_summary"}
+
+
+def _reoffer_history_candidates(message: str, chat_history) -> Optional[ChatResponse]:
+    """Ask again instead of guessing after an unresolved candidate list.
+
+    The app resends the original question with the chosen barcode, so the
+    choice never appears as user text. A later productless follow-up gets the
+    same candidates again, with this follow-up pending.
+    """
+    if not chat_history or _explicit_named_product_query(message, None):
+        return None
+    if rule_based_classify_intent(message=message, product=None, profile=None, chat_history=[]) not in _PRODUCT_FOLLOWUP_INTENTS:
+        return None
+    for item in reversed(chat_history[-6:]):
+        if getattr(item, "role", None) != "user":
+            continue
+        candidates = find_product_candidates_from_message(item.content, limit=3)
+        if not candidates:
+            continue
+        return build_confirmation_if_needed(
+            candidates,
+            search_query=extract_product_search_query(item.content),
+            original_message=message,
+            pending_intent=rule_based_classify_intent(message=message, product=candidates[0], profile=None, chat_history=[]),
+        )
+    return None
+
+
 def _has_unresolved_product_confirmation(chat_history) -> bool:
     """Use assistant text only as a fail-closed barrier to implicit selection.
 
@@ -521,6 +554,7 @@ def _has_unresolved_product_confirmation(chat_history) -> bool:
         content = normalize_message(getattr(item, "content", ""))
         if any(marker in content for marker in [
             "아래 후보 중 맞는 제품을 선택",
+            "검색된 상품 중 질문하려는 제품을 선택",
             "해당하는 제품이 여러 개",
             "아직 어느 제품도 선택하지 않았",
             "아직 한 제품을 확정하지 않았",
@@ -1547,6 +1581,9 @@ def _explicit_named_product_query(message, profile):
     if not query or compact_search_text(query) == compact_search_text(text):
         return None
     if re.search(r"(?:첫|두|세)\s*번째|(?:맨\s*)?(?:위|아래|마지막|처음)\s*(?:제품|상품|거|것)", query):
+        return None
+    # '이 제품에 특정 성분이 들어 있어?' refers to a product; it names none.
+    if re.match(r"(?:이|그|저|해당|현재|방금)\s*(?:제품|상품)", query):
         return None
     from app.services.comparison_language import comparison_axis_reply
     if comparison_axis_reply(text):

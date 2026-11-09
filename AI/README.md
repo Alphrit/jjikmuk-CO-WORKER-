@@ -226,6 +226,7 @@ uvicorn app.api.main:app --reload
 7. `20260903_product_label_revision_binding.sql`
 8. `20260909_chatbot_log_product_trace.sql`
 9. `20260910_conversation_no_expiry.sql`
+10. `20261109_chatbot_log_policy_version_length.sql`
 
 운영 제품 라벨 판단에는 실제 수집 과정에서 기록한 출처, 관찰 시각, 포함 필드 그룹, 수집 시점 콘텐츠 해시가 필요합니다. 런타임이 기존 행에 출처를 추정해 채우지 않습니다.
 
