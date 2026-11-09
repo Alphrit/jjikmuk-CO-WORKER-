@@ -682,6 +682,7 @@ def rule_based_classify_intent(
 ) -> str:
     from app.services.comparison_language import split_comparison_cancellation
     message, _ = split_comparison_cancellation(message)
+    current_message = message
     if product is None:
         from app.intent.explanation_topics import resolve_explanation_question
         message = resolve_explanation_question(message, chat_history)
@@ -699,7 +700,10 @@ def rule_based_classify_intent(
         return "out_of_domain"
 
     from app.intent.request_semantics import food_recommendation_request
-    if food_recommendation_request(message):
+    # A recommendation is requested by this turn, not by an earlier question
+    # that explanation follow-ups prepend ('다른 제품이랑 제조 공장이 같대' +
+    # '얼마나 섞였는지 %로 알려줘').
+    if food_recommendation_request(current_message):
         return "alternative_food_recommend"
 
     from app.intent.request_semantics import nutrient_exclusion_question

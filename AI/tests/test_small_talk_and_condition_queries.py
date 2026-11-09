@@ -104,6 +104,29 @@ def test_greeting_prefix_does_not_join_the_product_name(client):
     assert "안녕하세요 새우깡" not in data["answer"]
 
 
+@pytest.mark.parametrize("message", [
+    "땅콩 알레르기인데 저염 두부스낵 먹어도 돼?",
+    "땅콩 알레르기라서 저염 두부스낵 먹어도 돼?",
+    "땅콩 알레르기가 있는데 저염 두부스낵 먹어도 돼?",
+])
+def test_allergy_clause_in_any_form_resolves_the_named_product(client, message):
+    data = legacy(client, message)
+    assert data["intent"] == "can_i_eat"
+    assert "저염 두부스낵" in data["answer"]
+
+
+def test_earlier_question_does_not_turn_a_followup_into_a_recommendation():
+    from app.core.models import ChatHistoryItem
+    from app.intent.rules import rule_based_classify_intent
+    history = [
+        ChatHistoryItem(role="user", content="다른 제품이랑 제조 공장이 같대. 무슨 의미야?"),
+        ChatHistoryItem(role="assistant", content="같은 제조시설 문구는 혼입 가능성을 알리는 주의문구예요."),
+    ]
+    intent = rule_based_classify_intent("얼마나 섞였는지 %로 알려줘", None, None, history)
+    assert intent != "alternative_food_recommend"
+    assert rule_based_classify_intent("다른 제품 추천해줘", None, None, history) == "alternative_food_recommend"
+
+
 def test_intolerance_clause_resolves_the_named_product(client):
     data = legacy(client, "유당불내증인데 저염 두부스낵 먹어도 돼?")
     assert data["intent"] == "can_i_eat"
