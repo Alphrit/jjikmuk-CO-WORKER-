@@ -1536,6 +1536,13 @@ def _explicit_named_product_query(message, profile):
         # deictic task, not a new catalog name spanning both sentences.
         named = [_explicit_named_product_query(clause, profile) for clause in clauses]
         return next((query for query in reversed(named) if query), None)
+    # '유당불내증인데 새우깡 먹어도 돼?': the leading condition clause is context,
+    # so look for the catalog name only in what follows it.
+    condition_clause = re.match(
+        r"\s*\S*(?:불내증|셀리악\S*)(?:이|가)?\s*(?:있(?:는데|어서|으니까)|(?:이)?(?:라서|인데|이니까))\s+(\S.*)$", text,
+    )
+    if condition_clause:
+        return _explicit_named_product_query(condition_clause[1], profile)
     query = extract_product_search_query(text)
     if not query or compact_search_text(query) == compact_search_text(text):
         return None
@@ -1549,13 +1556,19 @@ def _explicit_named_product_query(message, profile):
         return None
     if re.match(r"(?:나트륨|단백질|당류|당분|칼로리|열량|지방|탄수화물|콜레스테롤)(?:\s+|하고|과|와)", query):
         return None
+    # '그럼 원재료에 들어갔다는 건 아니지?' asks about a label field of the
+    # current topic; a field word with a particle cannot start a catalog name.
+    if re.match(r"(?:원재료|원료|성분|표시|라벨)(?:명)?(?:에는|에서|에|이|가|은|는|을|를|도|으로|로)(?:\s|$)", query):
+        return None
     if detect_nutrition_keyword(query) and re.fullmatch(
         r"(?:(?:나트륨|단백질|당류|당분|칼로리|열량|포화지방|지방|탄수화물|콜레스테롤)(?:과|와|하고|이랑|랑|[,/·\s])?\s*)+", query,
     ):
         return None
     if re.match(r"(?:한|두|세|네|반|\d+(?:\.\d+)?)\s*(?:팩|봉지|통|병|개|g|ml|kg|l)(?:\s|[을를의은는도만]|$)", query, re.I):
         return None
-    if re.search(r"비교|레시피|요리|알레르기|알러지", text):
+    # A condition stated elsewhere in the sentence is not part of a catalog
+    # name either; intolerance wording is handled like allergy wording.
+    if re.search(r"비교|레시피|요리|알레르기|알러지|불내증|셀리악", text):
         return None
     if profile and profile_is_named(profile, query):
         return None

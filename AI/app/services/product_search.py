@@ -322,6 +322,9 @@ def recipe_source_query(message: str) -> str:
     generic = {
         "기본식재료", "일반식재료", "식재료", "채소", "야채", "일반", "간단한",
         "제품없이", "제품없는", "다른", "새로운", "다양한", "또다른", "더", "또", "하나", "추천",
+        # An unsupported diet is a condition, not a catalog source; the recipe
+        # builder answers that it is unsupported instead of a product lookup.
+        "비건", "vegan",
         *(compact_search_text(term) for name, aliases in SPECIAL_DIET_KEYWORDS.items() for term in (name, *aliases)),
     }
     for sentence in re.split(r"[.!?;\n]", message):

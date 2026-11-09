@@ -25,7 +25,9 @@ def command_text(message: str) -> str:
 
 
 def current_topic_message(message: str) -> str:
-    """Drop only an explicitly dismissed topic, not arbitrary earlier text."""
+    """Drop only an explicitly dismissed topic or a leading greeting, not arbitrary earlier text."""
+    from app.services.conversation_controls import strip_leading_small_talk
+    message = strip_leading_small_talk(message)
     if re.match(r"\s*(?:(?:확인\s*)?질문)(?:은|는|만)?\s*그만", message):
         return message
     match = re.match(

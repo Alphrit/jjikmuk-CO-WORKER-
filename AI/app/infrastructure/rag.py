@@ -1298,6 +1298,32 @@ def _official_reference_from_file(raw_source: str, digest: str) -> dict[str, str
     }
 
 
+def local_official_entries(source_topics: set[str]) -> List[Dict[str, str]]:
+    """Approved excerpts whose reviewed topics match, read from local files only.
+
+    No embedding, index or provider call: this serves a recognized topic when
+    external processing is not permitted. Callers still verify each entry.
+    """
+    if not source_topics:
+        return []
+    entries: List[Dict[str, str]] = []
+    manifest = _build_document_manifest()
+    for document in _load_documents(expected_manifest=manifest):
+        if document.metadata.get("source_kind") != "official_excerpt":
+            continue
+        raw_source = document.metadata["source"]
+        digest = document.metadata["source_sha256"]
+        reference = _official_reference_from_file(raw_source, digest)
+        if not source_topics.intersection(filter(None, reference["topics"].split(","))):
+            continue
+        text = " ".join(reference["excerpt_content"].split())
+        entries.append({
+            "source": reference["source"], "content": text, "source_file": raw_source,
+            "source_sha256": digest, "text": f"[{reference['citation']}] {text}",
+        })
+    return entries
+
+
 def official_citation_from_entry(entry: dict[str, str]) -> Optional[str]:
     """Recheck local approval at final response assembly, not just retrieval."""
     reference = verified_official_reference(entry)

@@ -24,6 +24,7 @@ from app.infrastructure.external_ai_consent import (
 )
 from app.infrastructure.repository import InMemoryActivityRepository
 from app.services.activity import get_activity_repository, set_activity_repository
+from app.services.rag_grounding import answer_matches_reviewed_sources
 from test_released_knowledge import packaged_sources
 
 
@@ -78,7 +79,14 @@ def test_general_followup_rag_generation_keeps_request_consent_boundary(packaged
         assert payload["external_ai_processing"]["services"] == ["rag", "llm"]
     else:
         assert searches == outputs == []
-        assert payload["answer_source"] == "rules" and not payload["sources"]
+        assert not payload["external_ai_processing"]["used"]
+        # Without consent only an approved excerpt chosen locally may answer:
+        # its exact reviewed body, never generated text.
+        if payload["sources"]:
+            assert payload["answer_source"] == "rag" and payload["answer"] != answer
+            assert answer_matches_reviewed_sources(payload["answer"], payload["sources"])
+        else:
+            assert payload["answer_source"] == "rules"
 
 
 @pytest.fixture(autouse=True)

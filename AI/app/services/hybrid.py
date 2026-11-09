@@ -1016,6 +1016,57 @@ def enhance_rule_response(
     })
 
 
+LOCAL_EXCERPT_REASON = "reviewed_excerpt_local"
+
+
+def local_reviewed_excerpt_response(
+    base_response: ChatResponse,
+    message: str,
+    profile: Optional[Profile],
+    product: Optional[Product],
+    chat_history: Optional[List[ChatHistoryItem]] = None,
+) -> Optional[ChatResponse]:
+    """Answer a recognized general topic with its approved excerpt, locally.
+
+    Without consent the generic rule text ignores the actual question (e.g.
+    '트랜스지방이 뭐야?' got a nutrition-label overview). The reviewed bodies are
+    already written for end users, so returning them involves no external
+    processing and no generated facts.
+    """
+    if product is not None or base_response.intent not in {
+        "general_allergy_guide", "general_diet_guide", "general_nutrition_guide",
+    }:
+        return None
+    question = resolve_explanation_question(message, chat_history)
+    if not _is_supported_food_domain_question(question, profile, product):
+        return None
+    from app.infrastructure.rag import local_official_entries
+    try:
+        entries = local_official_entries(requested_topics(question))
+    except (OSError, ValueError, KeyError):
+        return None
+    selected = select_reviewed_entries(question, entries)
+    if not selected:
+        return None
+    context = [entry["content"] for entry in selected]
+    # An excerpt that never names the allergen the question is about (e.g. a
+    # purchase-check note for '"우유 알레르기가 있다"의 뜻') is off-target.
+    body = " ".join(context)
+    for allergen, aliases in ALLERGY_MAP.items():
+        if any(alias in question for alias in aliases) and not any(alias in body for alias in aliases):
+            return None
+    sources = _sources_from_entries(selected)
+    if len(sources) != len(selected):
+        return None
+    # Same shape as the consented extractive mode (exact reviewed bodies with
+    # their citations); external_ai_processing still records that nothing left
+    # the server.
+    return base_response.model_copy(update={
+        "answer": "\n\n".join(context), "answer_source": "rag", "task_type": "general_chat",
+        "sources": sources, "grounding_context": context, "fallback_reason": LOCAL_EXCERPT_REASON,
+    })
+
+
 def try_general_llm_fallback(
     base_response: ChatResponse,
     message: str,
@@ -1026,7 +1077,7 @@ def try_general_llm_fallback(
     if base_response.fallback_reason == "rag_question_outside_evidence_scope":
         return base_response
     if not is_llm_enabled():
-        return base_response
+        return local_reviewed_excerpt_response(base_response, message, profile, product, chat_history) or base_response
 
     if product is not None:
         return base_response

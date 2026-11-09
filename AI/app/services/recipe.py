@@ -592,6 +592,14 @@ def build_recipe_response(
     if (product is None and recipe_source_query(message)) or (product is not None and product.product_found is False):
         from app.services.recipe_request_context import missing_recipe_source_response
         return missing_recipe_source_response(message, conversation_state)
+    from app.services.recipe_request_context import unsupported_recipe_request
+    unsupported_request = unsupported_recipe_request(message) if product is None else None
+    if unsupported_request:
+        answer, reason = unsupported_request
+        return build_response(
+            intent="recipe_recommend", answer=answer, risk_level="unknown",
+            assessment_status="unsupported", reasons=[reason], profile=profile, task_type="general_chat",
+        )
     prior_fingerprints = [
         item for item in (conversation_state or {}).get("recipe_fingerprints", [])
         if isinstance(item, str) and re.fullmatch(r"[0-9a-f]{64}", item)
@@ -733,6 +741,14 @@ def build_recipe_response(
         if selected_product is not None
         else [*_general_recipe_variants(requested_diets), *reviewed_recipe_variants(requested_diets)]
     )
+    if selected_product is None:
+        from app.services.recipe_request_context import requested_dish_name, matches_dish
+        dish = requested_dish_name(message)
+        named = [variant for variant in variants
+                 if dish and variant.get("source_recipe_id") and matches_dish(dish, variant["title"])]
+        if named:
+            # A named reviewed dish must not silently fall back to another dish.
+            variants = named
     selected_variant = None
     rejected_conflicts: list[str] = []
     product_name = (
