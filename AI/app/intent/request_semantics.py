@@ -46,7 +46,7 @@ def current_topic_message(message: str) -> str:
 
 
 _LABEL_FIELD = r"원재료|원료|성분|알레르기|알러지|영양|나트륨|당류|당분|칼로리|열량|단백질|지방|탄수화물|콜레스테롤|먹어도|마셔도|괜찮"
-_SHORT_NUTRIENT_FIELD = r"(?:그럼\s*)?(?:나트륨|당류|당분|칼로리|열량|단백질|포화지방|지방|탄수화물|콜레스테롤)(?:은|는|도)?\s*[?？]*"
+_SHORT_NUTRIENT_FIELD = r"(?:그럼\s*)?(?:나트륨|당류|당분|칼로리|열량|단백질|포화지방|트랜스지방|식이섬유|지방|탄수화물|콜레스테롤)(?:은|는|도)?\s*[?？]*"
 
 
 def productless_reference_question(message: str) -> bool:
@@ -60,7 +60,7 @@ def productless_reference_question(message: str) -> bool:
     return bool((deictic and re.search(_LABEL_FIELD, text)) or re.fullmatch(_SHORT_NUTRIENT_FIELD, text))
 
 
-_DAILY_NUTRIENT = r"카페인|나트륨|소금|당류|설탕|포화지방|트랜스지방|지방|단백질|탄수화물|콜레스테롤|식이섬유|열량|칼로리"
+_DAILY_NUTRIENT = r"커피|카페인|나트륨|소금|당류|설탕|포화지방|트랜스지방|지방|단백질|탄수화물|콜레스테롤|식이섬유|열량|칼로리"
 
 
 def general_label_term_question(message: str) -> bool:
@@ -68,7 +68,7 @@ def general_label_term_question(message: str) -> bool:
     text = " ".join(message.strip().split())
     if re.search(r"(?:^|\s)(?:이|그|저|해당)\s*(?:상품|제품|과자|음료|우유|거)|바코드", text):
         return False
-    if re.search(r"추천|비교|골라|고를|먹어도|마셔도|먹을\s*수|대비|기준으로|(?:으로|로)\s*보면|몇\s*(?:개|봉지|잔|캔|병|팩)", text):
+    if re.search(r"추천|비교|골라|고를|먹어도|마셔도|먹을\s*수|대비|기준으로|(?:으로|로)\s*보면|몇\s*(?:개|봉지|캔|병|팩)", text):
         # Recommendations, comparisons and eatability keep their own routes.
         return False
     # Only when the nutrient leads: '허니버터칩 나트륨이 하루 권장량의…' names a product.

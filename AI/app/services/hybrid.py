@@ -352,13 +352,31 @@ def _evidence_text(
     ]).lower()
 
 
+# '1,000' is one number, not '1' and '000'.
+_ANY_NUMBER_PATTERN = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?")
+
+
 def _has_unsupported_numbers(answer: str, evidence: str) -> bool:
-    numbers = re.findall(r"\d+(?:\.\d+)?", answer)
+    numbers = [n.replace(",", "") for n in _ANY_NUMBER_PATTERN.findall(answer)]
     evidence_numbers = {
-        _canonical_number(number)
-        for number in re.findall(r"\d+(?:\.\d+)?", evidence)
+        _canonical_number(number.replace(",", ""))
+        for number in _ANY_NUMBER_PATTERN.findall(evidence)
     }
     return any(_canonical_number(number) not in evidence_numbers for number in numbers)
+
+
+# Health effects and suitability words a general food explanation must not
+# add on its own ('장 건강에 좋아요', '대부분 괜찮아요'). Allowed only when
+# the reviewed evidence itself uses the word.
+_HEALTH_EFFECT_TERMS = (
+    "괜찮", "변비", "장 건강", "장건강", "혈당", "혈관", "혈압", "근육", "면역", "셀리악", "다이어트", "살이 빠",
+    "살 빠", "체중", "예방", "치료", "효과", "건강에 좋", "몸에 좋", "적합", "안심",
+    "드세요", "드셔도", "섭취하세요", "섭취해도",
+)
+
+
+def _has_unsupported_health_terms(answer: str, evidence: str) -> bool:
+    return any(term in answer and term not in evidence for term in _HEALTH_EFFECT_TERMS)
 
 
 def _canonical_number(value: str) -> str:
@@ -852,6 +870,8 @@ def _grounding_failure_types(
     )
     if _has_unsupported_numbers(normalized_answer, evidence):
         failures.append("unsupported_number")
+    if rag_context and _has_unsupported_health_terms(normalized_answer, evidence):
+        failures.append("unsupported_safety_or_effect_claim")
     elif _has_mismatched_nutrition_claims(normalized_answer, product):
         failures.append("unsupported_number")
 
@@ -1135,6 +1155,11 @@ def try_general_llm_fallback(
     ]
 
     if _requires_rag_context_for_general_llm() and not rag_context:
+        # Index stale (startup rebuild) or embedding failed: answer from the
+        # local reviewed excerpts, as without consent, not a generic notice.
+        local = local_reviewed_excerpt_response(base_response, original_question, profile, product, chat_history)
+        if local is not None:
+            return local
         return base_response.model_copy(update={
             "fallback_reason": "rag_context_missing_for_general_llm",
             "validation_failure_types": ["rag_context_missing"],
@@ -1204,7 +1229,7 @@ def try_general_llm_fallback(
             base_response, validation_failure_types=["rag_source_approval_changed"],
         )
 
-    answer, recommended_questions = _split_answer_and_questions(llm_answer)
+    answer, _model_chips = _split_answer_and_questions(llm_answer)
 
     failure_types = _grounding_failure_types(
         answer=answer,
@@ -1236,7 +1261,9 @@ def try_general_llm_fallback(
 
     return base_response.model_copy(update={
         "answer": answer,
-        "recommended_questions": recommended_questions,
+        # Model-written chips skip claim review ('…변비를 치료하는 방법');
+        # keep the reviewed rule chips instead.
+        "recommended_questions": base_response.recommended_questions,
         "answer_source": "rag" if rag_context else "llm",
         "task_type": "general_chat",
         "sources": _sources_from_entries(rag_entries) if rag_context else [],

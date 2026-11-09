@@ -52,6 +52,8 @@ def asked_ingredient_text(product, message):
     from app.intent.text import detect_ingredient_keyword
     message = strip_product_name_words(product, message)
     ingredient = detect_ingredient_keyword(message)
+    if not ingredient and re.search(r"유당|락토스|젖당", message):
+        return "유당은 우유에 들어 있는 당이라 우유 표시로 확인했어요. " + ingredient_label_text(product, "우유")
     if not ingredient and "글루텐" in message:
         # Gluten is checked through its labelled source; 보리·호밀 are not label allergens.
         return "글루텐은 밀·보리·호밀에 들어 있는 단백질이라 밀 표시로 확인했어요. " + ingredient_label_text(product, "밀")

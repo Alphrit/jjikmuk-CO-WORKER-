@@ -215,14 +215,15 @@ def handle_product_summary(profile: Optional[Profile], product: Product, message
 
     resolved_allergies = product.resolved_allergies()
     if resolved_allergies:
-        allergy_preview = ", ".join(resolved_allergies[:2])
+        # Every labelled allergen: a truncated list reads as 'only these'.
+        allergy_preview = ", ".join(resolved_allergies)
         extra_sentences.append(
             f"DB에 등록된 알레르기 표시에는 {allergy_preview}가 확인돼요."
         )
 
     if "kcal" in product.nutrition:
         extra_sentences.append(
-            f"열량은 {product.nutrition['kcal']}kcal"
+            f"열량은 {product.nutrition['kcal']:,.10g}kcal"
             f"({nutrition_basis_label(product)})로 확인돼요."
         )
 

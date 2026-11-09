@@ -112,8 +112,11 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
     # single-product summary, provided it carries no reassurance.
     if (response.intent == 'food_compare' and response.comparison_products
             and response.answer_source == 'rules' and _bounded_verdict(response)):
+        # One product conflicting makes the overall verdict 'avoid', but the
+        # other product's 'no conflict found' still needs the same caveat.
+        caveat = COMPARISON_NO_CONFLICT_NOTE + '\n' if '찾지 못했' in response.answer else ''
         return response.model_copy(update={
-            'answer': response.answer + '\n' + COMPARISON_SOURCE_NOTE,
+            'answer': response.answer + '\n' + caveat + COMPARISON_SOURCE_NOTE,
             'recommended_products': [], 'recipe': None, 'product_candidates': [],
         })
     if response.intent == 'food_compare' and response.comparison_products and response.answer_source == 'rules':
@@ -135,6 +138,13 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
             'recommended_products': [], 'comparison_products': [], 'recipe': None,
             'product_candidates': [],
         })
+
+    if (response.intent == 'food_compare' and not response.comparison_products and not response.product_candidates
+            and response.answer_source == 'rules' and _no_positive_decision(response)):
+        # '신라면이랑 OO 중에 뭐가 나아?' where OO is not in the catalog: keep
+        # the upstream 'could not find' answer instead of a generic refusal.
+        return response.model_copy(update={'answer': response.answer + '\n' + COMPARISON_SOURCE_NOTE,
+                                           'recommended_products': [], 'recipe': None})
 
     candidates = [candidate.model_copy(update={
         'reason': '출처 미확인 검색 후보입니다. 이름·제조사·포장 정보를 비교해 선택해 주세요.',

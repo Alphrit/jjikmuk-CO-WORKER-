@@ -66,7 +66,7 @@ def detect_nutrition_keyword(message: str) -> Optional[str]:
     for nutrient, aliases in NUTRITION_KEYWORDS.items():
         for alias in aliases:
             if len(alias) <= 1:
-                pattern = rf"{re.escape(alias)}(?:은|는|이|가|\s|[?!.]|$|함량|수치|어때|높|많|적|얼마|얼마나|몇)"
+                pattern = rf"(?<!유){re.escape(alias)}(?:은|는|이|가|\s|[?!.]|$|함량|수치|어때|높|많|적|얼마|얼마나|몇)"
                 if re.search(pattern, message):
                     return nutrient
                 continue

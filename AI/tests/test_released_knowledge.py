@@ -215,10 +215,15 @@ def test_unapproved_or_internal_context_does_not_enable_general_llm(
     monkeypatch.setattr(hybrid, "generate_text", forbidden)
     base = ChatResponse(intent="general_nutrition_guide", answer="규칙 안내", risk_level="unknown")
     result = hybrid.try_general_llm_fallback(base, "식품 영양 안내", None, None)
-    assert result.answer == base.answer
-    assert result.answer_source == "rules"
-    assert result.fallback_reason == "rag_context_missing_for_general_llm"
-    assert result.sources == []
+    # Without reviewed retrieval context no model text is produced: either the
+    # rule answer, or an approved local excerpt quoted verbatim.
+    if result.fallback_reason == hybrid.LOCAL_EXCERPT_REASON:
+        assert result.sources and all("요약·재구성" in source for source in result.sources)
+    else:
+        assert result.answer == base.answer
+        assert result.answer_source == "rules"
+        assert result.fallback_reason == "rag_context_missing_for_general_llm"
+        assert result.sources == []
 
 
 @pytest.mark.parametrize("answer,accepted", [

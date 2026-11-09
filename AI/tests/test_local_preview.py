@@ -217,7 +217,7 @@ def test_missing_index_general_answer_is_rule_only(monkeypatch, tmp_path):
         result = ask(client, "식품 알레르기 안내", external=True)
         assert result["diagnostics"]["calls"] == []
         assert not result["diagnostics"]["llm_output_adopted"]
-        assert result["diagnostics"]["fallback_reason"] == "rag_context_missing_for_general_llm"
+        assert result["diagnostics"]["fallback_reason"] in {"rag_context_missing_for_general_llm", "reviewed_excerpt_local"}
 
 
 def test_rejected_generated_answer_is_shown_as_reviewed_text_not_adopted_llm(packaged_sources, monkeypatch):

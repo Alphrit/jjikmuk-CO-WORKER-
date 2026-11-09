@@ -199,7 +199,7 @@ ALTERNATIVE_FOOD_KEYWORDS = [
 
 FOOD_COMPARISON_KEYWORDS = [
     "비교", "더 낮", "더 높", "더 많", "더 적", "뭐가 더", "뭐가 덜", "어느 게", "어떤 게",
-    "a와 b", "a랑 b", "둘 중", "중에 뭐"
+    "a와 b", "a랑 b", "둘 중", "중에 뭐", "뭐가 나아", "뭐가 나을", "뭐가 낫", "어느 쪽"
 ]
 
 ALTERNATIVE_CATEGORY_MAP: Mapping[str, tuple[str, ...]] = MappingProxyType({

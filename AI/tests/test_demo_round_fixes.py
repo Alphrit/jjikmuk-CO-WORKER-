@@ -480,3 +480,46 @@ def test_gluten_question_checks_wheat_label():
     product = Product(product_name="새우깡", barcode="1", rawmtrl_nm="소맥분, 새우")
     text = asked_ingredient_text(product, "새우깡 글루텐 있어?")
     assert text.startswith("글루텐은") and "밀 관련 표기가 확인돼요" in text
+
+
+# Full-code review, priority 2.
+@pytest.mark.parametrize("message, expected", [
+    ("새우깡 칼로리랑 당류", "새우깡"), ("다이어트 중인데 새우깡 먹어도 돼?", "새우깡"),
+    ("새우깡 건강에 괜찮아?", "새우깡"), ("매일우유 유당 있어?", "매일우유"),
+])
+def test_condition_words_stay_out_of_product_names(message, expected):
+    assert extract_product_search_query(message) == expected
+
+
+@pytest.mark.parametrize("message, expected", [
+    ("신라면이랑 진라면 뭐가 나아?", "food_compare"), ("트랜스지방은?", "missing_product"),
+    ("식이섬유는?", "missing_product"), ("고소한 과자 추천해줘", "alternative_food_recommend"),
+    ("저염식 간식 뭐가 좋아?", "general_diet_guide"),
+])
+def test_priority2_intents(message, expected):
+    assert rule_based_classify_intent(message, None, None, []) == expected
+
+
+def test_lactose_question_checks_milk_label():
+    from app.services.product_facts import asked_ingredient_text
+    text = asked_ingredient_text(Product(product_name="매일우유", barcode="1", rawmtrl_nm="원유 100%"), "매일우유 유당 있어?")
+    assert text.startswith("유당은") and "우유 관련 표기가 확인돼요" in text
+
+
+def test_generated_answer_validators():
+    from app.services.hybrid import _has_unsupported_health_terms, _has_unsupported_numbers
+    assert not _has_unsupported_numbers("1,000mg", "1g은 1,000mg입니다")
+    assert _has_unsupported_numbers("2,000mg", "1g은 1,000mg입니다")
+    assert _has_unsupported_health_terms("식이섬유는 장 건강에 좋아요", "식이섬유는 탄수화물의 한 종류입니다")
+    assert not _has_unsupported_health_terms("트랜스지방은 지방의 한 종류입니다", "트랜스지방은 지방의 한 종류입니다")
+
+
+@pytest.mark.parametrize("raw", ['"unknown"', "[1, 2]", "null", '{"intent": "emergency_safety"}'])
+def test_llm_intent_parser_is_robust(raw):
+    from app.intent.llm import parse_llm_intent
+    assert parse_llm_intent(raw) == "unknown"
+
+
+def test_which_is_better_comparison_targets():
+    from app.services.general_handlers import _message_product_segments
+    assert _message_product_segments("신라면이랑 진라면 뭐가 나아?") == ["신라면", "진라면"]
