@@ -68,7 +68,7 @@ def general_label_term_question(message: str) -> bool:
     text = " ".join(message.strip().split())
     if re.search(r"(?:^|\s)(?:이|그|저|해당)\s*(?:상품|제품|과자|음료|우유|거)|바코드", text):
         return False
-    if re.search(r"추천|비교|골라|고를|먹어도|마셔도", text):
+    if re.search(r"추천|비교|골라|고를|먹어도|마셔도|먹을\s*수|대비|기준으로|(?:으로|로)\s*보면|몇\s*(?:개|봉지|잔|캔|병|팩)", text):
         # Recommendations, comparisons and eatability keep their own routes.
         return False
     # Only when the nutrient leads: '허니버터칩 나트륨이 하루 권장량의…' names a product.

@@ -698,7 +698,11 @@ def rule_based_classify_intent(
 
     from app.intent.request_semantics import general_label_term_question
     if product is None and general_label_term_question(current_message):
-        return "general_nutrition_guide"
+        # The date terms alone trip the out-of-scope list ('유통기한 지난…');
+        # any other scope signal (임신, 질환, 날씨…) still applies.
+        rest = re.sub(r"유통\s*기한|소비\s*기한|품질\s*유지\s*기한", " ", text)
+        if not is_out_of_domain_question(rest, product):
+            return "general_nutrition_guide"
 
     if is_out_of_domain_question(text, product):
         return "out_of_domain"

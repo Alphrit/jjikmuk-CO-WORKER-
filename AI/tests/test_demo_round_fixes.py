@@ -359,3 +359,25 @@ def test_product_fact_requests_get_no_general_topic(message):
 def test_deictic_product_requests_are_not_general_explanations(message):
     from app.intent.classifier import classify_intent_result
     assert classify_intent_result(message, None, None, []).intent != "general_nutrition_guide"
+
+
+@pytest.mark.parametrize("message, expected", [
+    # Second review: scope checks still apply, and a product named after the nutrient keeps product routing.
+    ("카페인 하루 권장량 임산부는 얼마야?", "out_of_domain"), ("나트륨 하루 권장량 고혈압 환자는 얼마야?", "out_of_domain"),
+    ("소비기한 뭐야? 그리고 오늘 날씨 어때", "out_of_domain"),
+    ("나트륨 하루 권장량 대비 새우깡은 얼마야?", "missing_product"),
+    ("하루 칼로리 권장량 기준 새우깡 몇 봉지?", "missing_product"),
+])
+def test_label_terms_keep_scope_and_product_routes(message, expected):
+    assert rule_based_classify_intent(message, None, None, []) == expected
+
+
+@pytest.mark.parametrize("message", ["새우깡 어떻게 먹어?", "성분 뭐야?", "얘 성분 뭐야", "제품 설명해줘"])
+def test_product_questions_are_not_general_food_fallbacks(message):
+    from app.intent.classifier import classify_intent_result
+    assert classify_intent_result(message, None, None, []).intent != "general_nutrition_guide"
+
+
+@pytest.mark.parametrize("message", ["콜레스테롤 0 표시 무슨 뜻이야?", "콜레스테롤 5mg 미만 표시 뜻"])
+def test_cholesterol_zero_display_uses_the_zero_rule(message):
+    assert requested_topics(message) == {"nutrition_zero"}
