@@ -82,6 +82,9 @@ def _general_food_question(message: str, product: Optional[Product], profile: Op
         # A named product still goes to the candidate search.
         return False
     text = message.lower()
+    if re.search(r"(?:이|그|저|해당|방금|아까)\s*(?:제품|상품|과자|음료|우유|거|것)", text):
+        # '이 제품 설명해줘' refers to a product the turn did not name.
+        return False
     # Only questions that ask for an explanation; '성분 좀 볼래' wants a product.
     asks = re.search(r"뭐|뭘|무엇|뜻|의미|차이|어떻게|왜|봐야|고를|고르|기준|설명", text)
     return bool(asks) and any(term in text for term in _FOOD_DOMAIN_TERMS)

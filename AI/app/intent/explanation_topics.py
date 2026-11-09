@@ -257,14 +257,17 @@ def requested_topics(message: str) -> set[str]:
     if "콜레스테롤" in text and not topics.intersection({"nutrition_zero", "nutrition_percentage", "percentage_calculation"}) and re.search(
             r"뭐|뜻|의미|이란|란|무엇|설명|어디|들어있|들어가|어떤", text):
         topics.add("cholesterol_basics")
-    if re.search(r"유통기한|소비기한|품질유지기한", text):
+    # These label terms name a product fact too ('카페인 함량 알려줘', '이 우유
+    # 소비기한'): only questions about the term's meaning are explanations.
+    explains = re.search(r"뜻|의미|뭐|무엇|무슨|이란|차이|달라|다르|구분|왜|어떻게봐|어떻게읽|기준|시행|언제부터|설명", text)
+    if explains and re.search(r"유통기한|소비기한|품질유지기한", text) and "언제까지" not in text:
         topics.add("date_marking")
     if re.search(r"haccp|해썹|안전관리인증", text):
         topics.add("haccp_mark")
-    if "고카페인" in text or ("카페인" in text and re.search(r"표시|문구|함량|함유|확인", text)):
+    if explains and ("고카페인" in text or ("카페인" in text and re.search(r"표시|문구", text))):
         topics.add("caffeine_label")
-    if ("원재료" in text and re.search(r"순서|순으로|차례|앞에|먼저적", text)) or (
-            re.search(r"첨가물|감미료|보존료|착색료", text) and re.search(r"용도|괄호|명칭|이름옆|같이적|함께적", text)):
+    if explains and (("원재료" in text and re.search(r"순서|순으로|차례|앞에|먼저적", text)) or (
+            re.search(r"첨가물|감미료|보존료|착색료", text) and re.search(r"용도|괄호|명칭|이름옆|같이적|함께적", text))):
         # '감미료(용도) 표시' asks how additives are labelled, not about sweetness.
         topics.discard("sugar_energy")
         topics.add("ingredient_order")

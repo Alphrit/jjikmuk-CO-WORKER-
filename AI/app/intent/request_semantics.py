@@ -66,15 +66,23 @@ _DAILY_NUTRIENT = r"카페인|나트륨|소금|당류|설탕|포화지방|트랜
 def general_label_term_question(message: str) -> bool:
     """'나트륨 하루 권장량', '카페인은 하루에 얼마까지', '유통기한이랑 소비기한 차이': general, not a product."""
     text = " ".join(message.strip().split())
-    if re.search(r"(?:^|\s)(?:이|그|저|해당)\s*(?:상품|제품)|바코드", text):
+    if re.search(r"(?:^|\s)(?:이|그|저|해당)\s*(?:상품|제품|과자|음료|우유|거)|바코드", text):
+        return False
+    if re.search(r"추천|비교|골라|고를|먹어도|마셔도", text):
+        # Recommendations, comparisons and eatability keep their own routes.
         return False
     # Only when the nutrient leads: '허니버터칩 나트륨이 하루 권장량의…' names a product.
-    if re.match(rf"(?:(?:하루|1일|일일)\s*(?:에\s*)?)?(?:{_DAILY_NUTRIENT})\s*(?:은|는|이|가|의)?\s*(?:하루|1일|일일|섭취|권장)", text):
+    if re.match(rf"(?:{_DAILY_NUTRIENT})\s*(?:은|는|이|가|의)?\s*(?:하루|1일|일일)", text):
         return True
-    # The terms themselves; whether an expired food is still edible stays out of scope.
-    return bool(re.search(r"유통\s*기한|소비\s*기한", text)
-                and re.search(r"차이|뜻|의미|뭐|무슨|달라|다르|다른|구분|언제|시행", text)
-                and not re.search(r"지난|지나|넘은|넘었|먹어도|마셔도|상한|상했|버려", text))
+    if re.match(rf"(?:하루|1일|일일)\s*(?:에\s*)?(?:{_DAILY_NUTRIENT})\s*(?:은|는|이|가|의)?\s*(?:섭취|권장|기준)", text):
+        return True
+    if re.match(rf"(?:{_DAILY_NUTRIENT})\s*(?:은|는|이|가|의)?\s*(?:권장\s*(?:섭취)?\s*량|섭취\s*기준|섭취량\s*기준)", text):
+        return True
+    # The terms themselves, asked first; a product's own date or whether an
+    # expired food is still edible stays out of scope.
+    return bool(re.match(r"(?:유통\s*기한|소비\s*기한|품질\s*유지\s*기한)", text)
+                and re.search(r"차이|뜻|의미|뭐|무슨|달라|다르|다른|구분|언제부터|시행", text)
+                and not re.search(r"언제까지|지난|지나|넘은|넘었|상한|상했|버려", text))
 
 
 def _halved_amount(text: str) -> bool:

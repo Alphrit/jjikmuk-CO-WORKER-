@@ -337,3 +337,25 @@ def test_daily_amount_question_names_no_product():
 def test_unknown_food_questions_take_the_general_path(message, expected):
     from app.intent.classifier import classify_intent_result
     assert classify_intent_result(message, None, None, []).intent == expected
+
+
+@pytest.mark.parametrize("message, expected", [
+    # Review round: recommendations, comparisons and a product's own date keep their routes.
+    ("나트륨 섭취 많은 과자 추천해줘", "alternative_food_recommend"),
+    ("나트륨 섭취 기준으로 새우깡이랑 포카칩 비교해줘", "food_compare"),
+    ("당류 섭취 줄이려면 새우깡 먹어도 돼?", "missing_product"),
+    ("새우깡 소비기한 언제까지야?", "out_of_domain"), ("이 우유 소비기한 언제까지야?", "out_of_domain"),
+])
+def test_label_term_rule_leaves_product_routes_alone(message, expected):
+    assert rule_based_classify_intent(message, None, None, []) == expected
+
+
+@pytest.mark.parametrize("message", ["카페인 함량 알려줘", "고카페인이야?", "첨가물 명칭 알려줘", "이 우유 소비기한 알려줘"])
+def test_product_fact_requests_get_no_general_topic(message):
+    assert requested_topics(message) == set()
+
+
+@pytest.mark.parametrize("message", ["이 제품 설명해줘", "방금 그 제품 뭐였지?"])
+def test_deictic_product_requests_are_not_general_explanations(message):
+    from app.intent.classifier import classify_intent_result
+    assert classify_intent_result(message, None, None, []).intent != "general_nutrition_guide"

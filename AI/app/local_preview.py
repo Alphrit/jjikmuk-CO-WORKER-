@@ -9,6 +9,7 @@ conversation state. The local adapter signs consent for its own fixed test user.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import hmac
 import os
 import secrets
@@ -108,12 +109,15 @@ def _request_consent(req: ChatRequest, granted: bool, enabled: bool):
         method="POST", path="/local-chat", user_id="local-fictional-user",
         consent=value, nonce=nonce, body=body,
     )
-    return consent.verify_external_ai_consent(
+    decision = consent.verify_external_ai_consent(
         headers={consent.CONSENT_HEADER: value, consent.TIMESTAMP_HEADER: str(timestamp),
                  consent.NONCE_HEADER: nonce, consent.SIGNATURE_HEADER: signature,
                  consent.USER_ID_HEADER: "local-fictional-user"},
         method="POST", path="/local-chat", body=body, operator_enabled=enabled,
     )
+    # The preview's per-question toggle is an explicit choice; the server-wide
+    # assumed consent must not override an unticked box.
+    return decision if granted else dataclasses.replace(decision, consent_granted=False, reason="consent_denied")
 
 
 def _readiness(allow_external: bool):
