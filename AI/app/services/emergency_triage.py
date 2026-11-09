@@ -42,6 +42,12 @@ _SEVERE_PATTERN = re.compile(
     r"쓰러|실신|기절|입술(?:이|가)?\s*(?:붓|부어|부었|부은|파래|푸르)|"
     r"침(?:을|도)?\s*(?:못|안)\s*삼키)"
 )
+# Hives, rash, itching, swelling or stomach symptoms after eating: not routed
+# as an emergency, but never left unanswered either.
+_MILD_REACTION_PATTERN = re.compile(
+    r"(?:두드러기|발진|가려|간지러|붉게|빨갛게|울긋불긋|(?:눈|얼굴|입|손|몸)(?:이|가)?\s*(?:붓|부어|부었|부은)|"
+    r"토했|토해|구토|토할|복통|배(?:가)?\s*(?:아파|아프)|설사)"
+)
 _EXPOSURE_PATTERN = re.compile(
     r"(?:먹고|먹었|마시고|마셨|들이켰|(?:먹은|마신)\s*(?:직후|뒤|후)|섭취\s*후|"
     r"섭취하고|섭취한\s*(?:뒤|후))"
@@ -67,8 +73,8 @@ def _symptom_clauses(message):
                 yield clause
 
 
-def _affirmed_severe_symptom(text):
-    for match in _SEVERE_PATTERN.finditer(text):
+def _affirmed_severe_symptom(text, pattern=_SEVERE_PATTERN):
+    for match in pattern.finditer(text):
         # Negation belongs to this symptom only. Another affirmed symptom in
         # the same message must still take the emergency path.
         suffix = text[match.end():]
@@ -87,6 +93,9 @@ def _affirmed_severe_symptom(text):
             continue
         if re.match(r"^(?:은|는|이|가|도)?\s*(?:(?:전혀|아직|별로|하나도|조금도|거의)\s*)?(?:없|아니|아닌)", suffix):
             continue
+        # '두드러기는 안 났어' denies the symptom ('안 없어져' still reports it).
+        if re.match(r"^[가-힣]{0,2}\s*(?:(?:전혀|아직|하나도)\s*)?안\s*(?:났|나|생겼|생기|올라|일어)", suffix):
+            continue
         return True
     return False
 
@@ -104,6 +113,7 @@ def _is_current_severe_allergic_reaction(
     message: str,
     profiles: Sequence[Profile],
     has_food_context: bool = False,
+    pattern=_SEVERE_PATTERN,
 ) -> bool:
     text = " ".join(message.strip().split())
     if not text:
@@ -111,7 +121,7 @@ def _is_current_severe_allergic_reaction(
     # A quotation being translated/explained is not a reported symptom.
     # Remove that quotation only; a separate current report still has priority.
     text = re.sub(r'''["“‘'].*?["”’']\s*(?:라는|이란|이라는)?\s*(?:예문|문장|표현).*?(?:번역|해석|설명)[^.!?]*''', "", text)
-    if not _CURRENT_PATTERN.search(text) or not any(_affirmed_severe_symptom(clause) for clause in _symptom_clauses(text)):
+    if not _CURRENT_PATTERN.search(text) or not any(_affirmed_severe_symptom(clause, pattern) for clause in _symptom_clauses(text)):
         return False
     has_allergy_context = (
         bool(_ALLERGY_CONTEXT_PATTERN.search(text))
@@ -138,6 +148,8 @@ def build_emergency_triage_response(
 
     effective_profiles = list(profiles or [])
     if not _is_current_severe_allergic_reaction(message, effective_profiles, has_food_context):
+        if _is_current_severe_allergic_reaction(message, effective_profiles, has_food_context, _MILD_REACTION_PATTERN):
+            return _allergic_reaction_guidance(effective_profiles)
         return None
 
     headline = "심한 알레르기 반응일 수 있어 즉시 응급 대응이 필요해요."
@@ -183,4 +195,28 @@ def build_emergency_triage_response(
         applied_rule_ids=provenance["applied_rule_ids"],
         evidence=provenance["evidence"],
         provenance_status=provenance["provenance_status"],
+    )
+
+
+def _allergic_reaction_guidance(profiles: Sequence[Profile]) -> ChatResponse:
+    """Fixed guidance for a mild reaction reported right after eating; no diagnosis."""
+    headline = "음식을 먹은 뒤 나타난 알레르기 반응일 수 있어요."
+    actions = [
+        "숨쉬기 어렵거나 입술·혀·목이 붓거나 어지러우면 즉시 119에 연락하세요.",
+        "두드러기나 붓기가 온몸으로 퍼지거나 계속되면 바로 진료를 받으세요.",
+        "증상이 나타난 음식은 더 먹지 말고, 먹은 제품의 포장지를 진료 때 보여 주세요.",
+        "이 챗봇은 증상을 진단하거나 치료를 안내할 수 없어요.",
+    ]
+    provenance = response_provenance(["safety.allergic_reaction.routing.v1", "emergency.anaphylaxis.action.v1"])
+    names = list(dict.fromkeys(profile.profile_name for profile in profiles))
+    return ChatResponse(
+        task_type="safety_triage", answer_source="rules", pipeline_stage="safety_triage", intent="emergency_safety",
+        answer=f"{headline}\n" + "\n".join(actions),
+        risk_level="high", overall_decision="avoid", allergy_status="unknown", assessment_status="incomplete",
+        reasons=["음식 섭취 직후의 알레르기 증상 표현 감지", "진단이 아닌 고정 안전 안내"],
+        profile_name=names[0] if names else None, active_profile_names=names,
+        safety_guidance=SafetyGuidance(urgency="urgent", headline=headline, actions=actions, emergency_contact="119"),
+        sources=provenance["sources"], source_details=provenance["source_details"],
+        policy_version=provenance["policy_version"], applied_rule_ids=provenance["applied_rule_ids"],
+        evidence=provenance["evidence"], provenance_status=provenance["provenance_status"],
     )

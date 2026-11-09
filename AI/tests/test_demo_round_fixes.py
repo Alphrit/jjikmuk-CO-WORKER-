@@ -212,3 +212,31 @@ def test_comparison_without_an_axis_lists_main_values_instead_of_asking():
 def test_comparison_targets_drop_polite_request_endings(message, expected):
     from app.services.general_handlers import _message_product_segments
     assert _message_product_segments(message) == expected
+
+
+@pytest.mark.parametrize("message, urgency", [
+    ("아이가 우유 마시고 온몸에 두드러기가 났어", "urgent"), ("땅콩 먹고 가려워", "urgent"),
+    ("우유 마시고 두드러기가 안 없어져", "urgent"), ("방금 새우깡 먹었는데 입술이 부었어", "emergency"),
+])
+def test_reaction_after_eating_always_gets_safety_guidance(message, urgency):
+    from app.services.emergency_triage import build_emergency_triage_response
+    response = build_emergency_triage_response(message)
+    assert response is not None and response.safety_guidance.urgency == urgency
+    assert "119" in response.answer
+
+
+@pytest.mark.parametrize("message", ["새우깡 먹었는데 두드러기는 안 났어", "두드러기가 뭐야?", "예전에 우유 먹고 두드러기 난 적 있어"])
+def test_no_reaction_guidance_without_a_current_symptom(message):
+    from app.services.emergency_triage import build_emergency_triage_response
+    assert build_emergency_triage_response(message) is None
+
+
+def test_allergen_in_the_name_but_not_the_label_is_warned_for_the_profile():
+    from app.core.models import Profile
+    from app.services.product_facts import name_only_allergen_warning
+    lines = name_only_allergen_warning(Product(product_name="바나나맛우유", barcode="1", allergy=[]),
+                                       Profile(name="엄마", allergies=["milk"]))
+    assert lines == ["엄마: 제품명에 '우유'가 들어 있어요. 등록된 표시에는 없지만 들어 있을 가능성이 높으니 "
+                     "포장지를 확인하기 전에는 드시지 마세요."]
+    assert name_only_allergen_warning(Product(product_name="쌀새우깡", barcode="2", allergy=["새우"]),
+                                      Profile(name="나", allergies=["shrimp"])) == []

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "policy_version": "2026.09.10.1",
+  "policy_version": "2026.11.09.1",
   "sources": [
     {
       "source_id": "official.kdca.anaphylaxis",
@@ -24,6 +24,16 @@
       "support_level": "internal_heuristic",
       "effective_from": "2026-09-10",
       "review_due": "2027-03-10",
+      "reviewer_role": "engineering_policy_owner"
+    },
+    {
+      "rule_id": "safety.allergic_reaction.routing.v1",
+      "rule_kind": "service_safety_routing",
+      "exact_claim_scope": "음식 섭취 직후의 경증 알레르기 증상 표현을 고정 안전 안내(악화 시 119, 진료 권고, 진단 불가)로 라우팅",
+      "source_ids": [],
+      "support_level": "internal_heuristic",
+      "effective_from": "2026-11-09",
+      "review_due": "2027-05-09",
       "reviewer_role": "engineering_policy_owner"
     },
     {

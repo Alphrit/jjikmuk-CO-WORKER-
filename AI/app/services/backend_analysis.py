@@ -4,12 +4,14 @@ RAG, search, recommendations, comparisons and recipes keep their existing
 pipelines. A BARCODE_ROW verdict never becomes a verdict about another product.
 """
 
+import re
+
 from app.core.backend_analysis import PublicBackendAnalysis
 from app.core.models import AssessmentSummary, ChatResponse
 from app.core.public_product import public_product_payload, public_conversation_state
 from app.intent.common import PRODUCT_INTENTS
 from app.services.product_facts import (
-    asked_ingredient_text, ingredient_label_text, intolerance_text, product_facts_text,
+    asked_ingredient_text, ingredient_label_text, intolerance_text, name_only_allergen_warning, product_facts_text,
 )
 
 _SAFETY_TEXT = {
@@ -105,6 +107,11 @@ def decision_response(req, intent, *, lead=""):
                 + lead + intolerance_text(req.product, req.message) + text)
     if results:
         text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
+        if req.product:
+            # A missing label field must not hide an allergen the name states.
+            warnings = [line for profile in profiles for line in name_only_allergen_warning(req.product, profile)]
+            if warnings:
+                text += "\n" + "\n".join(warnings)
     else:
         text += _SAFETY_TEXT["NOT_EVALUATED"]
     if ctx.profileSource == "CLIENT_REQUEST" and profiles:
@@ -210,6 +217,13 @@ def run_backend_pipeline(req, legacy_pipeline):
     intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, req.chat_history)
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
         intent = "can_i_eat"
+    elif intent in {"unknown", "ambiguous"} and req.product and re.fullmatch(r"\s*\S+(?:은|는|도)\s*[?？]*\s*", intent_message):
+        from app.intent.text import detect_ingredient_keyword
+        if detect_ingredient_keyword(intent_message):
+            # '우유는?' about the selected product asks for that ingredient.
+            intent = "ingredient_check"
+        elif named_query and same_product_name(named_query, req.product):
+            intent = "product_summary"
     elif intent in {"unknown", "ambiguous"} and req.product and named_query and same_product_name(named_query, req.product):
         # '새우깡은?' with 새우깡 selected (e.g. right after tapping its card)
         # asks about the selected product; asking to select it again loops.

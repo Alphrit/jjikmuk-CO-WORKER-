@@ -77,3 +77,27 @@ def ingredient_label_text(product, ingredient):
         return f"{ingredient}의 직접 함유 표기는 찾지 못했지만 교차오염 가능성 표시가 있어요: {', '.join(shared[:3])}.\n"
     return (f"등록된 원재료·알레르기 표시에서 {ingredient} 관련 표기는 찾지 못했어요. "
             "표시 정보가 빠졌을 수 있어 들어 있지 않다고 단정할 수는 없어요.\n")
+
+
+def name_only_allergens(product, profile):
+    """Profile allergens named in the product name but missing from its label ('바나나맛우유')."""
+    from app.data.dictionaries import ALLERGEN_CANONICAL_ALIASES
+    from app.services.response_helpers import allergy_terms_from_product_name, find_matching_aliases
+    wanted = {allergen.lower() for allergen in profile.resolved_allergies()}
+    found = []
+    for term in allergy_terms_from_product_name(product):
+        aliases = {alias.lower() for alias in ALLERGEN_CANONICAL_ALIASES.get("대두" if term == "콩" else term, ())} | {term}
+        if aliases & wanted and not find_matching_aliases(product, term):
+            found.append(term)
+    return found
+
+
+def name_only_allergen_warning(product, profile):
+    from app.services.response_helpers import object_particle
+    lines = []
+    for term in name_only_allergens(product, profile):
+        subject = "이" if object_particle(term) == "을" else "가"
+        lines.append(f"{profile.profile_name}: 제품명에 '{term}'{subject} 들어 있어요. 등록된 표시에는 없지만 들어 있을 "
+                     "가능성이 높으니 포장지를 확인하기 전에는 드시지 마세요.")
+    return lines
+

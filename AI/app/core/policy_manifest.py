@@ -42,6 +42,12 @@ _REQUIRED_RULE_CONTRACTS = {
         "internal_heuristic",
         "현재성 있는 중증 알레르기 증상 표현을 고정 응급 안내로 라우팅",
     ),
+    "safety.allergic_reaction.routing.v1": (
+        "service_safety_routing",
+        (),
+        "internal_heuristic",
+        "음식 섭취 직후의 경증 알레르기 증상 표현을 고정 안전 안내(악화 시 119, 진료 권고, 진단 불가)로 라우팅",
+    ),
     "emergency.anaphylaxis.action.v1": (
         "official_guidance",
         ("official.kdca.anaphylaxis",),
