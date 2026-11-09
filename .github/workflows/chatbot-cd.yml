@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   cd:
-    uses: KW-coworker/JJIKMUK-Backend/.github/workflows/chatbot-release.yml@bdbb02b164381ef3d13aee413a627fdb5057c3be
+    uses: KW-coworker/JJIKMUK-Backend/.github/workflows/chatbot-release.yml@f6a7eeeb17de526c17920a01ecfbb86cfaacab78
     with:
-      controller_ref: bdbb02b164381ef3d13aee413a627fdb5057c3be
+      controller_ref: f6a7eeeb17de526c17920a01ecfbb86cfaacab78
       enabled: ${{ vars.CHATBOT_CD_ENABLED == 'true' }}
