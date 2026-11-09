@@ -984,6 +984,12 @@ def generate_chat_response(
         # Keep an unfinished comparison understandable after cancellation,
         # while the comparison resolver still requires new targets.
         intent = "food_compare"
+    from app.services.operational_policy import team_feature_unavailable_response
+    unavailable = team_feature_unavailable_response(intent, product)
+    if unavailable is not None:
+        # Team mode blocks this feature: answer before the recipe or
+        # recommendation search runs, instead of rewriting its reply later.
+        return attach_response_assessment(unavailable, profiles=effective_profiles, product=None)
     rule_response = build_rule_based_response(
         intent=intent,
         profile=effective_profile,

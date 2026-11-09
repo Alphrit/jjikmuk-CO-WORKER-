@@ -4,6 +4,12 @@ from app.core.models import Product
 
 
 def pick_recommended_questions(intent: str, risk_level: str, product: Optional[Product]) -> List[str]:
+    """Follow-up chips for a reply, without features the current policy blocks."""
+    from app.services.operational_policy import team_blocks_question
+    return [question for question in _questions_for(intent, risk_level, product) if not team_blocks_question(question)]
+
+
+def _questions_for(intent: str, risk_level: str, product: Optional[Product]) -> List[str]:
     product_name = product.product_name if product and product.product_name else "이 제품"
 
     if intent == "can_i_eat":

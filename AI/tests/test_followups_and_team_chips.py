@@ -94,3 +94,26 @@ def test_team_mode_productless_stage_c_requests_get_the_unavailable_answer(team_
     data = response.json()
     assert data["answer"] == expected
     assert not any("레시피" in question or "추천" in question for question in data["recommended_questions"])
+
+
+@pytest.mark.parametrize("message", ["김치찌개 만드는 법 알려줘", "저염 과자 추천해줘"])
+def test_team_mode_answers_blocked_features_before_any_handler_runs(team_client, monkeypatch, message):
+    from app.services import chat as chat_service
+    monkeypatch.setattr(chat_service, "build_rule_based_response",
+                        lambda **_: pytest.fail("a blocked feature must not run its handler"))
+    payload = request_payload(statuses=("DANGER",), product=False)
+    payload["message"] = message
+    data = team_client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert data["answer"] in {RECIPE_UNAVAILABLE_ANSWER, RECOMMENDATION_UNAVAILABLE_ANSWER}
+
+
+def test_chip_picker_leaves_out_blocked_features_in_team_mode(monkeypatch):
+    from app.services.recommended_questions import pick_recommended_questions
+    monkeypatch.setenv("FOOD_CHATBOT_TEAM_UNVERIFIED_CATALOG", "false")
+    assert "비슷한 제품 중에서 더 나은 것도 알려줘" in pick_recommended_questions("can_i_eat", "high", None)
+    monkeypatch.setenv("FOOD_CHATBOT_TEAM_UNVERIFIED_CATALOG", "true")
+    for intent in ("can_i_eat", "ingredient_check", "nutrition_explain", "missing_product", "general_nutrition_guide"):
+        for risk in ("high", "medium", "low", "unknown"):
+            for question in pick_recommended_questions(intent, risk, None):
+                assert rule_based_classify_intent(question, None, None, []) not in {
+                    "recipe_recommend", "alternative_food_recommend"}, question

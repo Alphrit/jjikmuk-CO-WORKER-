@@ -12,6 +12,10 @@ from app.intent.common import PRODUCT_INTENTS
 from app.services.candidate_prompts import TEAM_CHOOSE_FROM_CANDIDATES
 from app.services.conversation_controls import CONVERSATION_CONTROL_REASON
 from app.services.hybrid import LOCAL_EXCERPT_REASON, _contains_reassuring_conclusion
+from app.services.operational_policy import (  # noqa: F401  (re-exported for callers and tests)
+    RECIPE_UNAVAILABLE_ANSWER, RECOMMENDATION_UNAVAILABLE_ANSWER, STAGE_C_INTENTS, STAGE_C_QUESTION,
+    TEAM_FEATURE_UNAVAILABLE_REASON,
+)
 from app.services.product_status_handlers import handle_product_summary
 from app.services.response_assessment import attach_response_assessment
 
@@ -20,21 +24,10 @@ GENERAL_INTENTS = {'general_diet_guide', 'general_allergy_guide', 'general_nutri
 # Replies that only ask which product is meant or explain that the question was
 # unclear; they state no catalog fact.
 NO_PRODUCT_GUIDANCE_INTENTS = {'missing_product', 'unknown'}
-STAGE_C_INTENTS = {'recipe_recommend', 'alternative_food_recommend'}
-# Follow-up chips that would lead into a Stage C reply.
-STAGE_C_QUESTION = re.compile(r'레시피|요리법|만드는\s*법|추천|대체|대안')
 COMPARISON_SOURCE_NOTE = '비교에 쓴 상품 표시 정보는 출처 미확인 상태예요. 섭취 전 실제 포장지 표시를 확인해 주세요.'
 COMPARISON_UNAVAILABLE_ANSWER = (
     '출처가 확인되지 않은 상품 정보로는 알레르기 충돌이 없다고 비교해 드릴 수 없어요. '
     '각 제품을 선택하면 등록된 원재료·알레르기 표시를 확인해 드릴게요.'
-)
-RECIPE_UNAVAILABLE_ANSWER = (
-    '지금은 상품 정보의 출처를 확인할 수 없어 레시피 추천을 제공하지 않아요. '
-    '제품의 원재료·알레르기·영양성분 확인은 도와드릴 수 있어요.'
-)
-RECOMMENDATION_UNAVAILABLE_ANSWER = (
-    '지금은 상품 정보의 출처를 확인할 수 없어 상품 추천을 제공하지 않아요. '
-    '궁금한 제품명이나 바코드를 알려 주시면 등록된 원재료·알레르기 표시를 확인해 드릴게요.'
 )
 
 
@@ -65,6 +58,10 @@ def _authored_text(response):
 
 def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=None, external_enabled=False):
     if response.task_type == 'safety_triage' or response.intent == 'emergency_safety':
+        return response
+    if response.fallback_reason == TEAM_FEATURE_UNAVAILABLE_REASON:
+        # Already the team policy's own answer (operational_policy), decided
+        # before any handler ran; nothing here to bound.
         return response
     if (response.fallback_reason == CONVERSATION_CONTROL_REASON and response.answer_source == 'rules'
             and not any((response.recommended_products, response.comparison_products, response.recipe,

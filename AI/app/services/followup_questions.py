@@ -22,14 +22,14 @@ def _request_key(text: str) -> str:
 
 
 def tidy_followups(response: ChatResponse, message: str, *, team_mode: bool) -> ChatResponse:
-    from app.services.team_catalog import STAGE_C_QUESTION
+    from app.services.operational_policy import leads_to_stage_c
     has_product = response.current_product is not None
     asked = _request_key(message)
     questions = [
         question for question in response.recommended_questions
         if not _TEMPLATE.search(question)
         and (has_product or not _DEICTIC.search(question))
-        and not (team_mode and STAGE_C_QUESTION.search(question))
+        and not (team_mode and leads_to_stage_c(question))
         and _request_key(question) != asked
     ]
     answer = response.answer
