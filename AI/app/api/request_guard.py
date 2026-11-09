@@ -4,6 +4,7 @@ import logging
 import json
 import math
 import os
+import re
 import secrets
 import threading
 import time
@@ -212,7 +213,16 @@ def _provided_api_token(headers: Dict[str, str]) -> str:
     return ""
 
 
-def _client_key(scope: Dict[str, Any], headers: Dict[str, str]) -> str:
+_SERVICE_USER_ID_RE = re.compile(r"^[0-9]{1,19}$")
+
+
+def _client_key(scope: Dict[str, Any], headers: Dict[str, str], *, service_authenticated: bool = False) -> str:
+    # Every backend call arrives from the backend's one address; behind a valid
+    # service token, limit each signed-in owner separately instead of sharing
+    # one budget across all users.
+    user_id = headers.get("x-food-chatbot-user-id", "").strip()
+    if service_authenticated and _SERVICE_USER_ID_RE.fullmatch(user_id):
+        return f"user:{user_id}"
     if trust_proxy_headers():
         forwarded_for = headers.get("x-forwarded-for", "")
         forwarded_client = forwarded_for.split(",", 1)[0].strip()
@@ -302,7 +312,7 @@ class ChatRequestGuardMiddleware:
 
         if is_chat_request and chat_rate_limit_enabled():
             allowed, retry_after = chat_rate_limiter.allow(
-                _client_key(scope, headers),
+                _client_key(scope, headers, service_authenticated=bool(expected_token)),
                 limit=chat_rate_limit_requests(),
                 window_seconds=chat_rate_limit_window_seconds(),
             )

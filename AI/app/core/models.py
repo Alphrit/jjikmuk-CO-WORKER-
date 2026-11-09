@@ -56,7 +56,8 @@ MAX_CHAT_HISTORY_TOTAL_LENGTH = 20000
 MAX_CHAT_CONTEXT_TOTAL_LENGTH = 24000
 MAX_ACTIVE_PROFILES = 20
 MAX_PROFILE_NAME_LENGTH = 128
-MAX_PROFILE_LIST_ITEMS = 32
+# Backend UserPreferenceCatalog allows 50 terms per preference field.
+MAX_PROFILE_LIST_ITEMS = 50
 MAX_PROFILE_ITEM_LENGTH = 256
 MAX_PROFILE_TOTAL_TEXT_LENGTH = 4096
 MAX_RAW_PROFILE_PAYLOAD_LENGTH = 16384
@@ -1087,6 +1088,16 @@ class Product(BaseModel):
         payload["allergy_warning"] = _pick_non_empty(payload.get("allergy_warning"), payload.get("allergyWarning"), payload.get("알레르기경고"))
         payload["image_url"] = _pick_non_empty(payload.get("image_url"), payload.get("imageUrl"), payload.get("img_url"), payload.get("이미지URL"))
         payload["clean_product_name"] = _pick_non_empty(payload.get("clean_product_name"), payload.get("cleanProductName"))
+        # The backend ProductDto sends app categories as `foodCategories` (and
+        # may add `foodType`); keep them so category words still match.
+        payload["prdlst_dcnm"] = _pick_non_empty(
+            payload.get("prdlst_dcnm"), payload.get("PRDLST_DCNM"), payload.get("유형명"),
+            payload.get("food_type"), payload.get("foodType"),
+        )
+        payload["category_large"] = _pick_non_empty(
+            payload.get("category_large"), payload.get("categoryLarge"),
+            payload.get("food_categories"), payload.get("foodCategories"),
+        )
         payload["total_weight"] = _pick_non_empty(
             payload.get("total_weight"),
             payload.get("totalWeight"),

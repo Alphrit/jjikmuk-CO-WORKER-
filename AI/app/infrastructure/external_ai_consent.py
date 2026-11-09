@@ -362,6 +362,19 @@ def external_ai_request_allowed() -> bool:
     return _request_decision.get().allowed
 
 
+def verified_request_user_id() -> Optional[int]:
+    """Numeric user id from a signature-verified assertion (granted or denied).
+
+    The backend signs its owner id on every chat call; an unverified header is
+    never trusted.
+    """
+    decision = _request_decision.get()
+    if not decision.verified or not decision.user_id or not decision.user_id.isdigit():
+        return None
+    value = int(decision.user_id)
+    return value if 0 < value <= 9_223_372_036_854_775_807 else None
+
+
 def mark_external_ai_used(service: str) -> None:
     """Record an attempted external disclosure before making the provider call."""
 

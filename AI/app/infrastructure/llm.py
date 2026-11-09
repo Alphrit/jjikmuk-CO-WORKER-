@@ -11,6 +11,9 @@ import json
 import logging
 import math
 import os
+import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Callable, Optional
 from urllib import error, request as urllib_request
@@ -38,6 +41,11 @@ load_dotenv(dotenv_path=AI_DIR / ".env")
 DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_LLM_MODEL = "gpt-6-sol"
 DEFAULT_LLM_TIMEOUT_SECONDS = 120.0
+# The backend reads the AI response for at most 30 s; one answer can need two
+# generation calls (draft + grounding review). Bound the whole request.
+DEFAULT_REQUEST_BUDGET_SECONDS = 25.0
+MIN_LLM_CALL_SECONDS = 2.0
+_REQUEST_DEADLINE: ContextVar[Optional[float]] = ContextVar("llm_request_deadline", default=None)
 DEFAULT_LLM_TEMPERATURE = 0.2
 DEFAULT_LLM_REASONING_EFFORT = "high"
 DEFAULT_LLM_MAX_OUTPUT_TOKENS = 8_192
@@ -195,7 +203,40 @@ def is_llm_enabled() -> bool:
     return is_llm_provider_available() and external_ai_request_allowed()
 
 
+@contextmanager
+def llm_request_budget():
+    """Share one time budget across every generation call of a /chat request."""
+    budget = _bounded_float(
+        "FOOD_CHATBOT_REQUEST_BUDGET_SECONDS", default=DEFAULT_REQUEST_BUDGET_SECONDS,
+        minimum=1.0, maximum=300.0,
+    )
+    token = _REQUEST_DEADLINE.set(time.monotonic() + budget)
+    try:
+        yield
+    finally:
+        _REQUEST_DEADLINE.reset(token)
+
+
+def _call_timeout() -> Optional[float]:
+    configured = _bounded_float(
+        "LLM_TIMEOUT_SECONDS", default=DEFAULT_LLM_TIMEOUT_SECONDS, minimum=0.1, maximum=300.0,
+    )
+    deadline = _REQUEST_DEADLINE.get()
+    if deadline is None:
+        return configured
+    remaining = deadline - time.monotonic()
+    if remaining < MIN_LLM_CALL_SECONDS:
+        return None
+    return min(configured, remaining)
+
+
 def _post_json(url: str, payload: dict, headers: dict) -> Optional[dict]:
+    timeout = _call_timeout()
+    if timeout is None:
+        # Too little time is left for the caller to receive an answer; skip
+        # before reserving a call so no budget or consent is spent.
+        logger.warning("OpenAI call skipped: request time budget exhausted.")
+        return None
     endpoint = validate_external_ai_url(url)
     if not endpoint.allowed or not endpoint.canonical_url:
         logger.warning("OpenAI endpoint rejected by policy: reason=%s", endpoint.reason)
@@ -213,12 +254,7 @@ def _post_json(url: str, payload: dict, headers: dict) -> Optional[dict]:
             mark_external_ai_used('llm')
         with request.urlopen(
             req,
-            timeout=_bounded_float(
-                "LLM_TIMEOUT_SECONDS",
-                default=DEFAULT_LLM_TIMEOUT_SECONDS,
-                minimum=0.1,
-                maximum=300.0,
-            ),
+            timeout=timeout,
         ) as response:
             get_url = getattr(response, "geturl", None)
             if callable(get_url) and get_url() != canonical_url:

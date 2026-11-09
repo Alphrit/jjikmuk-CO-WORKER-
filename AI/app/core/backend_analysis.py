@@ -22,7 +22,9 @@ ProfileKey = Annotated[str, StringConstraints(pattern=r"^(?:self|family|request)
 ContextId = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")]
 Code = Annotated[str, StringConstraints(min_length=1, max_length=256)]
 Text = Annotated[str, StringConstraints(min_length=1, max_length=4000)]
-Terms = Annotated[list[Code], Field(max_length=128)]
+# effectiveConditions unions every selected person's terms: up to 21 people x
+# 50 terms per field in the backend.
+Terms = Annotated[list[Code], Field(max_length=1_050)]
 SafetyStatus = Literal["NOT_EVALUATED", "PASS", "DANGER", "UNKNOWN"]
 DietStatus = Literal["NOT_EVALUATED", "PASS", "MISMATCH", "UNKNOWN"]
 ProfileSource = Literal["SERVER", "CLIENT_REQUEST"]

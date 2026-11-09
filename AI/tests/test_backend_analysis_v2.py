@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from app.api import main as api
 from app.core.backend_analysis import CONTRACT_HEADER, CONTEXT_HEADER, ANALYSIS_VERSION
 from app.core.models import ChatRequest
+from app.core.public_product_schema import MAX_PUBLIC_PRODUCT_LONG_TEXT_LENGTH, MAX_PUBLIC_PRODUCT_NAME_LENGTH
 from app.infrastructure.repository import InMemoryProductRepository, InMemoryActivityRepository
 from app.services import product, activity
 from backend_v2_helpers import TOKEN, request_payload, headers, server_profiles
@@ -433,7 +434,8 @@ def test_aggregate_cannot_hide_individual_conflict(client, axis):
     assert CONTRACT_HEADER not in result.headers
 
 
-@pytest.mark.parametrize("field,value", [("productName", "x" * 513), ("rawMaterialName", "x" * 8193),
+@pytest.mark.parametrize("field,value", [("productName", "x" * (MAX_PUBLIC_PRODUCT_NAME_LENGTH + 1)),
+    ("rawMaterialName", "x" * (MAX_PUBLIC_PRODUCT_LONG_TEXT_LENGTH + 1)),
     ("energyKcal", 1000000001.0)])
 def test_unrenderable_backend_product_is_a_422_not_a_server_error(client, field, value):
     payload = request_payload()

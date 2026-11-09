@@ -9,10 +9,13 @@ from typing import Annotated, Any, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 
-MAX_PUBLIC_PRODUCT_NAME_LENGTH = 512
+# Match the backend products columns (JJIKMUK-Backend Product.kt: product_name and
+# manufacturer VARCHAR(1000); raw_materials/nutrient_text/allergy_warning TEXT).
+# v2 requests are validated with this schema and rejected, never truncated.
+MAX_PUBLIC_PRODUCT_NAME_LENGTH = 1_000
 MAX_PUBLIC_PRODUCT_IDENTIFIER_LENGTH = 256
-MAX_PUBLIC_PRODUCT_SHORT_TEXT_LENGTH = 512
-MAX_PUBLIC_PRODUCT_LONG_TEXT_LENGTH = 8_192
+MAX_PUBLIC_PRODUCT_SHORT_TEXT_LENGTH = 1_000
+MAX_PUBLIC_PRODUCT_LONG_TEXT_LENGTH = 65_535
 MAX_PUBLIC_IMAGE_URL_LENGTH = 2_048
 MAX_PUBLIC_PRODUCT_LIST_ITEMS = 128
 MAX_PUBLIC_PRODUCT_LIST_ITEM_LENGTH = 512

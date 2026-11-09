@@ -1670,8 +1670,12 @@ def chat_http(req: ChatRequest, request: Request, response: Response):
             raise HTTPException(status_code=422, detail={"code": "AI_ANALYSIS_CONTRACT_MISMATCH"})
     elif request.headers.get(CONTRACT_HEADER) or request.headers.get(CONTEXT_HEADER):
         raise HTTPException(status_code=422, detail={"code": "AI_ANALYSIS_CONTEXT_REQUIRED"})
-    result = (_stateless_chat_response(req) if req.conversation_id is None
-              else _chat_persisted(req, user_id=_conversation_user_id(request)))
+    from app.infrastructure.llm import llm_request_budget
+    with llm_request_budget():
+        from app.infrastructure.external_ai_consent import verified_request_user_id
+        result = (_stateless_chat_response(req, trusted_user_id=verified_request_user_id())
+                  if req.conversation_id is None
+                  else _chat_persisted(req, user_id=_conversation_user_id(request)))
     if ctx is not None:
         if result.backend_analysis is None or result.backend_analysis.contextId != ctx.contextId:
             raise HTTPException(status_code=500, detail={"code": "AI_ANALYSIS_NOT_PROCESSED"})

@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from app.api import main as api_main
 from app.core.models import ChatResponse, Product, ProductDataTrust
 from app.core.public_product import public_product_payload
-from app.core.public_product_schema import PublicProduct, PublicProductCandidate
+from app.core.public_product_schema import MAX_PUBLIC_PRODUCT_NAME_LENGTH, PublicProduct, PublicProductCandidate
 
 
 PRIVATE_FIELDS = {
@@ -71,7 +71,7 @@ def test_unapproved_image_host_is_not_exposed(monkeypatch):
 
 def test_malformed_oversized_product_is_rejected_by_public_contract():
     with pytest.raises((ValidationError, ValueError)):
-        public_product_payload(_internal_product(product_name="x" * 600))
+        public_product_payload(_internal_product(product_name="x" * (MAX_PUBLIC_PRODUCT_NAME_LENGTH + 1)))
 
 
 def test_chat_response_schema_never_serializes_internal_product_state():

@@ -428,7 +428,8 @@ def test_openapi_publishes_closed_nested_and_endpoint_response_models():
     state_properties = schemas["PublicConversationState"]["properties"]
     assert "product_id" not in json.dumps(state_properties)
     product_properties = schemas["PublicProduct"]["properties"]
-    assert product_properties["product_name"]["anyOf"][0]["maxLength"] == 512
+    from app.core.public_product_schema import MAX_PUBLIC_PRODUCT_NAME_LENGTH
+    assert product_properties["product_name"]["anyOf"][0]["maxLength"] == MAX_PUBLIC_PRODUCT_NAME_LENGTH
     assert product_properties["ingredients"]["maxItems"] == 128
     assert product_properties["ingredients"]["items"]["maxLength"] == 512
     assert schemas["PublicNutritionFacts"]["properties"]["sodium"]["anyOf"][0][
