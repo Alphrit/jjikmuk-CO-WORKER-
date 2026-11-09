@@ -4,6 +4,7 @@ from app.core.models import ActivityRecord
 from threading import Lock
 from typing import Any, Dict, List, Optional
 import json
+import re
 
 from app.infrastructure.activity_storage.common import (
     ActivityRepository,
@@ -54,6 +55,12 @@ class MySQLActivityRepository(ActivityRepository):
         "source_ids",
         "response_product_label_trace",
         "created_at",
+    }
+    # Columns whose width must hold what the backend sends. A narrower column
+    # fails every such insert with ER_DATA_TOO_LONG while the reply still goes
+    # out, so the loss is silent; startup warns with the migration to apply.
+    CHATBOT_LOG_MIN_CHAR_LENGTH = {
+        "policy_version": (256, "AI/migrations/20261109_chatbot_log_policy_version_length.sql"),
     }
 
     def __init__(
@@ -121,6 +128,20 @@ class MySQLActivityRepository(ActivityRepository):
             cursor.execute(f"SHOW COLUMNS FROM {quoted_table_name}")
             return {row["Field"] for row in cursor.fetchall()}
 
+    def _short_audit_columns(self, conn) -> list[str]:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(f"SHOW COLUMNS FROM {self.quoted_chat_log_table_name}")
+                types = {row["Field"]: str(row.get("Type") or "") for row in cursor.fetchall()}
+        except Exception:
+            return []
+        short = []
+        for column, (minimum, _migration) in self.CHATBOT_LOG_MIN_CHAR_LENGTH.items():
+            width = re.fullmatch(r"(?:var)?char\((\d+)\)", types.get(column, "").lower())
+            if width and int(width[1]) < minimum:
+                short.append(column)
+        return short
+
     def readiness_check(self) -> Dict[str, Any]:
         try:
             with self._connect() as conn:
@@ -131,6 +152,7 @@ class MySQLActivityRepository(ActivityRepository):
                     else set()
                 )
                 missing_audit_columns = self.CHATBOT_LOG_REQUIRED_COLUMNS - chatbot_log_columns
+                short_audit_columns = self._short_audit_columns(conn) if chatbot_log_exists else []
                 audit_log_ready = chatbot_log_exists and not missing_audit_columns
 
                 history_table_exists = self._table_exists(conn, self.table_name)
@@ -161,6 +183,7 @@ class MySQLActivityRepository(ActivityRepository):
                 "chat_log_table": self.chat_log_table_name,
                 "chat_log_table_exists": chatbot_log_exists,
                 "missing_audit_column_count": len(missing_audit_columns),
+                "short_audit_columns": short_audit_columns,
                 "legacy_history_writes_enabled": self.enable_legacy_history_writes,
                 "legacy_history_ready": legacy_history_ready,
                 "history_table_exists": history_table_exists,
@@ -245,6 +268,10 @@ class MySQLActivityRepository(ActivityRepository):
     def _ensure_chatbot_log_table(self) -> None:
         status = self.readiness_check()
         if status.get("available") is True:
+            for column in status.get("short_audit_columns") or []:
+                minimum, migration = self.CHATBOT_LOG_MIN_CHAR_LENGTH[column]
+                logger.warning("MySQL chatbot_logs.%s is narrower than %d characters; rows with longer "
+                               "values will not be saved. Apply %s.", column, minimum, migration)
             return
         reason = status.get("reason") or "mysql_activity_schema_not_ready"
         if reason == "mysql_activity_check_failed":
@@ -359,7 +386,7 @@ class MySQLActivityRepository(ActivityRepository):
         except Exception as exc:
             if not self._is_database_error(exc):
                 raise
-            logger.warning("MySQL chatbot log save failed: %s", type(exc).__name__)
+            logger.warning("MySQL chatbot log save failed: %s%s", type(exc).__name__, _database_error_detail(exc))
 
         if self.enable_legacy_history_writes:
             try:
@@ -608,3 +635,10 @@ class MySQLActivityRepository(ActivityRepository):
             logger.warning("MySQL recent fallback logs failed: %s", exc)
             return []
         return [_fallback_log_payload(record) for record in records]
+
+
+def _database_error_detail(exc) -> str:
+    """Error code and column only: MySQL messages can quote the rejected value."""
+    code = exc.args[0] if exc.args and isinstance(exc.args[0], int) else None
+    column = re.search(r"column '([A-Za-z0-9_]+)'", str(exc.args[1])) if len(exc.args) > 1 else None
+    return (f" code={code}" if code else "") + (f" column={column[1]}" if column else "")
