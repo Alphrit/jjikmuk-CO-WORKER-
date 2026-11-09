@@ -290,3 +290,20 @@ def test_unknown_verdict_with_raw_materials_only_names_what_was_checked():
     snack = Product(product_name="꼬깔콘고소한맛", barcode="4", rawmtrl_nm="옥수수, 식물성유지")
     assert unknown_allergy_guidance(snack, Profile(name="나", allergies=["shrimp"])).startswith(
         "확인한 결과 등록된 원재료에서는 새우가 보이지 않아요.")
+
+
+@pytest.mark.parametrize("message", [
+    # The Android product-detail button sends '<상품명>의 성분과 알레르기 주의사항을 알려줘'.
+    "허니버터칩의 성분과 알레르기 주의사항을 알려줘", "허니버터칩 성분이랑 알레르기 알려줘",
+    "허니버터칩의 알레르기 주의사항 알려줘", "허니버터칩 알레르기 알려줘",
+])
+def test_app_detail_button_question_is_not_a_new_allergy(message):
+    from app.services.message_constraint_guard import _message_allergens
+    parsed = _message_allergens(message)
+    assert not parsed.uncertain and not parsed.confirmed
+
+
+def test_personal_allergy_statements_still_count():
+    from app.services.message_constraint_guard import _message_allergens
+    assert _message_allergens("나 새우 알레르기 있는데 새우깡 먹어도 돼?").confirmed == {"새우"}
+    assert _message_allergens("나는 키위 알레르기").uncertain == {"키위"}

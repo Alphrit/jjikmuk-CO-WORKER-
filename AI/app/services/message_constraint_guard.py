@@ -82,6 +82,9 @@ def _message_allergens(message: str) -> MessageAllergies:
                         "등록된", "등록한", "저장된", "저장한", "프로필", "프로필의",
                         "어떤", "무슨", "다른", "새로운", "새", "음식", "식품", "그리고", "제품"}:
                 continue
+            if re.fullmatch(r"(?:성분|원재료|원료|재료|영양\s*성분|영양\s*정보|영양)(?:과|와|이랑|랑|하고|및|의)?", name):
+                # '성분과 알레르기 주의사항' lists label fields, not an allergen.
+                continue
             names.add(aliases.get(name, name))
         if not names:
             continue
@@ -117,7 +120,9 @@ def _message_allergens(message: str) -> MessageAllergies:
             # Information requests without a subject are not personal claims.
             prefix = re.split(r"[.!?;,\n]", message[:match.start()])[-1]
             information = re.match(
-                r"\s*(?:(?:의\s*)?(?:정보|증상|원인|뜻|설명|표시|문구|성분|차이)|(?:가|는|란)?\s*(?:뭔지|무엇인지|뭐야|어떤\s*뜻)|에\s*대해|란(?:\s|$)|라는\s*(?:게|것)|"
+                r"\s*(?:(?:의\s*)?(?:정보|증상|원인|뜻|설명|표시|문구|성분|차이|(?:주의|유의)\s*사항)|(?:가|는|란)?\s*(?:뭔지|무엇인지|뭐야|어떤\s*뜻)|에\s*대해|란(?:\s|$)|라는\s*(?:게|것)|"
+                # '허니버터칩 알레르기 알려줘' asks for the label, not about the speaker.
+                r"(?:을|를|좀)?\s*(?:알려|확인해|보여|설명해)|"
                 r"유발\s*(?:물질|성분)\s*(?:의\s*)?(?:부재|없음|표시|정보)|"
                 r"(?:유발\s*물질\s*)?(?:혼입|교차\s*(?:접촉|오염))\s*"
                 r"(?:표시|가능성|확률|주의\s*문구|경로|관리|뜻|개념|의미|여부|과정|원인))",
