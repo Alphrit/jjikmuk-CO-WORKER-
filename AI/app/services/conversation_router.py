@@ -611,6 +611,10 @@ def find_explicit_product_override(message: str, current_product: Optional[Produ
         return None, None
 
     text = normalize_message(message)
+    if rule_based_classify_intent(message=text, product=None, profile=None, chat_history=[]) == "food_compare":
+        # '진라면이랑 비교해줘' adds a comparison target; it does not replace
+        # the selected product (the comparison handler resolves both).
+        return None, None
     if contains_any(text, ["이 제품", "그 제품", "현재 제품", "방금 제품", "이거", "이건", "그거", "그건"]) and contains_any(
         text,
         ["대체 제품", "대체품", "대신", "비슷한 제품", "더 나은", "나은 것도"],

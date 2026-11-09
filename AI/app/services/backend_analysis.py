@@ -173,6 +173,12 @@ def _stale_selection_choice(req, named_query, intent):
     return _candidate_choice(candidates, extract_product_search_query(item.content), req.message, intent)
 
 
+def same_product_name(query, product):
+    from app.services.product_search import candidate_matches_product_query, compact_search_text
+    return (compact_search_text(query) == compact_search_text(product.product_name or "")
+            or candidate_matches_product_query(query, product))
+
+
 def run_backend_pipeline(req, legacy_pipeline):
     """Return (response, product, audit context), logging only in the API wrapper."""
     from app.api.adapters import normalize_active_profiles
@@ -204,6 +210,10 @@ def run_backend_pipeline(req, legacy_pipeline):
     intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, req.chat_history)
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
         intent = "can_i_eat"
+    elif intent in {"unknown", "ambiguous"} and req.product and named_query and same_product_name(named_query, req.product):
+        # '새우깡은?' with 새우깡 selected (e.g. right after tapping its card)
+        # asks about the selected product; asking to select it again loops.
+        intent = "product_summary"
     same_product = bool(req.product and (not named_query or candidate_matches_product_query(named_query, req.product)))
     if intent in {"unknown", "ambiguous"} and named_query and any(word in req.message for word in ("찾아", "검색")):
         intent = "product_summary"
@@ -262,6 +272,12 @@ def run_backend_pipeline(req, legacy_pipeline):
     application = "context_only"
     found_query = bool(named_query and response.intent in {"unknown", "ambiguous"})
     if not interrupt and (response.intent in PRODUCT_INTENTS or found_query) and response.current_product is not None:
+        if req.product and resolved is not None and resolved.barcode and resolved.barcode == req.product.barcode:
+            # The selection being asked for is the one already made: answer it.
+            response = decision_response(req, response.intent if response.intent in PRODUCT_INTENTS else "product_summary")
+            activity = dict(profile=profile, product=req.product, barcode=req.product.barcode,
+                            report_number=req.product.report_number, message=req.message)
+            return response, req.product, activity
         application = "product_selection_required"
         from app.services.candidate_prompts import CHOOSE_FROM_CANDIDATES
         from app.services.product import find_product_candidates_from_message

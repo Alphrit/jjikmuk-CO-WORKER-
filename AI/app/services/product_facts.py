@@ -71,7 +71,7 @@ def ingredient_label_text(product, ingredient):
         # evidence, so never let a missing label field read as reassurance.
         subject = "이" if object_particle(ingredient) == "을" else "가"
         return (f"제품명에 '{ingredient}'{subject} 들어 있어요. 등록된 표시에는 없지만 들어 있을 가능성이 높으니 "
-                "포장지의 알레르기 표시를 꼭 확인하고, 확인 전에는 피하는 편이 안전해요.\n")
+                "포장지의 알레르기 표시를 꼭 확인하고, 확인하기 전에는 드시지 마세요.\n")
     shared = find_cross_contamination_aliases(product, ingredient)
     if shared:
         return f"{ingredient}의 직접 함유 표기는 찾지 못했지만 교차오염 가능성 표시가 있어요: {', '.join(shared[:3])}.\n"

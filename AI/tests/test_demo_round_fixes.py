@@ -99,7 +99,7 @@ def test_ingredient_in_the_product_name_is_never_reported_as_absent():
     from app.services.product_facts import ingredient_label_text
     product = Product(product_name="땅콩빼빼로", barcode="9", allergy=["밀", "우유"], rawmtrl_nm="밀가루, 설탕")
     text = ingredient_label_text(product, "땅콩")
-    assert "제품명에 '땅콩'이 들어 있어요" in text and "피하는 편이 안전해요" in text
+    assert "제품명에 '땅콩'이 들어 있어요" in text and "드시지 마세요" in text
     assert "찾지 못했어요" not in text
 
 
@@ -154,3 +154,33 @@ def test_comparison_against_the_selected_product_in_a_stateless_request(monkeypa
     assert confirmation is None
     assert [product.product_name for product in products] == ["신라면", "진라면(순한맛)"]
     assert state["comparison_auto_picked"] == ["진라면(순한맛)"]
+
+
+def test_comparison_with_a_selected_product_is_not_a_product_switch():
+    from app.services.conversation_router import find_explicit_product_override
+    assert find_explicit_product_override("진라면이랑 비교해줘", _product("신라면", "1", 1.0)) == (None, None)
+
+
+def test_naming_the_selected_product_never_asks_to_select_it_again(monkeypatch):
+    # '새우깡은?' right after tapping 새우깡's card looped on the same choice.
+    from fastapi.testclient import TestClient
+    from app.api import main as api
+    from app.infrastructure.repository import InMemoryActivityRepository, InMemoryProductRepository
+    from app.services import activity, product as product_service
+    from backend_v2_helpers import TOKEN, request_payload, headers
+    monkeypatch.setenv("FOOD_CHATBOT_API_TOKEN", TOKEN)
+    monkeypatch.setenv("FOOD_CHATBOT_ENABLE_EXTERNAL_AI", "false")
+    monkeypatch.setattr(product_service, "_default_repository", InMemoryProductRepository())
+    old = activity.get_activity_repository()
+    activity.set_activity_repository(InMemoryActivityRepository())
+    try:
+        with TestClient(api.app) as test_client:
+            payload = request_payload(statuses=("DANGER",))
+            payload["product"]["productName"] = "새우깡"
+            payload["message"] = "새우깡은?"
+            data = test_client.post("/chat", json=payload, headers=headers(payload)).json()
+    finally:
+        activity.set_activity_repository(old)
+    assert not data["product_candidates"]
+    assert data["answer"].startswith("새우깡 기준으로 확인했어요.")
+    assert data["answer_source"] == "backend"
