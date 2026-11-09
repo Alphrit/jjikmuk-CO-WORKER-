@@ -307,3 +307,24 @@ def test_personal_allergy_statements_still_count():
     from app.services.message_constraint_guard import _message_allergens
     assert _message_allergens("나 새우 알레르기 있는데 새우깡 먹어도 돼?").confirmed == {"새우"}
     assert _message_allergens("나는 키위 알레르기").uncertain == {"키위"}
+
+
+@pytest.mark.parametrize("message", [
+    "나트륨 하루 권장량이 얼마야?", "카페인은 하루에 얼마까지 괜찮아?", "하루 당류 섭취 기준이 얼마야?",
+    "유통기한이랑 소비기한 차이가 뭐야?", "소비기한이 뭐야?",
+])
+def test_general_label_terms_are_not_products_or_out_of_scope(message):
+    assert rule_based_classify_intent(message, None, None, []) == "general_nutrition_guide"
+
+
+@pytest.mark.parametrize("message, expected", [
+    ("유통기한 지난 우유 먹어도 돼?", "out_of_domain"), ("소비기한 지나면 버려야 돼?", "out_of_domain"),
+    ("허니버터칩 나트륨이 하루 권장량의 몇 퍼센트야?", "missing_product"),
+    ("이 제품 나트륨 하루 기준치 대비 얼마야?", "missing_product"),
+])
+def test_expired_food_and_named_products_keep_their_intent(message, expected):
+    assert rule_based_classify_intent(message, None, None, []) == expected
+
+
+def test_daily_amount_question_names_no_product():
+    assert _explicit_named_product_query("카페인은 하루에 얼마까지 괜찮아?", None) is None

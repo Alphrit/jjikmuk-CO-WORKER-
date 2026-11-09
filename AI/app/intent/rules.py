@@ -696,6 +696,10 @@ def rule_based_classify_intent(
             return "product_summary"
         return "unknown"
 
+    from app.intent.request_semantics import general_label_term_question
+    if product is None and general_label_term_question(current_message):
+        return "general_nutrition_guide"
+
     if is_out_of_domain_question(text, product):
         return "out_of_domain"
 

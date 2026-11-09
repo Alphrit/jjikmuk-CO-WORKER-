@@ -1565,11 +1565,11 @@ def _explicit_named_product_query(message, profile):
     older target. Reuse the catalog query boundary rather than catalog success
     to decide whether the user actually supplied a name.
     """
-    from app.intent.request_semantics import command_text
+    from app.intent.request_semantics import command_text, general_label_term_question
     from app.services.condition_subject import profile_is_named
     from app.intent.rules import is_out_of_domain_question
     text = command_text(message)
-    if is_out_of_domain_question(text, None):
+    if is_out_of_domain_question(text, None) or general_label_term_question(text):
         return None
     if _is_candidate_selection_only(text):
         return None

@@ -116,7 +116,7 @@ RAG 임베딩은 축소하지 않은 3,072차원을 사용합니다. 기존 `tex
 python evaluation/rebuild_rag_index.py
 ```
 
-모델 설정만으로 외부 AI 동의나 생성 모드가 켜지지는 않습니다. 검색 근거를 활용한 일반 설명 생성에는 기존처럼 `FOOD_CHATBOT_ENABLE_EXTERNAL_AI=true`, 유효한 요청별 동의 서명, `RAG_GENERAL_RESPONSE_MODE=generated`가 필요합니다. `.env.example`의 기본 응답 모드는 `extractive`이며, 이 모드에서는 검색한 승인 설명을 그대로 제공합니다.
+모델 설정만으로 외부 AI 동의나 생성 모드가 켜지지는 않습니다. 검색 근거를 활용한 일반 설명 생성에는 기존처럼 `FOOD_CHATBOT_ENABLE_EXTERNAL_AI=true`와 백엔드의 요청별 서명이 필요합니다. 앱이 동의를 묻지 않으므로 서명된 요청은 기본적으로 동의한 것으로 처리합니다(`FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT=false`로 되돌릴 수 있음). `.env.example`의 응답 모드는 `generated`입니다. 설정이 없으면 코드 기본값 `extractive`로 동작해 검색한 승인 설명을 그대로 제공하므로, 배포 서버에 이 값을 꼭 넣어 주세요.
 
 레시피 초안은 [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)를 사용해 JSON 필드·자료형, `servings: "1인분"`, 선택 제품명을 제한합니다. 형식이 맞아도 재료·사용량·조리 문장·알레르기·식이 조건 검증을 모두 통과해야 채택하며, 실패하면 규칙 레시피로 대체합니다.
 
@@ -234,7 +234,7 @@ uvicorn app.api.main:app --reload
 
 ## RAG 지식 문서
 
-일반 설명의 기본값은 `RAG_GENERAL_RESPONSE_MODE=extractive`입니다. 공식 자료만 검색하고, 검토된 주제와 질문이 맞을 때 승인 본문을 그대로 출처와 함께 제공합니다. 근거가 없거나 현재 자료로 다루지 못하는 세부 기준·질문이면 규칙 응답을 유지합니다. 일반 설명의 사실 문장을 LLM으로 새로 만들지 않습니다. 제품 판정·레시피 경로와는 별개입니다.
+일반 설명은 `RAG_GENERAL_RESPONSE_MODE=generated`(`.env.example` 값, 아래 설명)로 운영합니다. 설정이 없으면 코드 기본값 `extractive`로 공식 자료만 검색하고, 검토된 주제와 질문이 맞을 때 승인 본문을 그대로 출처와 함께 제공합니다. 근거가 없거나 현재 자료로 다루지 못하는 세부 기준·질문이면 규칙 응답을 유지합니다. 일반 설명의 사실 문장을 LLM으로 새로 만들지 않습니다. 제품 판정·레시피 경로와는 별개입니다.
 
 현재 승인 설명은 **40개**, 실제 인용하는 출처 문서는 **18종**입니다. 기존 19개 설명에 영양표시 안내서의 설명 6개와 공식 웹 자료의 설명 15개를 추가했습니다. 아래의 기존 PDF 검토에 더해 FDA·NHS·영국 정부 자료 11종의 선택한 사실을 직접 확인하고 독립적인 한국어 문장으로 정리했습니다. 숫자나 조각 수가 서비스 전반의 완성도를 뜻하지는 않습니다. `topics`도 승인 해시에 포함되므로 주제 수정에는 재검토가 필요합니다. 질문 주제 구분은 제한된 규칙이며 모든 자연어 질문의 근거 충분성을 판별하는 기능은 아닙니다.
 
