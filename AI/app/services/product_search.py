@@ -114,6 +114,15 @@ def _asked_ingredient_boundary():
 
 _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
     _asked_ingredient_boundary(),
+    # '오레오 성분', '진라면 순한맛 나트륨', '새우깡 칼로리야?': a label field
+    # as the last word ends the product name.
+    re.compile(
+        r"\s+(?:알레르기|알러지|원재료명?|성분|영양성분|영양정보|영양|나트륨|당류|단백질|포화지방|지방|"
+        r"탄수화물|칼로리|열량|콜레스테롤)(?:은|는|이|가|야|이야|요|정보|표시)?\s*[?？!.~]*$",
+        re.IGNORECASE,
+    ),
+    # '새우깡 몇 칼로리야'
+    re.compile(r"\s+몇\s*(?:칼로리|kcal|그램|g|mg|밀리그램)", re.IGNORECASE),
     re.compile(
         r"\s+(?:제품(?:을|으로)?\s*)?(?:이용|활용)(?:한|해서|해)\s*"
         r"(?:레시피|요리|조리법)",
@@ -126,8 +135,8 @@ _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
     ),
     re.compile(
         r"\s+(?:이거|이건|그거|그건)?\s*"
-        r"(?:먹으려고|먹으려는데|먹어\s*보려고|먹어도|먹을까|먹을\s*수|"
-        r"마시려고|마시려는데|마셔도|섭취하려고|섭취하려는데|섭취해도)",
+        r"(?:먹으려고|먹으려는데|먹어\s*보려고|먹어도|먹어두|머거도|먹을까|먹을\s*수|"
+        r"마시려고|마시려는데|마셔도|마셔두|섭취하려고|섭취하려는데|섭취해도)",
         re.IGNORECASE,
     ),
     re.compile(
@@ -151,8 +160,8 @@ _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
     ),
     re.compile(
         r"(?:은|는)?(?:이거|이건|그거|그건)?"
-        r"(?:먹으려고|먹으려는데|먹어보려고|먹어도|먹을까|먹을수|"
-        r"마시려고|마시려는데|마셔도|섭취하려고|섭취하려는데|섭취해도)",
+        r"(?:먹으려고|먹으려는데|먹어보려고|먹어도|먹어두|머거도|먹을까|먹을수|"
+        r"마시려고|마시려는데|마셔도|마셔두|섭취하려고|섭취하려는데|섭취해도)",
         re.IGNORECASE,
     ),
     re.compile(

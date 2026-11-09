@@ -238,16 +238,23 @@ def _format_product_comparison_answer(
             if lineage_missing
             else "1회 제공량, 100g/100ml, 총 내용량 기준이 없거나 서로 다르면 수치 차이를 영양성분 차이로 해석하면 안 돼요."
         )
+        next_step = (
+            "차단 사유를 해결하고 수집 당시 내용 기록과 일치하는 제품 표시 정보로 다시 비교해 주세요."
+            if lineage_missing
+            else "각 제품의 영양성분 기준량을 확인한 뒤 같은 기준으로 다시 비교해 주세요."
+        )
+        from app.services.operational_policy import unverified_catalog_enabled
+        if lineage_missing and unverified_catalog_enabled():
+            # Team mode has no label lineage at all; the record-binding detail
+            # is noise to a user, so say what it means for this comparison.
+            primary = f"{label} 수치는 있지만 상품 정보의 출처를 확인할 수 없어 어느 쪽이 낫다고 단정하지 않았어요."
+            limitation = "기준량(1회 제공량·100g·총 내용량)도 확인되지 않아 수치 차이를 그대로 영양성분 차이로 볼 수 없어요."
+            next_step = "포장지의 영양성분표에서 같은 기준량으로 확인해 주세요."
         answer = format_general_answer(
             primary,
             [f"원문 수치는 {', '.join(value_lines)}로 확인돼요."],
             [limitation],
-            [
-                "차단 사유를 해결하고 수집 당시 내용 기록과 일치하는 제품 표시 정보로 다시 "
-                "비교해 주세요."
-                if lineage_missing
-                else "각 제품의 영양성분 기준량을 확인한 뒤 같은 기준으로 다시 비교해 주세요."
-            ],
+            [next_step],
         )
         reasons = [
             f"{candidate.product_name or '이 제품'} {label}: "
@@ -668,7 +675,10 @@ def handle_food_compare(
     profiles: Optional[Sequence[Profile]] = None,
     conversation_state: Optional[dict] = None,
 ) -> ChatResponse:
-    if product is not None and not product.facts_verified:
+    from app.services.operational_policy import unverified_catalog_enabled
+    if product is not None and not product.facts_verified and not unverified_catalog_enabled():
+        # Team mode compares unverified labels with its source note (Stage B),
+        # as it already does when no product is selected.
         return build_unverified_product_response("food_compare", profile)
 
     from app.services.comparison_context import resolve_comparison

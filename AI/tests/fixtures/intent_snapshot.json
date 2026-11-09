@@ -2336,7 +2336,7 @@
   "with_product": "recipe_recommend"
  },
  "조건에 맞는 과자 추천해줘": {
-  "no_product": "unknown",
+  "no_product": "alternative_food_recommend",
   "with_product": "alternative_food_recommend"
  },
  "조리 순서 다시 알려줘": {

@@ -100,6 +100,14 @@ def food_recommendation_request(message: str) -> bool:
                 or re.search(r"(?:현재\s*)?선택된\s*(?:사람들?|프로필).*기준.*추천", message))
 
 
+def vague_food_recommendation(message: str) -> bool:
+    """'다이어트 간식 추천', '아무거나 추천해줘': asks for food, names no product or recipe."""
+    return bool(re.search(
+        r"(?:간식|과자|음료|음식|먹을\s*(?:거|것)|마실\s*(?:거|것)|아무거나|뭐\s*먹을지)\s*(?:좀\s*)?추천(?:해\s*줘|해줘|해\s*주세요|해|좀)?[요?？.!\s]*$",
+        message.strip(),
+    )) and not re.search(r"레시피|요리|만드는", message)
+
+
 def nutrient_exclusion_question(message: str) -> bool:
     """A whole-nutrient avoidance decision is outside label-definition evidence."""
     return bool(re.search(

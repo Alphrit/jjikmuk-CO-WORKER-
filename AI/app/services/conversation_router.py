@@ -392,6 +392,13 @@ def find_product_from_request_text(
     use_history: bool = True,
 ) -> tuple[Optional[Product], Optional[ChatResponse]]:
     text = normalize_message(message)
+    from app.services.general_handlers import _message_product_segments
+    if (rule_based_classify_intent(message=text, product=None, profile=None, chat_history=[]) == "food_compare"
+            and len(_message_product_segments(message)) >= 2):
+        # '새우깡이랑 쌀새우깡 비교해줘' names two targets; the comparison
+        # handler resolves each. Searching the whole phrase as one product
+        # offered a single-product candidate list instead.
+        return None, None
     history_restore_allowed = use_history and not _has_unresolved_product_confirmation(
         chat_history
     )
@@ -1620,14 +1627,24 @@ def _explicit_named_product_query(message, profile):
     if re.search(r"뜻|의미|개념|정의|차이|단위|총\s*당류.*첨가당|첨가당.*총\s*당류|비건.*표시(?:돼|되어|라고)", text):
         return None
     from app.intent.explanation_topics import requested_topics
-    if requested_topics(text) and re.search(r"영양\s*표시|(?:이면|라면|과자면)|짠\s*맛|안\s*짠", text):
+    # '제로라면 괜찮아?' is a condition on a label claim; the noun in '진라면'
+    # is a product, so the conditional must follow a claim word.
+    claim_condition = r"(?:제로|무설탕|무당|무가당|저당|저칼로리|저열량|저지방|저염|저나트륨|고단백|라이트)\S*(?:이면|라면|면)"
+    if requested_topics(text) and re.search(rf"영양\s*표시|{claim_condition}|과자면|짠\s*맛|안\s*짠", text):
+        return None
+    if requested_topics(text) and re.fullmatch(
+        r"(?:제로|무설탕|무당|무가당|저당|저칼로리|저열량|저지방|저염|저나트륨|고단백|라이트)\s*"
+        r"(?:음료|음료수|탄산음료|탄산|음식|식품|제품|과자|간식|커피|아이스크림)?(?:은|는|이|가|도)?", query,
+    ):
+        # '제로 음료는 칼로리가 0이야?' asks what a claim means for a kind of
+        # food, not about a catalog item ('펩시 제로' still names one).
         return None
     if requested_topics(query) and query.endswith("면"):
         # A conditional about a recognized label claim ('제로칼로리면')
         # is not a catalog name. Unknown named products still retain their
         # own unresolved target rather than falling back to the old product.
         return None
-    if not re.search(r"먹어도|먹을\s*수|마셔도|섭취해도|어때|괜찮|바꿨어|바꿨|변경했|선택했|골랐|찾아|검색|원재료|성분|나트륨|당류|단백질|열량|칼로리|콜레스테롤", text):
+    if not re.search(r"먹어도|먹어두|머거도|먹을\s*수|마셔도|마셔두|섭취해도|어때|괜찮|바꿨어|바꿨|변경했|선택했|골랐|찾아|검색|원재료|성분|나트륨|당류|단백질|열량|칼로리|콜레스테롤", text):
         return None
     return query
 

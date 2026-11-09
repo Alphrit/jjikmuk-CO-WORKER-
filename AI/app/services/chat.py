@@ -570,7 +570,9 @@ def attach_profile_allergy_alert(
 ) -> ChatResponse:
     if response.task_type != "product_chat":
         return response
-    if response.intent == "profile_based_recheck":
+    if response.intent in {"profile_based_recheck", "food_compare"}:
+        # A comparison already states each compared product's allergy result;
+        # a single-product alert would describe whichever product was selected.
         return response
     if (
         product is None

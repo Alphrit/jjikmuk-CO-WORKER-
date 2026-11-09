@@ -6,6 +6,7 @@ import re
 from app.core.models import ChatResponse, Product
 
 from app.services.product import find_product_candidates_from_message
+from app.services.response_helpers import object_particle
 from app.services.comparison_language import comparison_axis_reply, comparison_relative_reply, replacement_targets
 from app.services.conversation_router import (
     _resolve_authoritative_product_reference,
@@ -87,9 +88,19 @@ def resolve_comparison(
     products = []
     for index, query in enumerate(queries):
         product = _resolve_authoritative_product_reference(refs[index])[0] if refs[index] else None
+        if product is None and selected_product is not None and _same_name(query, selected_product):
+            product = selected_product
         if product is None:
             candidates = find_product_candidates_from_message(f"{query} 찾아줘", limit=3)
-            confirmation = build_confirmation_if_needed(
+            exact = [candidate for candidate in candidates if _same_name(query, candidate)]
+            if len(exact) == 1:
+                # An exact catalog name ('새우깡', '쌀새우깡') needs no choice.
+                candidates = exact
+            elif selected_product is not None and _names_target(query, selected_product):
+                # Stateless clients resend the comparison with the tapped
+                # barcode; that product answers the target it was offered for.
+                candidates, product = [], selected_product
+            confirmation = None if product is not None else build_confirmation_if_needed(
                 candidates, search_query=query, original_message=original, pending_intent="food_compare",
             )
             if confirmation is not None:
@@ -100,16 +111,26 @@ def resolve_comparison(
                     "comparison_status": "pending",
                 }
                 return [], confirmation.model_copy(update={
-                    "answer": f"비교 대상 '{query}'을 먼저 확인해 주세요.\n{confirmation.answer}",
+                    "answer": f"비교 대상 '{query}'{object_particle(query)} 먼저 확인해 주세요.\n{confirmation.answer}",
                     "conversation_state": context, "internal_conversation_state": context,
                 }), context, original
-            product = candidates[0] if candidates else None
+            product = product or (candidates[0] if candidates else None)
         if product is None:
             refs[index] = None
             return _incomplete(message, {
                 "comparison_status": "unresolved", "comparison_products": refs, "comparison_queries": queries,
-            }, f"비교 대상 '{query}'을 DB에서 찾지 못했어요. 정확한 제품명을 다시 알려 주세요.")
+            }, f"비교 대상 '{query}'{object_particle(query)} DB에서 찾지 못했어요. 정확한 제품명을 다시 알려 주세요.")
         refs[index] = _product_state_reference(product)
         products.append(product)
     context = {"version": 1, "comparison_products": refs, "comparison_queries": queries, "comparison_status": "active", "comparison_axes": axes}
     return products, None, context, original
+
+
+def _same_name(query, product):
+    from app.services.product_search import compact_search_text
+    return bool(product.product_name) and compact_search_text(product.product_name) == compact_search_text(query)
+
+
+def _names_target(query, product):
+    from app.services.product_search import candidate_matches_product_query
+    return _same_name(query, product) or candidate_matches_product_query(query, product)

@@ -703,7 +703,8 @@ def rule_based_classify_intent(
     # A recommendation is requested by this turn, not by an earlier question
     # that explanation follow-ups prepend ('다른 제품이랑 제조 공장이 같대' +
     # '얼마나 섞였는지 %로 알려줘').
-    if food_recommendation_request(current_message):
+    from app.intent.request_semantics import vague_food_recommendation
+    if food_recommendation_request(current_message) or (product is None and vague_food_recommendation(current_message)):
         return "alternative_food_recommend"
 
     from app.intent.request_semantics import productless_reference_question

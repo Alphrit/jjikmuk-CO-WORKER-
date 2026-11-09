@@ -216,6 +216,10 @@ def requested_topics(message: str) -> set[str]:
     ):
         if any(term in text for term in terms):
             topics.add(topic)
+    # '제로 음료는 칼로리가 0이야?': a zero claim asked about energy.
+    if ("제로" in text and "zero_energy" not in topics and not topics & {"sugar_energy", "sugar_alcohol"}
+            and any(t in text for t in ("칼로리", "열량")) and any(t in text for t in ("0이", "0인", "0칼", "없", "제로야", "제로인", "제로에요", "제로예요"))):
+        topics.add("zero_energy")
     if any(t in text for t in ("저나트륨", "저염기준", "저염표시", "나트륨함량기준", "나트륨표시기준")):
         topics.add("low_sodium")
     if any(t in text for t in ("식이섬유", "섬유질")) and "high_fiber" not in topics:

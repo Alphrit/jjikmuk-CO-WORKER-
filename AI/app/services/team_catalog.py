@@ -25,6 +25,7 @@ GENERAL_INTENTS = {'general_diet_guide', 'general_allergy_guide', 'general_nutri
 # unclear; they state no catalog fact.
 NO_PRODUCT_GUIDANCE_INTENTS = {'missing_product', 'unknown'}
 COMPARISON_SOURCE_NOTE = '비교에 쓴 상품 표시 정보는 출처 미확인 상태예요. 섭취 전 실제 포장지 표시를 확인해 주세요.'
+COMPARISON_NO_CONFLICT_NOTE = '등록 표시에서 충돌을 찾지 못한 제품도 출처 미확인 정보라 안전하다고 판단할 수 없어요.'
 COMPARISON_UNAVAILABLE_ANSWER = (
     '출처가 확인되지 않은 상품 정보로는 알레르기 충돌이 없다고 비교해 드릴 수 없어요. '
     '각 제품을 선택하면 등록된 원재료·알레르기 표시를 확인해 드릴게요.'
@@ -112,6 +113,14 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
         return response.model_copy(update={
             'answer': response.answer + '\n' + COMPARISON_SOURCE_NOTE,
             'recommended_products': [], 'recipe': None, 'product_candidates': [],
+        })
+    if response.intent == 'food_compare' and response.comparison_products and response.answer_source == 'rules':
+        # No compared product conflicts: keep the label facts, but withhold the
+        # no-conflict verdict an unverified catalog cannot support.
+        return response.model_copy(update={
+            'answer': response.answer + '\n' + COMPARISON_NO_CONFLICT_NOTE + '\n' + COMPARISON_SOURCE_NOTE,
+            'overall_decision': 'check_required', 'allergy_status': 'unknown', 'risk_level': 'unknown',
+            'per_profile_results': [], 'recommended_products': [], 'recipe': None, 'product_candidates': [],
         })
 
     if (product_resolved and response.intent in PRODUCT_INTENTS
