@@ -25,7 +25,11 @@ def test_required_terms_read_models_and_dicts():
     object.__setattr__(response, "per_profile_results", [_Named(profile_name="웹테스트"), {"profile_name": "엄마"}])
     object.__setattr__(response, "current_product", _Named(product_name="새우깡"))
     terms = answer_polish._required_terms(RULE, response)
-    assert {"새우깡", "웹테스트", "엄마", "새우"} <= set(terms)
+    assert {"새우깡", "새우"} <= set(terms)
+    assert "웹테스트" not in terms and "엄마" not in terms  # one named person may go unnamed
+    two = ChatResponse(intent="can_i_eat", answer=RULE + "\n엄마: 확인 필요", answer_source="backend", risk_level="high")
+    object.__setattr__(two, "per_profile_results", [_Named(profile_name="웹테스트"), {"profile_name": "엄마"}])
+    assert {"웹테스트", "엄마"} <= set(answer_polish._required_terms(two.answer, two))
 
 
 @pytest.fixture

@@ -99,7 +99,8 @@ def test_ingredient_in_the_product_name_is_never_reported_as_absent():
     from app.services.product_facts import ingredient_label_text
     product = Product(product_name="땅콩빼빼로", barcode="9", allergy=["밀", "우유"], rawmtrl_nm="밀가루, 설탕")
     text = ingredient_label_text(product, "땅콩")
-    assert "제품명에 '땅콩'이 들어 있어요" in text and "드시지 마세요" in text
+    # A product fact, not personal advice: avoiding it is said per allergic person.
+    assert "제품명에 '땅콩'이 들어 있어 땅콩이 들어 있을 가능성이 높아요" in text and "포장지" in text
     assert "찾지 못했어요" not in text
 
 
@@ -237,14 +238,14 @@ def test_unknown_allergy_verdict_gets_a_concrete_next_step_per_person():
     snack = Product(product_name="농심 새우깡90G", barcode="1", allergy=[])
     assert unknown_allergy_guidance(snack, Profile(name="나", allergies=["shrimp"])).startswith("피하는 게 좋아요. 제품명에 '새우'가")
     assert unknown_allergy_guidance(snack, Profile(name="엄마", allergies=["milk"])) == (
-        "확인한 결과 등록된 정보에서는 우유 성분이 보이지 않아요. 다만 이 상품은 알레르기 표시가 등록되어 "
-        "있지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+        "확인한 결과 등록된 정보에서는 우유 성분이 보이지 않아요. 다만 이 상품은 DB에 원재료와 알레르기 표시가 "
+        "모두 없어서 확실하지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
     labelled = Product(product_name="새우깡", barcode="2", allergy=["새우"])
     assert unknown_allergy_guidance(labelled, Profile(name="나", allergies=["shrimp"])) is None
     chips = Product(product_name="포카칩오리지널", barcode="3", allergy=["대두", "소고기", "우유"])
     assert unknown_allergy_guidance(chips, Profile(name="나", allergies=["shrimp"])) == (
         "확인한 결과 등록된 알레르기 표시(대두, 소고기, 우유)에는 새우가 보이지 않아요. "
-        "다만 표시 정보가 완전한지는 확인되지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+        "다만 DB 정보가 실제 포장과 다를 수 있으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
 
 
 def test_common_vowel_typos_are_retried_and_curiosity_ends_a_name():
@@ -289,7 +290,7 @@ def test_unknown_verdict_with_raw_materials_only_names_what_was_checked():
     from app.services.product_facts import unknown_allergy_guidance
     snack = Product(product_name="꼬깔콘고소한맛", barcode="4", rawmtrl_nm="옥수수, 식물성유지")
     assert unknown_allergy_guidance(snack, Profile(name="나", allergies=["shrimp"])).startswith(
-        "확인한 결과 등록된 원재료에서는 새우가 보이지 않아요.")
+        "확인한 결과 원재료 목록에는 새우가 보이지 않아요.")
 
 
 @pytest.mark.parametrize("message", [
@@ -550,3 +551,17 @@ def test_same_name_rows_put_label_data_first():
 
 def test_deictic_allergy_question_asks_for_the_product():
     assert rule_based_classify_intent("이거 알레르기 있어?", None, None, []) == "missing_product"
+
+
+def test_missing_structured_nutrient_uses_the_label_text():
+    from app.services.product_facts import product_facts_text
+    product = Product(product_name="새우깡", barcode="1", nutrition={"fat": 8.0},
+                      nutrient_text="30g당 160kcal, 지방8g 15%, 트랜스지방0g 0g, 포화지방2.4g 16%")
+    assert "트랜스지방: 0g (30g당)" in product_facts_text(product, "트랜스지방 있어?", "nutrition_explain")
+    assert "포화지방: 2.4g" in product_facts_text(product, "포화지방은?", "nutrition_explain")
+
+
+def test_bare_person_followup_asks_for_the_product():
+    from app.services.conversation_controls import followup_without_context_response
+    assert followup_without_context_response("나는 먹어도 돼?") is not None
+    assert followup_without_context_response("엄마도 먹어도 돼?") is None

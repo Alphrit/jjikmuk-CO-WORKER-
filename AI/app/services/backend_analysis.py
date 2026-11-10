@@ -60,7 +60,9 @@ def _decision_text(decision):
         text += " 충돌 항목: " + ", ".join(x[:40] for x in decision.dangerousIngredients[:3]) + (" 등" if len(decision.dangerousIngredients) > 3 else "") + "."
     diet = decision.dietConstraints
     if decision.status != "NOT_EVALUATED":
-        text += " " + (_DIET_TEXT[diet.status] if diet.requiredFilters else "지정된 필수 식단 조건은 없어요.")
+        if diet.requiredFilters:
+            # Only a diet the person actually set is worth a sentence.
+            text += " " + _DIET_TEXT[diet.status]
         if diet.failedFilters:
             text += " 미충족 항목: " + ", ".join(_DIET_LABELS.get(x, x)[:30] for x in diet.failedFilters[:3]) + (" 등" if len(diet.failedFilters) > 3 else "") + "."
     return text
@@ -113,12 +115,15 @@ def decision_response(req, intent, *, lead=""):
                     # Same UNKNOWN verdict, but a concrete next step for this person.
                     item["answer"] = item["answer"].replace(_SAFETY_TEXT["UNKNOWN"], guidance)
                     item["reasons"] = [item["answer"][:1000]]
-        text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
+        if len(results) == 1:
+            # One person: no name label ('웹테스트: …' reads like a log line).
+            text += results[0]["answer"]
+        else:
+            text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
         text += _SAFETY_TEXT["NOT_EVALUATED"]
     if ctx.profileSource == "CLIENT_REQUEST" and profiles:
         text += "\n이번 요청에서 선택한 프로필 조건을 기준으로 한 결과예요."
-    text += "\n질환이나 개인별 섭취 가능량은 이 판정에 포함되지 않아요."
     state = dict(req.conversation_state)
     state.update(last_intent=intent)
     if req.product:

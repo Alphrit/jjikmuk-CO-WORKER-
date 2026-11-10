@@ -1,4 +1,4 @@
-"""Wording-only polish of backend product answers.
+"""Wording-only polish of rule and backend answers before they are sent.
 
 The verdict, product, people, allergens and numbers are fixed by the rule
 answer. OpenAI may only rephrase it; a draft that drops or adds any of those,
@@ -18,14 +18,15 @@ logger = logging.getLogger(__name__)
 
 POLISH_ENV = "FOOD_CHATBOT_POLISH_PRODUCT_ANSWERS"
 
-_PROMPT = """아래는 식품 알레르기 안내 챗봇이 규칙으로 만든 답변이에요. 사용자에게 보여 줄 수 있게 자연스럽고 간결한 해요체로 다듬어 주세요.
+_PROMPT = """아래는 식품 알레르기 안내 챗봇이 규칙으로 만든 답변이에요. 사용자에게 보여 줄 수 있게 자연스럽고 간결한 해요체로 다듬어 주세요. 같은 말이 반복되면 한 번만 쓰세요.
 
 지킬 것:
 - 판정(피해야 함 / 포장지 확인 필요 / 충돌을 찾지 못함), 제품명, 사람 이름, 성분·알레르기 이름, 숫자와 단위는 원문 그대로 쓰세요.
 - 원문에 없는 정보, 이유, 건강 효과, 섭취 권유를 덧붙이지 마세요.
 - '안전해요', '먹어도 돼요'처럼 원문보다 안심시키는 표현을 쓰지 마세요.
-- 사람이 여러 명이면 사람마다 따로 한 문장 이상 남기세요.
-- 사람 이름은 '웹테스트 님'처럼 부르고, '판정됐어요' 같은 딱딱한 말 대신 '피하시는 게 좋아요', '포장지를 확인해 주세요'처럼 직접 권하는 말로 쓰세요.
+- 원문에 사람 이름이 여러 명 있으면 사람마다 따로 한 문장 이상 남기고 'OO 님'으로 부르세요. 원문에 이름이 없으면 이름을 쓰지 마세요.
+- '판정됐어요' 같은 딱딱한 말 대신 '피하시는 게 좋아요', '포장지를 확인해 주세요'처럼 직접 권하는 말로 쓰세요.
+- 원문에 따옴표로 든 예시 문장('…처럼 물어봐 주세요')은 그대로 두세요.
 - 마크다운, 목록 기호, 이모지, 제목 없이 문장으로만 쓰세요.
 
 원문:
@@ -49,7 +50,13 @@ def _required_terms(original: str, response: ChatResponse) -> list[str]:
     terms = []
     if response.current_product is not None and field(response.current_product, "product_name"):
         terms.append(field(response.current_product, "product_name"))
-    terms += [field(item, "profile_name") for item in (response.per_profile_results or [])]
+    terms += [field(item, "product_name") for item in (response.comparison_products or [])]
+    # Names matter only to tell several people apart; one person may go unnamed.
+    names = [name for name in (field(item, "profile_name") for item in (response.per_profile_results or []))
+             if name and name in original]
+    if len(set(names)) >= 2:
+        terms += names
+    terms += re.findall(r"'([^']{2,60})'", original)  # quoted example questions stay verbatim
     for match in re.finditer(r"충돌 항목:\s*([^.\n]+)", original):
         terms += [part.strip() for part in match[1].split(",") if part.strip()]
     terms += [name for name in ALLERGEN_CANONICAL_ALIASES if len(name) >= 2 and name in original]
@@ -66,7 +73,8 @@ def draft_keeps_facts(original: str, draft: str, response: ChatResponse) -> bool
     )
     if not draft or not (0.4 * len(original) <= len(draft) <= 1.3 * len(original) + 40):
         return False
-    if re.search(r"^\s*(?:[-*#•]|\d+[.)])\s", draft, re.M):
+    list_marker = r"^\s*(?:[-*#•]|\d+[.)])\s"
+    if re.search(list_marker, draft, re.M) and not re.search(list_marker, original, re.M):
         return False
     if any(term not in draft for term in _required_terms(original, response)):
         return False
@@ -85,9 +93,18 @@ def draft_keeps_facts(original: str, draft: str, response: ChatResponse) -> bool
     return True
 
 
-def polish_product_answer(response: ChatResponse) -> ChatResponse:
-    """Rephrase a backend product answer; keep the rule text on any doubt."""
-    if not _enabled() or response.answer_source != "backend" or not response.answer:
+def _eligible(response: ChatResponse) -> bool:
+    if response.answer_source not in {"backend", "rules"} or len(response.answer or "") < 40:
+        return False
+    # Emergency guidance is fixed and must not wait; candidate prompts are UI text.
+    if response.task_type == "safety_triage" or response.intent == "emergency_safety":
+        return False
+    return not response.product_candidates
+
+
+def polish_answer(response: ChatResponse) -> ChatResponse:
+    """Rephrase a rule or backend answer; keep the rule text on any doubt."""
+    if not _enabled() or not _eligible(response):
         return response
     from app.infrastructure.llm import generate_text, is_llm_enabled
     from app.infrastructure.llm_trace import llm_purpose
@@ -108,3 +125,7 @@ def polish_product_answer(response: ChatResponse) -> ChatResponse:
     except Exception as exc:
         logger.warning("Product answer polish check failed: error_type=%s", type(exc).__name__)
         return response
+
+
+# Earlier name, kept for callers and tests.
+polish_product_answer = polish_answer
