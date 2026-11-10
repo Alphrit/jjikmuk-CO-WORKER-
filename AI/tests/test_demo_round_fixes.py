@@ -523,3 +523,17 @@ def test_llm_intent_parser_is_robust(raw):
 def test_which_is_better_comparison_targets():
     from app.services.general_handlers import _message_product_segments
     assert _message_product_segments("신라면이랑 진라면 뭐가 나아?") == ["신라면", "진라면"]
+
+
+def test_bare_followups_ask_for_the_topic():
+    from app.services.conversation_controls import followup_without_context_response
+    assert followup_without_context_response("조금만 더 자세하게 알려줘") is not None
+    assert followup_without_context_response("새우깡 알려줘") is None
+    assert requested_topics("콜레스테롤 더 자세히 알려줘") == {"cholesterol_basics"}
+
+
+def test_same_company_factories_share_a_candidate():
+    from app.infrastructure.product_storage.common import _product_candidate_key
+    a = Product(product_name="허니버터칩", barcode="1", manufacturer_name="해태가루비(주)")
+    b = Product(product_name="허니버터칩", barcode="2", manufacturer_name="해태가루비(주) 제 2공장")
+    assert _product_candidate_key(a) == _product_candidate_key(b)

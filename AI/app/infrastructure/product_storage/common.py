@@ -537,7 +537,11 @@ def _product_candidate_key(product: Product) -> str:
     if normalized_name:
         # Same name from different makers (빙그레/롯데 바나나맛우유) can carry
         # different allergen labels; keep both cards so the user picks one.
-        maker = _normalize_search_text(product.manufacturer_name or product.company_name or "").replace(" ", "")
+        maker = product.manufacturer_name or product.company_name or ""
+        # One company's factories ('해태가루비(주)', '해태가루비(주) 제 2공장')
+        # are the same maker; only different companies stay separate.
+        maker = re.sub(r"\(주\)|주식회사|㈜|제\s*\d+\s*공장|\S*공장", " ", maker)
+        maker = _normalize_search_text(maker).replace(" ", "")
         if maker in {"알수없음", "unknown", "미상"}:
             maker = ""
         return f"{normalized_name}|{maker}"

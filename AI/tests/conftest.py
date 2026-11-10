@@ -10,6 +10,8 @@ os.environ["FOOD_CHATBOT_EXTERNAL_AI_CONSENT_SECRET"] = ""
 os.environ["FOOD_CHATBOT_EXTERNAL_AI_CONSENT_MAX_AGE_SECONDS"] = "60"
 # Consent tests check the strict boundary; the assumed-consent default has its own tests.
 os.environ["FOOD_CHATBOT_EXTERNAL_AI_ASSUME_CONSENT"] = "false"
+# Rule-text assertions stay exact; answer_polish has its own tests.
+os.environ["FOOD_CHATBOT_POLISH_PRODUCT_ANSWERS"] = "false"
 os.environ["FOOD_CHATBOT_ENV"] = "test"
 os.environ["FOOD_CHATBOT_API_TOKEN"] = ""
 os.environ["FOOD_CHATBOT_ENABLE_RATE_LIMIT"] = "false"

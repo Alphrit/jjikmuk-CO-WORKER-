@@ -259,7 +259,7 @@ def requested_topics(message: str) -> set[str]:
         topics.difference_update({"fat_types"})
         topics.add("nutrition_zero")
     if "콜레스테롤" in text and not topics.intersection({"nutrition_zero", "nutrition_percentage", "percentage_calculation"}) and re.search(
-            r"뭐|뜻|의미|이란|란|무엇|설명|어디|들어있|들어가|어떤", text):
+            r"뭐|뜻|의미|이란|란|무엇|설명|어디|들어있|들어가|어떤|자세히|자세하게", text):
         topics.add("cholesterol_basics")
     # These label terms name a product fact too ('카페인 함량 알려줘', '이 우유
     # 소비기한'): only questions about the term's meaning are explanations.

@@ -123,6 +123,25 @@ def _control_reply(answer, state, *, recommended_questions=None):
     )
 
 
+_FOLLOWUP_ONLY = re.compile(
+    r"\s*(?:(?:그럼|그러면|조금만|조금|좀|좀더|더|한\s*번\s*더|다시)\s*)*"
+    r"(?:(?:자세히|자세하게|쉽게|간단히|길게|이어서)\s*)?"
+    r"(?:알려|설명해|말해|풀어서\s*설명해|예를\s*들어)\s*(?:줘|줄래|주세요|줄\s*수\s*있어|봐)?[요?？.!~\s]*"
+    r"|\s*(?:그게|그건|그거)\s*(?:무슨|어떤)\s*(?:말|뜻)(?:이야|이에요|인가요)?[?？.!\s]*"
+)
+FOLLOWUP_WITHOUT_CONTEXT_ANSWER = (
+    "이전 대화 내용은 함께 전달되지 않아서 어떤 주제를 이어서 말씀하시는지 알 수 없어요. "
+    "'콜레스테롤 더 자세히 알려줘'처럼 주제나 제품 이름을 함께 적어 주시면 다시 설명해 드릴게요."
+)
+
+
+def followup_without_context_response(message, state=None):
+    """'조금만 더 자세하게 알려줘' with no previous turn: ask for the topic."""
+    if _FOLLOWUP_ONLY.fullmatch(message or ""):
+        return _control_reply(FOLLOWUP_WITHOUT_CONTEXT_ANSWER, state)
+    return None
+
+
 def conversation_control_response(message, state=None):
     if is_context_reset(message):
         context = {"version": 1, "last_intent": "unknown", "last_task_type": "general_chat"}

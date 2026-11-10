@@ -40,7 +40,8 @@ def product_facts_text(product, message, intent):
         ingredients = product.rawmtrl_nm or ", ".join(product.ingredients)
         allergens = product.resolved_allergies()
         text = asked_ingredient_text(product, message) if intent == "ingredient_check" else ""
-        text += ("등록된 원재료: " + ingredients[:1500] + "\n") if ingredients else "등록된 원재료 정보가 부족해요.\n"
+        text += (("등록된 원재료: " + ingredients[:1500] + "\n") if ingredients
+                 else "이 상품은 원재료가 등록되어 있지 않아 성분을 안내할 수 없어요. 포장지의 원재료명을 확인해 주세요.\n")
         if allergens:
             text += "등록된 알레르기 표시: " + ", ".join(allergens) + "\n"
         return text

@@ -210,7 +210,7 @@ def run_backend_pipeline(req, legacy_pipeline):
     from app.intent.request_semantics import current_topic_message, personal_assessment_request
     from app.intent.rules import rule_based_classify_intent
     from app.services.condition_subject import unresolved_profile_target_response
-    from app.services.conversation_controls import conversation_control_response
+    from app.services.conversation_controls import conversation_control_response, followup_without_context_response
     from app.services.emergency_triage import build_emergency_triage_response
     from app.services.request_language import standalone_cancellation_response
     from app.services.conversation_router import _explicit_named_product_query
@@ -224,6 +224,8 @@ def run_backend_pipeline(req, legacy_pipeline):
     profile = profiles[0] if profiles else None
     interrupt = (build_emergency_triage_response(req.message, profiles=profiles, has_food_context=bool(req.product))
                  or conversation_control_response(req.message, state)
+                 # The app never sends the previous turn; a bare follow-up needs its topic.
+                 or (None if req.chat_history or req.product else followup_without_context_response(req.message, state))
                  or standalone_cancellation_response(req.message, state, profiles=profiles, known_profiles=profiles)
                  or unresolved_profile_target_response(req.message, profiles, profiles, state))
     named_query = _explicit_named_product_query(req.message, profile)

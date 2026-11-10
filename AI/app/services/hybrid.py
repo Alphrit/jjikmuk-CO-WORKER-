@@ -1126,6 +1126,15 @@ def try_general_llm_fallback(
         "validation_failure_types": ["rag_evidence_insufficient"],
     }
     question_topics = requested_topics(message)
+    if not question_topics and not chat_history and re.search(
+            r"자세히|자세하게|더\s*알려|더\s*설명|쉽게|예를\s*들|무슨\s*말|그게|이어서|방금", original_question):
+        # '조금만 더 자세하게 알려줘': the app sends no previous turn, so ask
+        # for the topic instead of a generic 'not in the sources'.
+        return base_response.model_copy(update={
+            "answer": "이전 대화 내용은 함께 전달되지 않아서 어떤 주제를 이어서 말씀하시는지 알 수 없어요. "
+                      "'콜레스테롤 더 자세히 알려줘'처럼 주제를 함께 적어 주시면 다시 설명해 드릴게요.",
+            "fallback_reason": "followup_without_context",
+        })
     if not question_topics:
         # Unsupported questions need no embedding of the user's context.
         return base_response.model_copy(update=insufficient_scope)

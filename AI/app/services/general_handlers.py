@@ -372,8 +372,11 @@ def _key_nutrient_overview(products: Sequence[Product]) -> str:
             rows.append(f"- {label}: {', '.join(values)}")
     if not rows:
         return "비교할 영양 수치가 등록되어 있지 않아요. 포장지의 영양성분표를 확인해 주세요."
+    # The app does not send the previous turn, so the hint names both products.
+    names = [item.product_name for item in products[:2] if item.product_name]
+    example = f"{names[0]}이랑 {names[1]} 나트륨 비교해줘" if len(names) == 2 else "나트륨 기준으로 비교해줘"
     return ("주요 영양 수치예요. 기준량이 확인되지 않아 수치 차이를 그대로 비교하면 안 될 수 있어요.\n"
-            + "\n".join(rows) + "\n특정 기준으로 자세히 보려면 '나트륨 기준으로 비교해줘'처럼 물어봐 주세요.")
+            + "\n".join(rows) + f"\n특정 기준으로 자세히 보려면 '{example}'처럼 제품 이름과 함께 물어봐 주세요.")
 
 
 def _comparison_allergy_summary(
