@@ -1,0 +1,19 @@
+name: Chatbot CD
+on:
+  pull_request:
+    branches: [chatbot]
+  push:
+    branches: [chatbot]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: chatbot-production-deployment
+  cancel-in-progress: false
+jobs:
+  cd:
+    uses: KW-coworker/JJIKMUK-Backend/.github/workflows/chatbot-release.yml@f6a7eeeb17de526c17920a01ecfbb86cfaacab78
+    with:
+      controller_ref: f6a7eeeb17de526c17920a01ecfbb86cfaacab78
+      enabled: ${{ vars.CHATBOT_CD_ENABLED == 'true' }}
