@@ -591,7 +591,22 @@ def _dedupe_scored_products(scored: List[tuple[float, Product]]) -> List[tuple[f
             )
         ):
             deduped[key] = (score, product)
-    return sorted(deduped.values(), key=lambda item: item[0], reverse=True)
+    ranked = sorted(deduped.values(), key=lambda item: item[0], reverse=True)
+    # Different makers of the same name ('빼빼로' 롯데웰푸드/롯데제과) stay
+    # separate cards; among them the one with label data comes first. Rows
+    # with different names keep their search order ('진라면(순한맛)' first).
+    def same_name(product):
+        return _normalize_search_text(product.clean_product_name or product.product_name or "").replace(" ", "")
+    result: List[tuple[float, Product]] = []
+    for item in ranked:
+        result.append(item)
+        index = len(result) - 1
+        while (index > 0 and result[index - 1][0] == item[0]
+               and same_name(result[index - 1][1]) == same_name(item[1])
+               and _product_information_score(result[index - 1][1]) < _product_information_score(item[1])):
+            result[index - 1], result[index] = result[index], result[index - 1]
+            index -= 1
+    return result
 
 
 def _alternative_search_text(product: Product) -> str:

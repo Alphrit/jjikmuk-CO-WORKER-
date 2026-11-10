@@ -537,3 +537,16 @@ def test_same_company_factories_share_a_candidate():
     a = Product(product_name="허니버터칩", barcode="1", manufacturer_name="해태가루비(주)")
     b = Product(product_name="허니버터칩", barcode="2", manufacturer_name="해태가루비(주) 제 2공장")
     assert _product_candidate_key(a) == _product_candidate_key(b)
+
+
+def test_same_name_rows_put_label_data_first():
+    from app.infrastructure.product_storage.common import _dedupe_scored_products
+    empty = Product(product_name="빼빼로", barcode="1", manufacturer_name="롯데웰푸드(주)")
+    full = Product(product_name="빼빼로", barcode="2", manufacturer_name="롯데제과(주)", rawmtrl_nm="밀가루", nutrition={"kcal": 220.0})
+    other = Product(product_name="빼빼로 아몬드", barcode="3", manufacturer_name="롯데제과(주)", rawmtrl_nm="밀가루")
+    ranked = [p.barcode for _, p in _dedupe_scored_products([(1.0, empty), (1.0, full), (0.9, other)])]
+    assert ranked == ["2", "1", "3"]
+
+
+def test_deictic_allergy_question_asks_for_the_product():
+    assert rule_based_classify_intent("이거 알레르기 있어?", None, None, []) == "missing_product"

@@ -56,7 +56,9 @@ def productless_reference_question(message: str) -> bool:
         return False
     # A bare '그건' is also discourse ('그건 알겠고, 당류 0g은…'); only a
     # deictic with 상품/제품 refers to a product.
-    deictic = re.search(r"(?:^|\s)(?:이|그|저|해당|현재|방금)\s*(?:상품|제품)", text)
+    deictic = re.search(r"(?:^|\s)(?:이|그|저|해당|현재|방금)\s*(?:상품|제품)", text) or re.match(
+        # '이거 알레르기 있어?' points at a product just as '이 제품' does.
+        r"(?:이거|이건|이것|얘|요거|이 과자|이 음료)(?:에|에는|는|은|도)?\s", text)
     return bool((deictic and re.search(_LABEL_FIELD, text)) or re.fullmatch(_SHORT_NUTRIENT_FIELD, text))
 
 
