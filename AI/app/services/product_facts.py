@@ -8,6 +8,10 @@ unverified label.
 
 import re
 
+# Product.nutrition keys → backend nutrition-v1 value names.
+_CONTRACT_KEYS = {"kcal": "energyKcal", "carbohydrate": "carbsG", "protein": "proteinG", "fat": "fatG",
+                  "sugars": "sugarG", "sodium": "sodiumMg", "cholesterol": "cholesterolMg"}
+
 _INTOLERANCE_INGREDIENTS = ((r"(?:유당|락토스|젖당)\s*불내증", "우유"), (r"글루텐\s*불내증|셀리악", "밀"))
 
 
@@ -40,15 +44,47 @@ def product_facts_text(product, message, intent):
         # empty list, which printed '등록된 영양정보 — .').
         keys = [key for key, label in NUTRITION_LABELS.items()
                 if any(label in NUTRITION_KEYWORDS.get(name, (name,)) for name in requested)] or list(NUTRITION_LABELS)
+        from app.core.nutrition_basis import has_explicit_nutrition_basis, nutrition_basis_label
+        contract = getattr(product, "nutrition_contract", None)
+        basis_known = has_explicit_nutrition_basis(product)
+        package = contract.per_package if contract is not None else None
+        hundred = (contract.per100g or contract.per100ml) if contract is not None else None
+        wants_hundred = bool(re.search(r"100\s*(?:g|ml|그램|밀리)", message))
+
+        def number(value):
+            return f"{round(float(value), 1):,.10g}"
+
         def line(key):
-            label = NUTRITION_LABELS[key]
-            if product.nutrition.get(key) is not None:
-                return f"{label}: {product.nutrition[key]:,.10g}{NUTRITION_UNITS[key]}"
-            # Missing structured value: the label text the backend sent may still have it.
-            value = label_text_value(product, label)
-            return f"{label}: {value} (영양성분 표시 원문{label_text_basis(product)})" if value else f"{label}: 정보 없음"
+            label, unit = NUTRITION_LABELS[key], NUTRITION_UNITS[key]
+            value = product.nutrition.get(key)
+            if value is None:
+                # Missing structured value: the label text the backend sent may still have it.
+                text_value = label_text_value(product, label)
+                return f"{label}: {text_value} (영양성분 표시 원문{label_text_basis(product)})" if text_value else f"{label}: 정보 없음"
+            if not basis_known:
+                return f"{label}: {value:,.10g}{unit} (기준량 미확인)"
+            text = f"{label}: {value:,.10g}{unit} ({nutrition_basis_label(product)})"
+            # Backend-computed values; never multiplied again here.
+            contract_key = _CONTRACT_KEYS.get(key)
+            if package is not None and package.values.get(contract_key) is not None:
+                text += f", 한 봉지(총 {number(package.amount)}{package.unit}) 환산 {number(package.values[contract_key])}{unit}"
+            if (wants_hundred and hundred is not None and hundred.values.get(contract_key) is not None
+                    and nutrition_basis_label(product) != f"100{hundred.unit} 기준"):
+                text += f", 100{hundred.unit}당 환산 {number(hundred.values[contract_key])}{unit}"
+            return text
+
         lines = [line(key) for key in keys]
-        return "등록된 영양정보 — " + ", ".join(lines) + ". 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요.\n"
+        if not basis_known:
+            tail = " 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요."
+        elif package is not None:
+            tail = " 환산값은 원본 수치를 계산한 값이라 포장지 표기와 소수점이 다를 수 있어요."
+        else:
+            tail = {
+                "PACKAGE_QUANTITY_UNKNOWN": " 상품 전체 용량이 없어 한 봉지 기준으로는 환산하지 못했어요.",
+                "UNIT_MISMATCH": " 기준량과 전체 용량의 단위(g/ml)가 달라 한 봉지 기준으로는 환산하지 못했어요.",
+            }.get(contract.package_calculation_reason if contract is not None else None,
+                  " 한 봉지 기준 환산값은 전달되지 않았어요.")
+        return "등록된 영양정보 — " + ", ".join(lines) + "." + tail + "\n"
     if intent in {"ingredient_check", "product_summary"}:
         ingredients = product.rawmtrl_nm or ", ".join(product.ingredients)
         allergens = product.resolved_allergies()

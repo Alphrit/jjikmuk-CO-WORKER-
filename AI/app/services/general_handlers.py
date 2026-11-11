@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 
 from app.core.models import ChatResponse, Product, Profile
 from app.core.nutrition_basis import (
+    has_explicit_nutrition_basis,
     nutrition_basis_label,
     products_have_comparable_nutrition_basis,
 )
@@ -365,21 +366,39 @@ def _comparison_allergy_status(
 def _key_nutrient_overview(products: Sequence[Product]) -> str:
     """No axis named: list the main registered values side by side, no winner."""
     rows = []
+    # Backend nutrition-v1: when every product has a 100g (or 100ml) portion,
+    # compare on that common basis; the backend computed it, nothing is re-scaled.
+    contract_keys = {"kcal": "energyKcal", "sodium": "sodiumMg", "sugars": "sugarG"}
+    common = None
+    for portion_name in ("per100g", "per100ml"):
+        portions = [getattr(getattr(item, "nutrition_contract", None), portion_name, None) for item in products]
+        if portions and all(portion is not None for portion in portions):
+            common = (portion_name, portions)
+            break
     for key, label, unit in (("kcal", "열량", "kcal"), ("sodium", "나트륨", "mg"), ("sugars", "당류", "g")):
-        values = [f"{item.product_name or '이 제품'} {format_measurement(item.nutrition[key], unit)}"
-                  for item in products if item.nutrition.get(key) is not None]
+        if common is not None:
+            values = [f"{item.product_name or '이 제품'} {format_measurement(round(portion.values[contract_keys[key]], 1), unit)}"
+                      for item, portion in zip(products, common[1]) if portion.values.get(contract_keys[key]) is not None]
+        else:
+            values = [f"{item.product_name or '이 제품'} {format_measurement(item.nutrition[key], unit)}"
+                      + (f"({nutrition_basis_label(item)})" if has_explicit_nutrition_basis(item) else "")
+                      for item in products if item.nutrition.get(key) is not None]
         if values:
             rows.append(f"- {label}: {', '.join(values)}")
     if not rows:
         return "비교할 영양 수치가 등록되어 있지 않아요. 포장지의 영양성분표를 확인해 주세요."
+    if common is not None:
+        basis = "100g" if common[0] == "per100g" else "100ml"
+        intro = f"주요 영양 수치를 {basis}당 환산값으로 맞춰 봤어요. 환산값이라 포장지 표기와 소수점이 다를 수 있어요.\n"
+    else:
+        intro = "주요 영양 수치예요. 기준량이 확인되지 않아 수치 차이를 그대로 비교하면 안 될 수 있어요.\n"
     # The app does not send the previous turn, so the hint names both products.
     names = [item.product_name for item in products[:2] if item.product_name]
     def with_rang(name):
         hangul = [ch for ch in name if "가" <= ch <= "힣"]
         return name + ("이랑" if hangul and (ord(hangul[-1]) - 0xAC00) % 28 else "랑")
     example = f"{with_rang(names[0])} {names[1]} 나트륨 비교해줘" if len(names) == 2 else "나트륨 기준으로 비교해줘"
-    return ("주요 영양 수치예요. 기준량이 확인되지 않아 수치 차이를 그대로 비교하면 안 될 수 있어요.\n"
-            + "\n".join(rows) + f"\n특정 기준으로 자세히 보려면 '{example}'처럼 제품 이름과 함께 물어봐 주세요.")
+    return (intro + "\n".join(rows) + f"\n특정 기준으로 자세히 보려면 '{example}'처럼 제품 이름과 함께 물어봐 주세요.")
 
 
 def _comparison_allergy_summary(
