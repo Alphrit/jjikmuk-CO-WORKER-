@@ -305,5 +305,6 @@ def unknown_allergy_guidance(product, profile):
                 f"다만 '{names[0]} 함유' 같은 알레르기 표시가 등록되어 있지 않아, "
                 f"드시기 전에 포장지의 알레르기 표시에서 {listed}{subject(names[-1])} 있는지 한 번 확인해 주세요.")
     # Say what was checked and why it is not a 'no': the label is simply absent.
-    return (f"이 상품은 원재료와 알레르기 정보가 등록되어 있지 않아 {listed}{subject(names[-1])} 들어 있는지 알 수 없어요. "
-            f"드시기 전에 포장지의 원재료명과 알레르기 표시에서 {listed}{subject(names[-1])} 있는지 확인해 주세요.")
+    # Say plainly what to do: nothing registered, so the package decides.
+    return (f"이 상품은 원재료와 알레르기 정보가 등록되어 있지 않아 챗봇으로는 {listed} 포함 여부를 확인할 수 없어요. "
+            f"{listed} 알레르기가 있다면 포장지의 알레르기 표시에서 {listed}{subject(names[-1])} 없는 것을 확인한 뒤 드세요.")

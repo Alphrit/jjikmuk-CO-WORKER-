@@ -194,3 +194,24 @@ def test_polish_checks_do_not_misread_common_words():
 def test_a_lactose_question_on_a_selected_product_checks_ingredients():
     from app.services.backend_analysis import _bare_label_field
     assert _bare_label_field(" 유당 있어?") == "ingredient_check"
+
+
+@pytest.mark.parametrize("message", ["나도 먹을 수 있는 과자 추천해줘", "친구가 괜찮다고 해서 샀는데 땅콩 들어있어?"])
+def test_people_and_clauses_are_not_product_names(message):
+    from app.core.models import Profile
+    from app.services.conversation_router import _explicit_named_product_query
+    assert _explicit_named_product_query(message, Profile(profile_name="나", allergies=["새우"])) is None
+
+
+def test_same_verdict_for_everyone_may_be_merged():
+    from app.core.models import ChatResponse
+    response = ChatResponse.model_construct(intent="can_i_eat", answer="x", answer_source="backend", risk_level="high",
+                                            per_profile_results=[{"profile_name": "웹테스트"}, {"profile_name": "엄마"}],
+                                            current_product=None, comparison_products=[])
+    original = "새우깡 기준으로 확인했어요.\n웹테스트: 이 상품은 피해주세요. 충돌 항목: 새우.\n엄마: 이 상품은 피해주세요. 충돌 항목: 우유."
+    draft = "웹테스트 님과 엄마 님 모두 새우깡은 피하시는 게 좋아요.\n\n웹테스트 님은 새우, 엄마 님은 우유가 충돌해요."
+    assert answer_polish.draft_keeps_facts(original, draft, response)
+
+
+def test_me_is_not_searched_as_a_product():
+    assert extract_product_search_query("나도 먹을 수 있는 과자 추천해줘") == ""

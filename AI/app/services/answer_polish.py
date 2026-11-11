@@ -95,7 +95,7 @@ def draft_keeps_facts(original: str, draft: str, response: ChatResponse) -> bool
 # Verdict wording a draft must keep, and wording that would weaken it.
 _AVOID = re.compile(r"피해\s*(?:주세요|주셔야|야|요)|피하(?:세요|시는|는\s*(?:게|것|편)|고|셔야|셔요|시길|시면\s*좋)")
 _NOT_AVOID = re.compile(r"피하지\s*않|피할\s*필요|피해(?:는|가)\s|피하실\s*필요")
-_UNCERTAIN = re.compile(r"찾지\s*못|발견되지\s*않|볼\s*수\s*없|알\s*수\s*없|확실하지\s*않|단정할?\s*수\s*없|확인되지\s*않|부족")
+_UNCERTAIN = re.compile(r"찾지\s*못|발견되지\s*않|볼\s*수\s*없|알\s*수\s*없|확실하지\s*않|단정할?\s*수\s*없|확인되지\s*않|확인할\s*수\s*없|안내할\s*수\s*없|부족")
 # '새우가 없어요', '충돌이 없어요': an absence claim. Missing data ('정보가 없어요') is not one.
 _ABSENCE = re.compile(r"([가-힣]{1,12})(?:이|가|은|는)?\s*없(?:어요|습니다|다|음)")
 _DATA_WORDS = ("정보", "값", "기준량", "등록", "표시", "원재료", "자료", "기록")
@@ -189,7 +189,9 @@ def _rejection_reason(original: str, draft: str, response: ChatResponse) -> str 
                     for item in (response.per_profile_results or []))]
     if len(names) >= 2:
         before, after = _person_segments(original, names), _person_segments(draft, names)
-        for name in names:
+        same_for_all = len({bool(_AVOID.search(before.get(name, ""))) for name in names}) == 1
+        # When everyone has the same verdict nothing can be swapped; a merged sentence is fine.
+        for name in ([] if same_for_all else names):
             if bool(_AVOID.search(before.get(name, ""))) != bool(_AVOID.search(after.get(name, ""))):
                 return f"person_verdict:{name}"
     for cue, pattern in (("정보 없음", r"정보\s*(?:없음|가?\s*없)|값이\s*없|등록되어\s*있지\s*않"), ("질환", r"질환"), ("주의", r"주의")):

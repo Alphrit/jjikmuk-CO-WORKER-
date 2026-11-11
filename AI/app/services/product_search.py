@@ -338,6 +338,8 @@ def extract_product_search_query(message: str) -> str:
     query = _strip_product_query_suffix(cleaned)
     if compact_search_text(query) in PRODUCT_REFERENCE_ONLY_TOKENS:
         return ""
+    if re.fullmatch(r"(?:나|저|난|전)(?:도|는|은|만)?", query):
+        return ""  # '나도 먹을 수 있는 과자 추천해줘': the user, not a product
 
     compact_query = compact_search_text(query)
     canonical_generic_tokens = {

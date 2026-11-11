@@ -238,8 +238,8 @@ def test_unknown_allergy_verdict_gets_a_concrete_next_step_per_person():
     snack = Product(product_name="농심 새우깡90G", barcode="1", allergy=[])
     assert unknown_allergy_guidance(snack, Profile(name="나", allergies=["shrimp"])).startswith("피하는 게 좋아요. 제품명에 '새우'가")
     assert unknown_allergy_guidance(snack, Profile(name="엄마", allergies=["milk"])) == (
-        "이 상품은 원재료와 알레르기 정보가 등록되어 있지 않아 우유가 들어 있는지 알 수 없어요. "
-        "드시기 전에 포장지의 원재료명과 알레르기 표시에서 우유가 있는지 확인해 주세요.")
+        "이 상품은 원재료와 알레르기 정보가 등록되어 있지 않아 챗봇으로는 우유 포함 여부를 확인할 수 없어요. "
+        "우유 알레르기가 있다면 포장지의 알레르기 표시에서 우유가 없는 것을 확인한 뒤 드세요.")
     labelled = Product(product_name="새우깡", barcode="2", allergy=["새우"])
     assert unknown_allergy_guidance(labelled, Profile(name="나", allergies=["shrimp"])) is None
     chips = Product(product_name="포카칩오리지널", barcode="3", allergy=["대두", "소고기", "우유"])

@@ -1596,6 +1596,10 @@ def _explicit_named_product_query(message, profile):
         return None
     if re.fullmatch(r"(?:여기|거기|저기|이거|그거|저거|이것|그것|저것|얘|걔)(?:에|에는|엔|는|은|도)?", query):
         return None
+    if re.fullmatch(r"(?:나|저|난|전|내|제)(?:도|는|은|만|가)?", query):
+        return None  # '나도 먹을 수 있는 과자 추천해줘' names the user, not a product
+    if re.search(r"(?:는데|해서|어서|아서|다고|라고|더니|니까)(?:\s|$)", query):
+        return None  # '친구가 괜찮다고 해서 샀는데 …' is a clause, not a product name
     from app.services.comparison_language import comparison_axis_reply
     if comparison_axis_reply(text):
         return None

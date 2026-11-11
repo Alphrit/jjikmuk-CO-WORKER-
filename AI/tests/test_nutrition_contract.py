@@ -182,11 +182,11 @@ def test_a_typed_barcode_of_the_selected_product_is_answered(client):
     assert not body["product_candidates"] and body["intent"] == "can_i_eat"
 
 
-def test_elaboration_with_a_product_and_no_history_summarizes_it(client):
+def test_elaboration_with_a_product_and_no_history_offers_what_to_ask(client):
     payload = request_payload(statuses=("PASS",))
     payload["message"] = "조금만 더 자세하게 알려줘"
     body = client.post("/chat", json=payload, headers=headers(payload)).json()
-    assert body["intent"] == "product_summary" and "합성 시험 우유" in body["answer"]
+    assert "'합성 시험 우유 원재료 알려줘'" in body["answer"] and body["current_product"] is None
 
 
 def test_elaboration_with_history_keeps_the_previous_topic(client):
@@ -239,3 +239,18 @@ def test_no_disease_no_disease_line(client):
     payload = request_payload(statuses=("PASS",))
     payload["message"] = "이 제품 먹어도 돼?"
     assert "질환" not in client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+
+
+@pytest.mark.parametrize("message", ["기절할 만큼 맛있어", "오늘 달리기했더니 숨이 차"])
+def test_unrelated_chatter_does_not_bring_up_the_selected_product(client, message):
+    payload = request_payload(statuses=("DANGER",))
+    payload["message"] = message
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert "합성 시험 우유" not in body["answer"] and "피해" not in body["answer"]
+
+
+def test_a_narrowed_answer_does_not_mention_the_other_person(client):
+    payload = request_payload(statuses=("DANGER", "DANGER"))
+    payload["message"] = "엄마만 따로 알려줘"
+    answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+    assert "엄마:" in answer and "아빠" not in answer

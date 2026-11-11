@@ -147,10 +147,7 @@ def decision_response(req, intent, *, lead=""):
             names = ", ".join(f"{item['profile_name']} 님" for item in asked)
             text += (f"요청하신 {names} 결과만 알려 드릴게요.\n"
                      + "\n".join(f"{item['profile_name']}: {item['answer']}" for item in asked))
-            hidden = [item["profile_name"] for item in results if item not in asked and item.get("backend_status") != "PASS"]
-            if hidden:
-                # A narrowed answer must not hide someone else's warning.
-                text += f"\n참고로 {', '.join(hidden)} 님에게는 주의가 필요한 결과가 있어요."
+
         else:
             text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
@@ -347,8 +344,22 @@ def run_backend_pipeline(req, legacy_pipeline):
         intent_message = intent_message.replace(name, " ")
     intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, classify_history)
     if req.product and is_elaboration_followup(req.message):
-        # '조금만 더 자세하게 알려줘' with a product and no earlier turn: the product's full summary.
-        intent = "product_summary"
+        # '조금만 더 자세하게 알려줘' with no earlier turn: the topic is unknown (it may
+        # have been a general question), so offer what can be asked about this product.
+        from app.services.conversation_controls import _control_reply
+        name = req.product.product_name or "이 상품"
+        reply = _control_reply(
+            f"이전 대화 내용은 함께 전달되지 않아서 어떤 내용을 더 알려 드릴지 알 수 없어요. "
+            f"'{name} 원재료 알려줘', '{name} 영양정보 알려줘'처럼 궁금한 내용을 함께 적어 주세요.", state)
+        reply = reply.model_copy(update={"backend_analysis": _summary(req, "context_only")})
+        return reply, None, dict(profile=profile, product=None, barcode=req.product.barcode,
+                                 report_number=req.product.report_number, message=req.message)
+    if (intent in {"unknown", "ambiguous"} and req.product and not named_query and not person_named
+            and not re.search(r"먹|마셔|마시|성분|원재료|알레르기|알러지|영양|칼로리|열량|나트륨|당류|단백질|지방|들어|함유|이거|이\s*제품|괜찮|어때|섭취|표시|요약|정보|설명", req.message)):
+        # '기절할 만큼 맛있어', '오늘 달리기했더니 숨이 차': nothing about the selected product.
+        legacy_req = req.model_copy(update={"product": None, "raw_product": None, "barcode": None, "report_number": None})
+        response, resolved, activity = legacy_pipeline(legacy_req, log_activity=False)
+        return response.model_copy(update={"backend_analysis": _summary(req, "context_only")}), resolved, activity
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
         intent = "can_i_eat"
     elif intent in {"unknown", "ambiguous"} and req.product and person_named:
