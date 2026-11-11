@@ -223,3 +223,19 @@ def test_a_product_chosen_after_the_reset_is_kept(client):
     payload["chat_history"] = [{"role": "user", "content": "대화 초기화해줘"}, {"role": "assistant", "content": "맥락을 비웠어요."}]
     body = client.post("/chat", json=payload, headers=headers(payload)).json()
     assert (body.get("current_product") or {}).get("product_name") == "합성 시험 우유"
+
+
+def test_a_saved_disease_is_said_to_be_outside_the_verdict(client):
+    payload = request_payload(statuses=("DANGER", "PASS"))
+    payload["profiles"][1]["diseases"] = "당뇨"
+    payload["message"] = "이 제품 먹어도 돼?"
+    answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+    line = next(line for line in answer.splitlines() if line.startswith("아빠:"))
+    assert "등록된 질환은 이 판정에 포함되지 않아요" in line
+    assert answer.count("등록된 질환은 이 판정에 포함되지 않아요") == 1  # only the person with a disease
+
+
+def test_no_disease_no_disease_line(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "이 제품 먹어도 돼?"
+    assert "질환" not in client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]

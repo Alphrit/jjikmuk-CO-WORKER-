@@ -134,6 +134,10 @@ def decision_response(req, intent, *, lead=""):
                     # Same UNKNOWN verdict, but a concrete next step for this person.
                     item["answer"] = item["answer"].replace(_SAFETY_TEXT["UNKNOWN"], guidance)
                     item["reasons"] = [item["answer"][:1000]]
+                if getattr(profile, "conditions", None):
+                    # The verdict covers allergies and diets only; say so to whoever has a saved disease.
+                    item["answer"] = item["answer"].rstrip() + " 등록된 질환은 이 판정에 포함되지 않아요."
+                    item["reasons"] = [item["answer"][:1000]]
         asked = _asked_people(results, req.message)
         if len(results) == 1:
             # One person: no name label ('웹테스트: …' reads like a log line).
