@@ -82,6 +82,8 @@ def product_facts_text(product, message, intent):
             tail = f" 포장지 영양성분 표시의 {serving[0]}당 수치예요" + (f"(총 내용량 {serving[1]})" if serving[1] else "") + "."
             if wants_hundred and serving[0] not in {"100g", "100ml"}:
                 tail += f" 100g당 환산값은 전달되지 않아 표시 기준인 {serving[0]}당 수치로 안내했어요."
+            elif re.search(r"봉지|한\s*통|전체|다\s*먹", message):
+                tail += " 한 봉지 전체 값은 따로 전달되지 않아 계산하지 않았어요."
         elif not basis_known:
             tail = " 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요."
         elif package is not None:

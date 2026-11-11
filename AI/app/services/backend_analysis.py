@@ -304,7 +304,14 @@ def run_backend_pipeline(req, legacy_pipeline):
             activity = dict(profile=profile, product=None, barcode=req.product.barcode,
                             report_number=req.product.report_number, message=req.message)
             return response, None, activity
-        response = decision_response(req, intent)
+        # Diets are judged only from saved profiles; a diet named in the
+        # message ('비건인데 먹어도 돼?') must not look as if it were applied.
+        diet = re.search(r"비건|채식|베지테리언|페스코|락토|vegan|vegetarian", req.message, re.IGNORECASE)
+        lead = ""
+        if diet and not any(p.resolved_special_diets() for p in profiles):
+            lead = (f"방금 말씀한 식단 조건({diet[0]})은 프로필에 없어 이번 판정에 반영되지 않았어요. "
+                    "계속 적용하려면 설정에서 식단 조건을 추가해 주세요.\n")
+        response = decision_response(req, intent, lead=lead)
         resolved = req.product
         activity = dict(profile=profile, product=resolved, barcode=resolved.barcode,
                         report_number=resolved.report_number, message=req.message)

@@ -125,7 +125,7 @@ _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
     re.compile(r"\s+(?:나트륨|당류|단백질|포화지방|트랜스지방|식이섬유|지방|탄수화물|칼로리|열량|콜레스테롤)\s*(?:이랑|랑|하고|와|과|,)"),
     # '새우깡 건강에 괜찮아?', '커피 하루에 몇잔까지': health or amount wording.
     re.compile(r"\s+(?:건강|몸)(?:에|엔|상|에는)?\s*(?:괜찮|좋|나쁘|안\s*좋|해롭)"),
-    re.compile(r"\s+하루(?:에)?\s*(?:몇|얼마)"),
+    re.compile(r"(?:^|\s+)하루(?:에)?\s*(?:몇|얼마)"),
     # '새우깡 맛있어?', '새우깡 맛 어때': taste is not part of the name.
     re.compile(r"\s+맛(?:있|없|이\s*어때|은\s*어때|\s*어때)"),
     # '새우깡 몇 칼로리야'
@@ -318,6 +318,8 @@ def extract_product_search_query(message: str) -> str:
     # product clause so the catalog does not offer every shrimp-containing item.
     cleaned = _LEADING_PERSONAL_ALLERGY_PATTERN.sub("", cleaned).strip()
     cleaned = re.sub(r"^(?:다이어트|식단\s*관리|운동|저염식|저당식|비건|채식|감량)\s*(?:중|하는\s*중)(?:인데|이라|이라서|이어서|이니까|이야)?\s+", "", cleaned)
+    # '비건인데 먹어도 돼?', '나 채식주의자야. 이거 먹어도 돼?': a diet statement, not a product.
+    cleaned = re.sub(r"^(?:나는?\s*|저는?\s*)?(?:비건|채식주의자|채식|베지테리언|페스코|락토)(?:이야|야|이에요|예요|인데|이라|이라서|이니까|이고)?[.,!]?\s+", "", cleaned)
     # The named person in '상품명은 아빠가 먹어도 돼?' is a subject,
     # not part of the product's catalog identity.
     cleaned = re.sub(r"^(.+?)(?:은|는)\s+\S+(?:이|가|도)\s+(?=먹어도|먹을\s*수|마셔도|드셔도|드실\s*수)", r"\1 ", cleaned)

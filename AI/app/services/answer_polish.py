@@ -23,9 +23,11 @@ _PROMPT = """아래는 식품 알레르기 안내 챗봇이 규칙으로 만든 
 지킬 것:
 - 판정(피해야 함 / 포장지 확인 필요 / 충돌을 찾지 못함), 제품명, 사람 이름, 성분·알레르기 이름, 숫자와 단위는 원문 그대로 쓰세요.
 - 원문에 없는 정보, 이유, 건강 효과, 섭취 권유를 덧붙이지 마세요.
+- 원문에 없는 숫자를 계산해서 넣지 마세요(환산·합계·비율 포함).
 - '안전해요', '먹어도 돼요'처럼 원문보다 안심시키는 표현을 쓰지 마세요.
 - 원문에 사람 이름이 여러 명 있으면 사람마다 따로 한 문장 이상 남기고 'OO 님'으로 부르세요. 원문에 이름이 없으면 이름을 쓰지 마세요.
 - '판정됐어요' 같은 딱딱한 말 대신 '피하시는 게 좋아요', '포장지를 확인해 주세요'처럼 직접 권하는 말로 쓰세요.
+- '확인 필요예요', '포장지 확인 필요해요'처럼 명사로 끝내지 말고 '포장지를 확인해 주세요'처럼 자연스러운 문장으로 끝내세요.
 - 원문에 따옴표로 든 예시 문장('…처럼 물어봐 주세요')은 그대로 두세요.
 
 읽기 쉽게 쓰는 법:
@@ -63,7 +65,8 @@ def _required_terms(original: str, response: ChatResponse) -> list[str]:
              if name and name in original]
     if len(set(names)) >= 2:
         terms += names
-    terms += re.findall(r"'([^']{2,60})'", original)  # quoted example questions stay verbatim
+    # Quoted example questions ('…'처럼) are sent as typed; other quotes may be reworded.
+    terms += re.findall(r"'([^']{2,60})'\s*처럼", original)
     for match in re.finditer(r"충돌 항목:\s*([^.\n]+)", original):
         terms += [part.strip() for part in match[1].split(",") if part.strip()]
     terms += [name for name in ALLERGEN_CANONICAL_ALIASES if len(name) >= 2 and name in original]
@@ -93,8 +96,9 @@ def _rejection_reason(original: str, draft: str, response: ChatResponse) -> str 
         return "list_marker"
     if "**" in draft or "__" in draft:
         return "markdown"
-    if any(term not in draft for term in _required_terms(original, response)):
-        return "required_term"
+    missing = [term for term in _required_terms(original, response) if term not in draft]
+    if missing:
+        return f"required_term:{missing[0][:30]}"
     if _numbers(draft) != _numbers(original):
         return "numbers"
     # Each verdict cue of the rule text must survive.
@@ -111,7 +115,11 @@ def _rejection_reason(original: str, draft: str, response: ChatResponse) -> str 
 
 
 def _eligible(response: ChatResponse) -> bool:
-    if response.answer_source not in {"backend", "rules"} or len(response.answer or "") < 40:
+    # RAG answers are polished too, so every reply reads in the same 해요체.
+    # Short rule replies are fixed prompts; a short RAG answer still needs the same tone.
+    if response.answer_source not in {"backend", "rules", "rag"}:
+        return False
+    if len(response.answer or "") < (10 if response.answer_source == "rag" else 40):
         return False
     # Emergency guidance is fixed and must not wait; candidate prompts are UI text.
     if response.task_type == "safety_triage" or response.intent == "emergency_safety":
@@ -138,7 +146,7 @@ def polish_answer(response: ChatResponse) -> ChatResponse:
     try:
         reason = _rejection_reason(original, draft, response)
         if reason is not None:
-            logger.info("Answer polish kept the rule text: reason=%s intent=%s", reason, response.intent)
+            logger.warning("Answer polish kept the rule text: reason=%s intent=%s", reason, response.intent)
             return response
         # At most one blank line between paragraphs.
         draft = re.sub(r"\n\s*\n\s*(?:\n\s*)*", "\n\n", draft)

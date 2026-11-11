@@ -124,3 +124,11 @@ def test_backend_main_payload_for_the_latest_db_row():
     assert "열량: 542kcal (100g 기준), 한 봉지(총 60g) 환산 325.2kcal" in text
     assert "나트륨: 383mg (100g 기준), 한 봉지(총 60g) 환산 229.8mg" in text
     assert "기준량" not in text.replace("기준)", "")
+
+
+def test_a_diet_named_in_the_message_is_said_to_be_unapplied(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "비건인데 먹어도 돼?"
+    response = client.post("/chat", json=payload, headers=headers(payload))
+    assert response.status_code == 200
+    assert "식단 조건(비건)은 프로필에 없어 이번 판정에 반영되지 않았어요" in response.json()["answer"]

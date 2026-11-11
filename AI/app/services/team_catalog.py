@@ -28,9 +28,12 @@ NO_PRODUCT_GUIDANCE_INTENTS = {'missing_product', 'unknown'}
 # One closing line for product answers; the final pass adds it where missing.
 COMPARISON_SOURCE_NOTE = PRODUCT_REFERENCE_NOTE
 COMPARISON_NO_CONFLICT_NOTE = '등록 표시에서 충돌을 찾지 못한 제품도 출처 미확인 정보라 안전하다고 판단할 수 없어요.'
+# The app sends neither the previous turn nor the earlier product, so '둘 중에'
+# cannot be resolved: ask for both names instead of refusing the comparison.
 COMPARISON_UNAVAILABLE_ANSWER = (
-    '출처가 확인되지 않은 상품 정보로는 알레르기 충돌이 없다고 비교해 드릴 수 없어요. '
-    '각 제품을 선택하면 등록된 원재료·알레르기 표시를 확인해 드릴게요.'
+    '비교할 두 제품을 확인하지 못했어요. 이전 대화의 제품은 함께 전달되지 않아요.\n\n'
+    "'허니버터칩이랑 포카칩 나트륨 비교해줘'처럼 두 제품 이름을 함께 적어 주시면 "
+    '등록된 알레르기 표시와 영양 수치를 나란히 보여 드릴게요.'
 )
 
 

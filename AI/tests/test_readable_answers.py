@@ -83,3 +83,35 @@ def test_paragraphs_and_dot_bullets_are_kept(polish_on):
 def test_markdown_or_other_list_markers_keep_the_rule_text(polish_on, reply):
     polish_on(reply)
     assert answer_polish.polish_answer(_response()).answer == RULE
+
+
+def test_product_chips_name_the_product_because_the_app_sends_no_barcode():
+    from app.services.followup_questions import tidy_followups
+    response = ChatResponse(intent="can_i_eat", answer="새우깡은 피하시는 게 좋아요.", answer_source="backend",
+                            risk_level="high",
+                            recommended_questions=["이 상품의 원재료를 알려줘", "이 상품의 영양정보를 알려줘"])
+    from app.core.public_product import public_product_payload
+    response = response.model_copy(update={"current_product": public_product_payload(_saeukkang())})
+    chips = tidy_followups(response, "새우깡의 원재료를 알려줘", team_mode=True).recommended_questions
+    assert chips == ["새우깡의 영양정보를 알려줘"]  # the question just asked is not offered again
+
+
+def test_a_day_amount_question_is_not_a_product_name():
+    from app.services.product_search import extract_product_search_query
+    assert extract_product_search_query("하루에 얼마나 먹어도 돼?") == ""
+    assert extract_product_search_query("커피 하루에 몇 잔까지 괜찮아?") == "커피"
+    assert extract_product_search_query("비건인데 먹어도 돼?") == ""
+    assert extract_product_search_query("나 채식주의자야. 새우깡 먹어도 돼?") == "새우깡"
+
+
+def test_rag_answers_are_polished_too():
+    rag = ChatResponse(intent="general_nutrition_guide", answer="콜레스테롤은 몸의 모든 세포에 있는 밀랍 같은 지방 유사 물질입니다. 음식으로도 섭취해요.",
+                       answer_source="rag", risk_level="unknown")
+    assert answer_polish._eligible(rag)
+
+
+def test_only_quoted_example_questions_must_stay_verbatim():
+    original = "원재료 목록에는 새우가 보이지 않아요. '새우 함유' 같은 표시는 없어요. '새우깡 나트륨 알려줘'처럼 물어봐 주세요."
+    terms = answer_polish._required_terms(original, ChatResponse(intent="ingredient_check", answer=original,
+                                                                 answer_source="backend", risk_level="unknown"))
+    assert "새우깡 나트륨 알려줘" in terms and "새우 함유" not in terms and "새우" in terms
