@@ -1594,6 +1594,8 @@ def _explicit_named_product_query(message, profile):
     # '이 제품에 특정 성분이 들어 있어?' refers to a product; it names none.
     if re.match(r"(?:이|그|저|해당|현재|방금)\s*(?:제품|상품)", query):
         return None
+    if re.fullmatch(r"(?:여기|거기|저기|이거|그거|저거|이것|그것|저것|얘|걔)(?:에|에는|엔|는|은|도)?", query):
+        return None
     from app.services.comparison_language import comparison_axis_reply
     if comparison_axis_reply(text):
         return None
@@ -1657,8 +1659,20 @@ def _explicit_named_product_query(message, profile):
         # '새우깡은?' after another product names the next product; '우유는?'
         # and '칼로리는?' stay questions about the current one.
         return query
-    if not re.search(r"먹어도|먹어두|머거도|먹을\s*수|마셔도|마셔두|섭취해도|어때|괜찮|바꿨어|바꿨|변경했|선택했|골랐|찾아|검색|원재료|성분|나트륨|당류|단백질|열량|칼로리|콜레스테롤", text):
+    from app.intent.text import detect_ingredient_keyword
+    # '칙촉 계란 들어 있어?': containment wording counts only with an ingredient named.
+    asks_ingredient = bool(re.search(r"들어\s*(?:있|갔|가)|들었|함유|포함|있어(?:요)?\s*(?:[?？]|$)|있나|있는지", text)
+                           and (detect_ingredient_keyword(text) or re.search(r"유당|락토스|젖당|글루텐", text)))
+    if not asks_ingredient and not re.search(r"먹어도|먹어두|머거도|먹을\s*수|마셔도|마셔두|섭취해도|어때|괜찮|바꿨어|바꿨|변경했|선택했|골랐|찾아|검색|원재료|성분|나트륨|당류|단백질|열량|칼로리|콜레스테롤", text):
         return None
+    if asks_ingredient:
+        # '칙촉 계란 들어 있어?' names 칙촉; '계란 들어 있어?' names only an ingredient.
+        from app.data.dictionaries import INGREDIENT_KEYWORDS
+        ingredient_words = {compact_search_text(word) for word in INGREDIENT_KEYWORDS}
+        bare = re.sub(r"^(?:혹시|그럼|그러면)\s+|\s*(?:있어요?|있나요?|있는지)$", "", query)
+        if any(compact_search_text(word) in ingredient_words or detect_ingredient_keyword(word) == word
+               for word in (query, bare)):
+            return None
     return query
 
 

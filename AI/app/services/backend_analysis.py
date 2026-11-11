@@ -356,7 +356,12 @@ def run_backend_pipeline(req, legacy_pipeline):
 
     # Keep all legacy task handlers. Product decisions they compute for an
     # unselected barcode must not masquerade as a backend v2 decision.
-    response, resolved, activity = legacy_pipeline(req, log_activity=False)
+    legacy_req = req
+    if req.product is not None and named_query and not same_product:
+        # '스팸 나트륨 얼마야?' with 코카콜라 still selected names a new product:
+        # search for it instead of answering about the old selection.
+        legacy_req = req.model_copy(update={"product": None, "raw_product": None, "barcode": None, "report_number": None})
+    response, resolved, activity = legacy_pipeline(legacy_req, log_activity=False)
     application = "context_only"
     found_query = bool(named_query and response.intent in {"unknown", "ambiguous"})
     if not interrupt and (response.intent in PRODUCT_INTENTS or found_query) and response.current_product is not None:

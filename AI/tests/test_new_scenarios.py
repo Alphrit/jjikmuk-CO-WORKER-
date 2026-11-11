@@ -100,3 +100,14 @@ def test_long_ingredient_lists_are_deduplicated_and_shortened():
     raw = "향료, 향료, " + ", ".join(f"원료{i}" for i in range(20)) + ", 유화제, 유화제"
     text = product_facts_text(Product(product_name="초코파이", barcode="c", rawmtrl_nm=raw), "성분 알려줘", "product_summary")
     assert text.count("향료") == 1 and "외 7가지" in text
+
+
+@pytest.mark.parametrize("message, name", [
+    ("칙촉 계란 들어 있어?", "칙촉"), ("빼빼로 땅콩 들어 있어?", "빼빼로"), ("매일우유 유당 있어?", "매일우유"),
+    ("새우깡에 우유 들어 있어?", "새우깡"), ("계란 들어 있어?", None), ("유당 있어?", None), ("우유는 들어 있어?", None),
+    ("이거 우유 들어 있어?", None), ("여기에 대두 들어 있어?", None), ("혹시 계란 있어?", None), ("트랜스지방 있어?", None),
+])
+def test_a_new_product_in_an_ingredient_question_is_named(message, name):
+    from app.core.models import Profile
+    from app.services.conversation_router import _explicit_named_product_query
+    assert _explicit_named_product_query(message, Profile(profile_name="나", allergies=["새우"])) == name

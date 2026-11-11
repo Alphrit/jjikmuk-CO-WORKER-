@@ -164,3 +164,12 @@ def test_an_amount_question_says_amounts_are_not_judged(client):
     payload["message"] = "하루에 몇 개까지 먹어도 돼?"
     answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
     assert "얼마나 먹어도 되는지는 개인 상태에 따라 달라 안내하지 않아요" in answer
+
+
+@pytest.mark.parametrize("message", ["새우깡 나트륨 얼마야?", "칙촉 계란 들어 있어?"])
+def test_a_newly_named_product_is_not_answered_with_the_kept_one(client, message):
+    payload = request_payload(statuses=("PASS",))  # the app kept '합성 시험 우유'
+    payload["message"] = message
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert (body.get("current_product") or {}).get("product_name") != "합성 시험 우유"
+    assert "합성 시험 우유" not in body["answer"]
