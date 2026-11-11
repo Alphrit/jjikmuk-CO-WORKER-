@@ -249,12 +249,14 @@ class PublicProductCandidate(PublicPayloadModel):
 
     product_name: Optional[PublicProductName] = None
     report_number: Optional[PublicProductIdentifier] = None
+    # The Android card reads prdlst_dcnm with manufacturer_name as an alternate key
+    # and keeps the last one present, so the maker comes after the food type.
+    prdlst_dcnm: Optional[PublicProductShortText] = None
     manufacturer_name: Optional[PublicProductShortText] = None
     company_name: Optional[PublicProductShortText] = None
     weight: Optional[PublicProductShortText] = None
     image_url: Optional[PublicImageUrl] = None
     total_weight: Optional[PublicProductShortText] = None
-    prdlst_dcnm: Optional[PublicProductShortText] = None
     barcode: Optional[PublicProductIdentifier] = None
     label_trust: PublicProductLabelTrust
 

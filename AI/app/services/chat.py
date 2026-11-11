@@ -856,11 +856,12 @@ def generate_chat_response(
                 risk_level="unknown", conversation_state=conversation_state, internal_conversation_state=conversation_state,
             )
     effective_profiles = active_profiles_from_inputs(profile, active_profiles)
+    from app.services.emergency_triage import symptom_question_guidance
     emergency_response = build_emergency_triage_response(
         message,
         profiles=effective_profiles,
         has_food_context=bool(product or (conversation_state or {}).get("last_confirmed_product")),
-    )
+    ) or symptom_question_guidance(message, effective_profiles)
     if emergency_response is not None:
         # Defense in depth for callers that invoke this service directly. The
         # public API performs the same check even earlier, before product lookup.
@@ -873,7 +874,7 @@ def generate_chat_response(
     from app.services.request_language import standalone_cancellation_response, request_lifecycle, request_state_after_action
     from app.services.conversation_controls import (
         conversation_control_response, followup_without_context_response, history_after_reset,
-        message_with_previous_topic,
+        message_with_previous_topic, say_it_is_safe_response,
     )
     chat_history = history_after_reset(chat_history)
     message = message_with_previous_topic(message, chat_history)
@@ -881,6 +882,8 @@ def generate_chat_response(
     if control is None and not chat_history and product is None:
         # The app sends no previous turn: a bare '더 자세히 알려줘' needs its topic.
         control = followup_without_context_response(message, conversation_state)
+    if control is None:
+        control = say_it_is_safe_response(message, conversation_state)
     if control is not None:
         return attach_response_assessment(control, profiles=effective_profiles, product=None)
     current_condition_message = message

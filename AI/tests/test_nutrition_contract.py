@@ -45,7 +45,7 @@ def test_answers_state_the_basis_and_use_backend_package_values():
     pocky = Product.model_validate({"barcode": "1", "productName": "포키 녹차", "energyKcal": 500.0,
                                     "nutrition": contract(per_package={"energyKcal": 220.0})})
     text = product_facts_text(pocky, "칼로리 얼마야?", "nutrition_explain")
-    assert "500kcal (100g 기준)" in text and "한 봉지(총 44g) 환산 220kcal" in text
+    assert "500kcal (100g 기준)" in text and "총 내용량(44g) 기준 환산 220kcal" in text
     assert "기준량이 전달되지 않아" not in text
     serving = Product.model_validate({"barcode": "2", "productName": "새우깡", "energyKcal": 160.0,
                                       "nutrition": contract(basis_amount=30, package=None, per100={"energyKcal": 533.3333},
@@ -58,7 +58,7 @@ def test_answers_state_the_basis_and_use_backend_package_values():
 def test_without_the_contract_the_answer_is_unchanged_but_names_the_unknown_basis():
     legacy = Product.model_validate({"barcode": "3", "productName": "허니버터칩", "energyKcal": 325.2})
     text = product_facts_text(legacy, "칼로리", "nutrition_explain")
-    assert "325.2kcal (기준량 미확인)" in text and "기준량이 전달되지 않아" in text
+    assert "열량: 325.2kcal" in text and "(기준량 미확인)" not in text and "기준량이 전달되지 않아" in text
 
 
 def test_comparison_uses_a_common_per_100_basis():
@@ -100,7 +100,7 @@ def test_backend_request_with_nutrition_contract_end_to_end(client):
     response = client.post("/chat", json=payload, headers=headers(payload))
     assert response.status_code == 200
     answer = response.json()["answer"]
-    assert "60kcal (100ml 기준)" in answer and "한 봉지(총 200ml) 환산 120kcal" in answer
+    assert "60kcal (100ml 기준)" in answer and "총 내용량(200ml) 기준 환산 120kcal" in answer
 
 
 def test_backend_main_payload_for_the_latest_db_row():
@@ -121,8 +121,8 @@ def test_backend_main_payload_for_the_latest_db_row():
                       "perPackage": portion(60, 325.2, 229.8),
                       "packageCalculationStatus": "CALCULATED", "packageCalculationReason": None}})
     text = product_facts_text(honey, "칼로리랑 나트륨 알려줘", "nutrition_explain")
-    assert "열량: 542kcal (100g 기준), 한 봉지(총 60g) 환산 325.2kcal" in text
-    assert "나트륨: 383mg (100g 기준), 한 봉지(총 60g) 환산 229.8mg" in text
+    assert "열량: 542kcal (100g 기준), 총 내용량(60g) 기준 환산 325.2kcal" in text
+    assert "나트륨: 383mg (100g 기준), 총 내용량(60g) 기준 환산 229.8mg" in text
     assert "기준량" not in text.replace("기준)", "")
 
 
@@ -157,3 +157,100 @@ def test_me_only_is_a_person_not_a_product_search(client):
     payload["message"] = "나만 알려줘"
     body = client.post("/chat", json=payload, headers=headers(payload)).json()
     assert body["intent"] == "can_i_eat" and not body["product_candidates"]
+
+
+def test_an_amount_question_says_amounts_are_not_judged(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "하루에 몇 개까지 먹어도 돼?"
+    answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+    assert "얼마나 먹어도 되는지는 개인 상태에 따라 달라 안내하지 않아요" in answer
+
+
+@pytest.mark.parametrize("message", ["새우깡 나트륨 얼마야?", "칙촉 계란 들어 있어?"])
+def test_a_newly_named_product_is_not_answered_with_the_kept_one(client, message):
+    payload = request_payload(statuses=("PASS",))  # the app kept '합성 시험 우유'
+    payload["message"] = message
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert (body.get("current_product") or {}).get("product_name") != "합성 시험 우유"
+    assert "합성 시험 우유" not in body["answer"]
+
+
+def test_a_typed_barcode_of_the_selected_product_is_answered(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = f"{payload['product']['barcode']} 먹어도 돼?"
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert not body["product_candidates"] and body["intent"] == "can_i_eat"
+
+
+def test_elaboration_with_a_product_and_no_history_offers_what_to_ask(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "조금만 더 자세하게 알려줘"
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert "'합성 시험 우유 원재료 알려줘'" in body["answer"] and body["current_product"] is None
+
+
+def test_elaboration_with_history_keeps_the_previous_topic(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "조금만 더 자세하게 알려줘"
+    payload["chat_history"] = [{"role": "user", "content": "이 제품 먹어도 돼?"}, {"role": "assistant", "content": "충돌 없음"},
+                               {"role": "user", "content": "나트륨은?"}, {"role": "assistant", "content": "40mg"}]
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert body["intent"] == "nutrition_explain" and "나트륨" in body["answer"]
+
+
+def test_a_general_question_while_a_product_is_selected_is_answered_generally(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "HACCP 마크가 뭐야?"
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert body["intent"].startswith("general_") and body["current_product"] is None
+    assert "합성 시험 우유" not in body["answer"]
+
+
+
+def test_after_a_reset_the_old_selection_is_not_answered(client):
+    payload = request_payload(statuses=("PASS",))  # the app still sends '합성 시험 우유'
+    payload["message"] = "먹어도 돼?"
+    payload["chat_history"] = [{"role": "user", "content": "이 제품 먹어도 돼?"}, {"role": "assistant", "content": "합성 시험 우유는 …"},
+                               {"role": "user", "content": "대화 초기화해줘"}, {"role": "assistant", "content": "맥락을 비웠어요."},
+                               {"role": "user", "content": "고마워"}, {"role": "assistant", "content": "천만에요."}]
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert "합성 시험 우유" not in body["answer"] and body["current_product"] is None
+
+
+def test_a_product_chosen_after_the_reset_is_kept(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "합성 시험 우유 먹어도 돼?"
+    payload["chat_history"] = [{"role": "user", "content": "대화 초기화해줘"}, {"role": "assistant", "content": "맥락을 비웠어요."}]
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert (body.get("current_product") or {}).get("product_name") == "합성 시험 우유"
+
+
+def test_a_saved_disease_is_said_to_be_outside_the_verdict(client):
+    payload = request_payload(statuses=("DANGER", "PASS"))
+    payload["profiles"][1]["diseases"] = "당뇨"
+    payload["message"] = "이 제품 먹어도 돼?"
+    answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+    line = next(line for line in answer.splitlines() if line.startswith("아빠:"))
+    assert "등록된 질환은 이 판정에 포함되지 않아요" in line
+    assert answer.count("등록된 질환은 이 판정에 포함되지 않아요") == 1  # only the person with a disease
+
+
+def test_no_disease_no_disease_line(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "이 제품 먹어도 돼?"
+    assert "질환" not in client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+
+
+@pytest.mark.parametrize("message", ["기절할 만큼 맛있어", "오늘 달리기했더니 숨이 차"])
+def test_unrelated_chatter_does_not_bring_up_the_selected_product(client, message):
+    payload = request_payload(statuses=("DANGER",))
+    payload["message"] = message
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert "합성 시험 우유" not in body["answer"] and "피해" not in body["answer"]
+
+
+def test_a_narrowed_answer_does_not_mention_the_other_person(client):
+    payload = request_payload(statuses=("DANGER", "DANGER"))
+    payload["message"] = "엄마만 따로 알려줘"
+    answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+    assert "엄마:" in answer and "아빠" not in answer

@@ -102,7 +102,9 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
     # Stage A: no catalog fact and no personal verdict (general explanations,
     # out-of-domain and "which product?" guidance). Nothing here depends on the
     # unverified catalog, so it is kept instead of a product-search prompt.
-    if (resolved_product is None and response.intent in GENERAL_INTENTS | NO_PRODUCT_GUIDANCE_INTENTS
+    # A general explanation stays one even while a product is selected ('목이 부으면 어떻게 해?').
+    if ((resolved_product is None or response.intent in GENERAL_INTENTS)
+            and response.intent in GENERAL_INTENTS | NO_PRODUCT_GUIDANCE_INTENTS
             and (response.answer_source == 'rules' or external_enabled
                  or response.fallback_reason == LOCAL_EXCERPT_REASON)
             and summary is not None and not summary.safety_assessed
@@ -173,7 +175,10 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
                 or response.task_type in {'product_chat', 'product_assessment'}):
             answer += '\n선택 전 정보나 출처 미확인 정보로는 섭취 가능 여부를 확정할 수 없어요.'
 
-    warning = response.overall_decision in {'avoid', 'caution'}
+    # A recommendation, recipe or comparison reply is not about the product
+    # selected earlier, so that product's warning is not repeated there.
+    warning = (response.overall_decision in {'avoid', 'caution'}
+               and response.intent not in {'recipe_recommend', 'alternative_food_recommend', 'food_compare'})
     if warning:
         answer = '등록 정보에 주의 신호가 있어요. 섭취 전에 해당 표시를 확인해 주세요.\n\n' + answer
     bounded = ChatResponse(

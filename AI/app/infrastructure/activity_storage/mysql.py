@@ -3,6 +3,7 @@
 from app.core.models import ActivityRecord
 from threading import Lock
 from typing import Any, Dict, List, Optional
+import hashlib
 import json
 import re
 
@@ -29,6 +30,9 @@ logger = logging.getLogger(__name__)
 
 
 class MySQLActivityRepository(ActivityRepository):
+    # The base chatbot_logs table. Columns added by later AI migrations
+    # (20260730/20260828 audit fields, 20260909 product trace) are written only
+    # when the deployed DB has them, so an older DB keeps logging and /ready.
     CHATBOT_LOG_REQUIRED_COLUMNS = {
         "id",
         "user_id",
@@ -41,24 +45,11 @@ class MySQLActivityRepository(ActivityRepository):
         "answer_source",
         "pipeline_stage",
         "risk_level",
-        "confidence",
-        "confidence_reasons",
-        "fallback_reason",
-        "validation_failure_types",
-        "critical_safety_violation",
-        "blocked_llm_output_stored",
-        "response_id",
-        "external_ai_used",
-        "external_ai_services",
-        "policy_version",
-        "applied_rule_ids",
-        "source_ids",
-        "response_product_label_trace",
         "created_at",
     }
-    # Columns whose width must hold what the backend sends. A narrower column
-    # fails every such insert with ER_DATA_TOO_LONG while the reply still goes
-    # out, so the loss is silent; startup warns with the migration to apply.
+    # Columns whose width must hold what the backend sends. Without the widening
+    # migration a longer value is shortened to fit (_fit_column), so the row
+    # is still saved and no DB change is needed.
     CHATBOT_LOG_MIN_CHAR_LENGTH = {
         "policy_version": (256, "AI/migrations/20261109_chatbot_log_policy_version_length.sql"),
     }
@@ -105,6 +96,8 @@ class MySQLActivityRepository(ActivityRepository):
         self.enable_legacy_history_writes = enable_legacy_history_writes is True
         self._chatbot_log_schema_ready = False
         self._chatbot_log_schema_lock = Lock()
+        self._chatbot_log_columns: set[str] = set()
+        self._column_widths: Dict[str, int] = {}
 
     def _connect(self):
         if self._connection_pool is None:
@@ -138,9 +131,30 @@ class MySQLActivityRepository(ActivityRepository):
         short = []
         for column, (minimum, _migration) in self.CHATBOT_LOG_MIN_CHAR_LENGTH.items():
             width = re.fullmatch(r"(?:var)?char\((\d+)\)", types.get(column, "").lower())
+            if width:
+                self.__dict__.setdefault("_column_widths", {})[column] = int(width[1])
             if width and int(width[1]) < minimum:
                 short.append(column)
         return short
+
+    def _existing_log_columns(self, conn, wanted) -> list[str]:
+        try:
+            existing = self._table_columns(conn, self.quoted_chat_log_table_name)
+        except Exception:  # unknown columns: read them all, as before
+            return list(wanted)
+        return [column for column in wanted if column in existing] or list(wanted)
+
+    def _fit_column(self, column: str, value):
+        """Shorten a value for a narrower existing column instead of losing the row.
+
+        '…-purpose-v5.2' (37 chars) on VARCHAR(32) would fail every insert; a
+        shortened value with a hash tail stays distinguishable.
+        """
+        width = getattr(self, "_column_widths", {}).get(column)
+        if not isinstance(value, str) or width is None or len(value) <= width:
+            return value
+        digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:8]
+        return value[: max(width - 9, 0)] + "~" + digest
 
     def readiness_check(self) -> Dict[str, Any]:
         try:
@@ -270,8 +284,13 @@ class MySQLActivityRepository(ActivityRepository):
         if status.get("available") is True:
             for column in status.get("short_audit_columns") or []:
                 minimum, migration = self.CHATBOT_LOG_MIN_CHAR_LENGTH[column]
-                logger.warning("MySQL chatbot_logs.%s is narrower than %d characters; rows with longer "
-                               "values will not be saved. Apply %s.", column, minimum, migration)
+                logger.warning("MySQL chatbot_logs.%s is narrower than %d characters; longer values are "
+                            "shortened to fit (optional widening: %s).", column, minimum, migration)
+            try:
+                with self._connect() as conn:
+                    self._chatbot_log_columns = self._table_columns(conn, self.quoted_chat_log_table_name)
+            except Exception:  # an unknown column list writes every column, as before
+                self._chatbot_log_columns = set()
             return
         reason = status.get("reason") or "mysql_activity_schema_not_ready"
         if reason == "mysql_activity_check_failed":
@@ -286,8 +305,8 @@ class MySQLActivityRepository(ActivityRepository):
         )
         raise RuntimeError(
             "MySQL chatbot audit schema is not ready; apply "
-            "the required migrations through "
-            "AI/migrations/20260909_chatbot_log_product_trace.sql before startup."
+            "the base chatbot_logs table (backend schema) before startup; later audit columns "
+            "(AI/migrations/20260909_chatbot_log_product_trace.sql) are optional."
             f"{detail}"
         )
 
@@ -306,47 +325,40 @@ class MySQLActivityRepository(ActivityRepository):
     def _save_chatbot_log(self, activity: ActivityRecord) -> None:
         self.ensure_chatbot_log_table()
         chatbot_action_type = "chat" if activity.message or activity.intent else activity.action_type
+        values = {
+            "user_id": activity.user_id,
+            "barcode": activity.barcode,
+            "report_number": activity.report_number,
+            "product_id": activity.product_id,
+            "action_type": chatbot_action_type,
+            "message": activity.message,
+            "intent": activity.intent,
+            "answer_source": activity.answer_source,
+            "pipeline_stage": activity.pipeline_stage,
+            "risk_level": activity.risk_level,
+            "confidence": activity.confidence,
+            "confidence_reasons": json.dumps(activity.confidence_reasons, ensure_ascii=False),
+            "fallback_reason": activity.fallback_reason,
+            "validation_failure_types": json.dumps(activity.validation_failure_types, ensure_ascii=False),
+            "critical_safety_violation": activity.critical_safety_violation,
+            "blocked_llm_output_stored": activity.blocked_llm_output_stored,
+            "response_id": activity.response_id,
+            "external_ai_used": activity.external_ai_used,
+            "external_ai_services": json.dumps(activity.external_ai_services, ensure_ascii=False),
+            "policy_version": self._fit_column("policy_version", activity.policy_version),
+            "applied_rule_ids": json.dumps(activity.applied_rule_ids, ensure_ascii=False),
+            "source_ids": json.dumps(activity.source_ids, ensure_ascii=False),
+            "response_product_label_trace": _response_product_label_trace_json(activity),
+        }
+        existing = getattr(self, "_chatbot_log_columns", set())
+        # Only the columns this DB has; an unknown column list means 'write them all'.
+        columns = [column for column in values if not existing or column in existing]
         with self._connect() as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
-                    f"""
-                    INSERT INTO {self.quoted_chat_log_table_name}
-                    (
-                        user_id, barcode, report_number, product_id, action_type,
-                        message, intent, answer_source, pipeline_stage, risk_level,
-                        confidence, confidence_reasons, fallback_reason,
-                        validation_failure_types, critical_safety_violation,
-                        blocked_llm_output_stored, response_id, external_ai_used,
-                        external_ai_services, policy_version, applied_rule_ids, source_ids,
-                        response_product_label_trace
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
-                    (
-                        activity.user_id,
-                        activity.barcode,
-                        activity.report_number,
-                        activity.product_id,
-                        chatbot_action_type,
-                        activity.message,
-                        activity.intent,
-                        activity.answer_source,
-                        activity.pipeline_stage,
-                        activity.risk_level,
-                        activity.confidence,
-                        json.dumps(activity.confidence_reasons, ensure_ascii=False),
-                        activity.fallback_reason,
-                        json.dumps(activity.validation_failure_types, ensure_ascii=False),
-                        activity.critical_safety_violation,
-                        activity.blocked_llm_output_stored,
-                        activity.response_id,
-                        activity.external_ai_used,
-                        json.dumps(activity.external_ai_services, ensure_ascii=False),
-                        activity.policy_version,
-                        json.dumps(activity.applied_rule_ids, ensure_ascii=False),
-                        json.dumps(activity.source_ids, ensure_ascii=False),
-                        _response_product_label_trace_json(activity),
-                    ),
+                    f"INSERT INTO {self.quoted_chat_log_table_name} ({', '.join(columns)}) "
+                    f"VALUES ({', '.join(['%s'] * len(columns))})",
+                    tuple(values[column] for column in columns),
                 )
             conn.commit()
 
@@ -403,18 +415,19 @@ class MySQLActivityRepository(ActivityRepository):
         with self._connect() as conn:
             if not self._chatbot_log_table_exists(conn):
                 return []
+            # Older DBs lack the later audit columns; read what exists.
+            selected = self._existing_log_columns(conn, (
+                "user_id", "barcode", "report_number", "product_id", "action_type",
+                "message", "intent", "answer_source", "pipeline_stage", "risk_level",
+                "confidence", "confidence_reasons", "fallback_reason",
+                "validation_failure_types", "critical_safety_violation",
+                "blocked_llm_output_stored", "response_id", "external_ai_used",
+                "external_ai_services", "policy_version", "applied_rule_ids", "source_ids",
+                "response_product_label_trace", "created_at"))
             with conn.cursor() as cursor:
                 cursor.execute(
                     f"""
-                    SELECT
-                        user_id, barcode, report_number, product_id, action_type,
-                        message, intent, answer_source, pipeline_stage, risk_level,
-                        confidence, confidence_reasons, fallback_reason,
-                        validation_failure_types, critical_safety_violation,
-                        blocked_llm_output_stored, response_id, external_ai_used,
-                        external_ai_services, policy_version, applied_rule_ids, source_ids,
-                        response_product_label_trace,
-                        created_at
+                    SELECT {", ".join(selected)}
                     FROM {self.quoted_chat_log_table_name}
                     WHERE user_id = %s
                     ORDER BY created_at DESC, id DESC
@@ -563,19 +576,21 @@ class MySQLActivityRepository(ActivityRepository):
         with self._connect() as conn:
             if not self._chatbot_log_table_exists(conn):
                 return []
+            selected = self._existing_log_columns(conn, (
+                "user_id", "barcode", "report_number", "action_type",
+                "message", "intent", "answer_source", "pipeline_stage", "risk_level",
+                "confidence", "fallback_reason", "validation_failure_types",
+                "critical_safety_violation", "blocked_llm_output_stored",
+                "response_id", "external_ai_used", "external_ai_services",
+                "response_product_label_trace", "created_at"))
+            if not {"fallback_reason", "validation_failure_types", "critical_safety_violation"} <= set(selected):
+                return []  # the monitoring columns were never added to this DB
             with conn.cursor() as cursor:
                 limit_sql = "LIMIT %s" if limit is not None else ""
                 params: tuple[Any, ...] = (limit,) if limit is not None else ()
                 cursor.execute(
                     f"""
-                    SELECT
-                        user_id, barcode, report_number, action_type,
-                        message, intent, answer_source, pipeline_stage, risk_level,
-                        confidence, fallback_reason, validation_failure_types,
-                        critical_safety_violation, blocked_llm_output_stored,
-                        response_id, external_ai_used, external_ai_services,
-                        response_product_label_trace,
-                        created_at
+                    SELECT {", ".join(selected)}
                     FROM {self.quoted_chat_log_table_name}
                     WHERE
                         (fallback_reason IS NOT NULL AND fallback_reason <> '')

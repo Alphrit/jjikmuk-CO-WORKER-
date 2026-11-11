@@ -45,12 +45,12 @@ _SEVERE_PATTERN = re.compile(
     r"목(?:이|가)?\s*(?:(?:꽉|점점|많이|갑자기|너무|엄청|퉁퉁|심하게)\s*)?(?:붓|부어|부었|부은|조여|조이|조인|막혀|막히|막힌)|"
     r"혀(?:가|도)?\s*(?:(?:점점|많이|갑자기|너무|엄청|퉁퉁|심하게)\s*)?(?:붓|부어|부었|부은)|의식(?:이|가)?\s*(?:흐리|없)|"
     r"쓰러|실신|기절|입술(?:이|가)?\s*(?:(?:너무|엄청|퉁퉁|많이|갑자기)\s*)?(?:붓|부어|부었|부은|파래|푸르)|"
-    r"침(?:을|도)?\s*(?:못|안)\s*삼키)"
+    r"침(?:을|도)?\s*(?:못|안)\s*삼키|어지러|어지럽)"
 )
 # Hives, rash, itching, swelling or stomach symptoms after eating: not routed
 # as an emergency, but never left unanswered either.
 _MILD_REACTION_PATTERN = re.compile(
-    r"(?:두드러기|발진|가려|간지러|붉게|빨갛게|울긋불긋|(?:눈|얼굴|입|손|몸)(?:이|가)?\s*(?:붓|부어|부었|부은)|"
+    r"(?:두드러기|발진|가려|가렵|간지러|간지럽|붉게|빨갛게|빨개|울긋불긋|(?:눈|얼굴|입|손|몸)(?:이|가)?\s*(?:붓|부어|부었|부은)|"
     r"토했|토해|토하|구토|토할|복통|배(?:가)?\s*(?:아파|아프)|설사)"
 )
 _EXPOSURE_PATTERN = re.compile(
@@ -67,11 +67,33 @@ _FOOD_EXPOSURE_PATTERN = re.compile(
 # food: in this app the likely cause is something just eaten, and 119 guidance
 # is never harmful. '숨이 차' alone (exercise) is excluded.
 _AIRWAY_PATTERN = re.compile(
-    r"숨(?:이)?\s*(?:막혀|막혔)|숨(?:을)?\s*쉴\s*수(?:가|도)?\s*없|숨(?:이|을)?\s*(?:잘\s*)?(?:안|못)\s*쉬|"
-    r"호흡곤란|목(?:이|가)?\s*(?:(?:꽉|점점|많이|갑자기|너무|엄청|퉁퉁|심하게)\s*)?(?:부어|부었|조여|막혀)|"
-    r"혀(?:가|도)?\s*(?:(?:점점|많이|갑자기|너무|엄청|퉁퉁|심하게)\s*)?(?:부어|부었)|의식(?:이|가)?\s*없|쓰러졌|실신|기절"
+    r"숨(?:이)?\s*(?:막혀|막혔|막히|막힘)|숨막|숨(?:을)?\s*쉴\s*수(?:가|도)?\s*없|숨(?:이|을)?\s*(?:잘\s*)?(?:안|못)\s*쉬|"
+    r"숨(?:을)?\s*쉬(?:기|기가|는\s*게)?\s*(?:힘들|어렵|어려)|호흡\s*(?:이\s*)?곤란|"
+    # '목이 붓고 두드러기가 났어', '목이 따끔하고 부었어', '목안이 부었어', typos '부엇', '부음'.
+    r"목(?:이|가|구멍이|\s*안(?:쪽)?(?:이|에)?)?[^.?!,\n]{0,8}?(?:붓|부어|부었|부엇|부은|부음|조여|조이|막혀|막혔|막히|막힘)|"
+    r"혀(?:가|도)?[^.?!,\n]{0,8}?(?:붓|부어|부었|부엇|부은)|의식(?:이|가)?\s*없|쓰러졌|실신|기절|"
+    # '아나필락시스 온 것 같아', '에피펜 맞아야 해?', '119 불러야 해?'
+    r"아나필락시스\s*(?:가|이)?\s*(?:온|왔|같아|나타|증상이\s*(?:나|있|생))|"
+    r"(?:에피펜|에피네프린|119|응급실)[^.?!\n]{0,8}(?:맞아야|놔야|불러야|가야|갈까|가요)"
 )
-_PRESENT_REPORT_PATTERN = re.compile(r"(?:어요|아요|해요|워요|요|어|아|다|도와\s*줘|도와\s*주세요|살려\s*줘|살려\s*주세요)\s*[.!?…ㅠㅜ]*\s*$")
+# Colds, exercise and exaggeration ('기절할 만큼 맛있어') are not allergic reactions.
+_NOT_A_REACTION = re.compile(r"감기|목감기|편도|인후염|맛있|만큼|정도로|줄\s*알았|매워|매운|노래|운동|뛰었|달리|계단|등산|영화|드라마|장면|분위기|긴장|더위|더워|추천")
+
+
+def _current_airway_report(clause):
+    """'숨이 막혀', '목이 부었는데 어떻게 해?': a sign happening now, not '먹으면 목이 부어요'."""
+    if _NOT_A_REACTION.search(clause):
+        return False
+    match = _AIRWAY_PATTERN.search(clause)
+    if not match:
+        return False
+    if re.search(r"(?:안|않)\s*(?:붓|부|막|조)", match[0]):
+        return False  # '목이 안 부었어요' ('숨이 안 쉬어져' stays a symptom)
+    if re.search(r"(?:으)?면(?:\s|$)|(?:을|ㄹ)\s*때", clause[:match.start()]):
+        return False  # a habit or condition: '땅콩 먹으면 목 부어'
+    if re.match(r"[가-힣]{0,6}(?:면|다면|으면)(?=\s|[?？]|$)", clause[match.end():]):
+        return False  # '목이 부으면 어떻게 해?'
+    return _affirmed_severe_symptom(clause, _AIRWAY_PATTERN)
 
 
 def _symptom_clauses(message):
@@ -105,7 +127,7 @@ def _affirmed_severe_symptom(text, pattern=_SEVERE_PATTERN):
         # Negated absence is an affirmed symptom ('없는 건 아니에요').
         if re.match(r"^(?:은|는|이|가|도)?\s*없(?:는|다고)\s*(?:건|것은|것이|말은)?\s*(?:아니|아닌)", suffix):
             return True
-        if re.match(r"^[가-힣]{0,6}\s*(?:(?:건|것은|것이|게|것도)\s*(?:아니|아닌)|지\s*않|적(?:은|이|도)?\s*없)", suffix):
+        if re.match(r"^[가-힣]{0,6}?\s*(?:(?:건|것은|것이|게|것도)\s*(?:아니|아닌)|(?:지|진|지는|지도)\s*않|적(?:은|이|도)?\s*없)", suffix):
             continue
         if re.match(r"^(?:은|는|이|가|도)?\s*(?:(?:전혀|아직|별로|하나도|조금도|거의)\s*)?(?:없|아니|아닌)", suffix):
             continue
@@ -137,14 +159,18 @@ def _is_current_severe_allergic_reaction(
     # A quotation being translated/explained is not a reported symptom.
     # Remove that quotation only; a separate current report still has priority.
     text = re.sub(r'''["“‘'][^"“”‘’'\n]{0,200}["”’']\s*(?:라는|이란|이라는)?\s*(?:예문|문장|표현)[^.!?\n]{0,80}?(?:번역|해석|설명)[^.!?]*''', "", text)
-    if (pattern is _SEVERE_PATTERN and not _PAST_OR_HYPOTHETICAL_PATTERN.search(text)
-            and _PRESENT_REPORT_PATTERN.search(text)
-            and any(_affirmed_severe_symptom(clause, _AIRWAY_PATTERN) for clause in _symptom_clauses(text))):
+    if pattern is _SEVERE_PATTERN and any(_current_airway_report(clause) for clause in _symptom_clauses(text)):
         return True
+    if (pattern is _SEVERE_PATTERN and not _NOT_A_REACTION.search(text)
+            and re.search(r"두드러기|발진|가렵|가려|간지러|간지럽", text) and re.search(r"숨|호흡", text)
+            and any(_affirmed_severe_symptom(clause) for clause in _symptom_clauses(text))):
+        return True  # hives together with breathing trouble
     if not _CURRENT_PATTERN.search(text) or not any(_affirmed_severe_symptom(clause, pattern) for clause in _symptom_clauses(text)):
         return False
     has_allergy_context = (
-        bool(_ALLERGY_CONTEXT_PATTERN.search(text))
+        # A selected product is the food just eaten ('지금 숨이 차요' on its page).
+        (has_food_context and not _NOT_A_REACTION.search(text))
+        or bool(_ALLERGY_CONTEXT_PATTERN.search(text))
         or bool(_FOOD_EXPOSURE_PATTERN.search(text))
         or (
             bool(_EXPOSURE_PATTERN.search(text))
@@ -215,6 +241,45 @@ def build_emergency_triage_response(
         applied_rule_ids=provenance["applied_rule_ids"],
         evidence=provenance["evidence"],
         provenance_status=provenance["provenance_status"],
+    )
+
+
+_SYMPTOM_WORD_PATTERN = re.compile(
+    r"(?:목|혀|입술|얼굴|눈)(?:이|가|구멍이)?\s*(?:붓|부어|부으|부은|부었)|숨(?:이|을)?\s*(?:막|차|쉬기\s*(?:힘|어려)|안\s*쉬어지|못\s*쉬)|쓰러지|"
+    r"호흡\s*곤란|두드러기|아나필락시스|알레르기\s*반응"
+)
+_SYMPTOM_QUESTION_PATTERN = re.compile(
+    r"(?:면|다면|으면|할\s*때|일\s*때|생기면|나면|났을\s*때|왔을\s*때).{0,15}(?:어떻게|어떡|뭘|무엇|해야|대처|대응|응급)|"
+    r"아나필락시스(?:가|는|란|이)?\s*(?:뭐|무엇|어떤)"
+)
+
+
+def symptom_question_guidance(message: str, profiles: Optional[Sequence[Profile]] = None) -> Optional[ChatResponse]:
+    """'목이 부으면 어떻게 해야 해?': what to do, as fixed first-aid guidance (not a report)."""
+    text = " ".join((message or "").split())
+    if not (_SYMPTOM_QUESTION_PATTERN.search(text) and _SYMPTOM_WORD_PATTERN.search(text)):
+        return None
+    if re.search(r"먹어도|마셔도|들어\s*있|무엇이\s*들어|뭘\s*먹어야|대신|추천", text):
+        return None  # a food or product question that mentions a symptom keeps its own route
+    headline = "목이나 혀가 붓거나 숨쉬기 힘든 증상은 심한 알레르기 반응(아나필락시스)의 신호일 수 있어요."
+    actions = [
+        "이런 증상이 생기면 바로 119에 연락하세요.",
+        "처방받은 에피네프린 자동주사기가 있다면 처방받은 방법대로 바로 사용하세요.",
+        "증상이 잠시 좋아져도 응급 진료를 미루지 마세요.",
+        "두드러기나 가려움만 있어도 온몸으로 퍼지거나 계속되면 진료를 받으세요.",
+    ]
+    provenance = response_provenance(["emergency.anaphylaxis.action.v1"])
+    names = list(dict.fromkeys(profile.profile_name for profile in profiles or []))
+    return ChatResponse(
+        task_type="safety_triage", answer_source="rules", pipeline_stage="safety_triage", intent="general_allergy_guide",
+        answer=f"{headline}\n\n" + "\n".join(actions),
+        risk_level="unknown", overall_decision="check_required", allergy_status="unknown", assessment_status="complete",
+        reasons=["알레르기 응급 증상 대처 질문", "진단이 아닌 고정 안전 안내"],
+        profile_name=names[0] if names else None, active_profile_names=names,
+        safety_guidance=SafetyGuidance(urgency="routine", headline=headline, actions=actions, emergency_contact="119"),
+        sources=provenance["sources"], source_details=provenance["source_details"],
+        policy_version=provenance["policy_version"], applied_rule_ids=provenance["applied_rule_ids"],
+        evidence=provenance["evidence"], provenance_status=provenance["provenance_status"],
     )
 
 

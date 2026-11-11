@@ -98,11 +98,20 @@ def _profile_results(req, intent, *, decisions=True):
 
 
 def _asked_people(results, message):
-    """The people a turn singles out ('엄마만 따로 알려줘', '나만'), or [] for everyone."""
-    asked = [item for item in results if item.get("profile_name") and re.search(
-        re.escape(item["profile_name"]) + r"(?:\s*님)?(?:만|은|는|이|가|도|의|한테|에게|랑|이랑|하고|와|과)?(?![가-힣A-Za-z0-9])",
-        message)]
-    if re.search(r"(?:^|\s)(?:나|저)만", message):
+    """The people a turn singles out ('엄마만 따로 알려줘', '엄마는?', '나만'), or [] for everyone.
+
+    '엄마랑 같이 먹어도 돼?' or '엄마도 먹어도 돼?' asks about more than 엄마, so a
+    joining particle (랑, 하고, 도…) never narrows the answer.
+    """
+    def singled(name):
+        return re.search(re.escape(name) + r"(?:\s*님)?(?:만|은|는|이|가|한테|에게)?(?![가-힣A-Za-z0-9])", message) and not re.search(
+            re.escape(name) + r"(?:\s*님)?(?:이랑|랑|하고|와|과|도|이도)(?![가-힣])", message)
+    if any(item.get("profile_name") and re.search(re.escape(item["profile_name"]) + r"(?:\s*님)?(?:이랑|랑|하고|와|과|도|이도)(?![가-힣])", message)
+           for item in results):
+        return []  # '엄마랑 아빠 먹어도 돼?' asks about everyone named
+    asked = [item for item in results if item.get("profile_name") and singled(item["profile_name"])]
+    if re.search(r"(?:^|\s)(?:나|저)만|(?:^|\s)(?:나|저)(?:는|도)?\s*(?:같이|함께|둘\s*다)", message):
+        # '엄마랑 나 둘 다' names the user too.
         asked += [item for item in results if item.get("target_type") == "self" and item not in asked]
     return asked if 0 < len(asked) < len(results) else []
 
@@ -125,6 +134,10 @@ def decision_response(req, intent, *, lead=""):
                     # Same UNKNOWN verdict, but a concrete next step for this person.
                     item["answer"] = item["answer"].replace(_SAFETY_TEXT["UNKNOWN"], guidance)
                     item["reasons"] = [item["answer"][:1000]]
+                if getattr(profile, "conditions", None):
+                    # The verdict covers allergies and diets only; say so to whoever has a saved disease.
+                    item["answer"] = item["answer"].rstrip() + " 등록된 질환은 이 판정에 포함되지 않아요."
+                    item["reasons"] = [item["answer"][:1000]]
         asked = _asked_people(results, req.message)
         if len(results) == 1:
             # One person: no name label ('웹테스트: …' reads like a log line).
@@ -134,6 +147,7 @@ def decision_response(req, intent, *, lead=""):
             names = ", ".join(f"{item['profile_name']} 님" for item in asked)
             text += (f"요청하신 {names} 결과만 알려 드릴게요.\n"
                      + "\n".join(f"{item['profile_name']}: {item['answer']}" for item in asked))
+
         else:
             text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
@@ -220,9 +234,46 @@ def _bare_label_field(text):
     joined = " ".join(rest)
     if detect_nutrition_keyword(joined) or joined in {"트랜스지방", "식이섬유"}:
         return "nutrition_explain"
-    if detect_ingredient_keyword(joined):
-        return "ingredient_check"
+    if detect_ingredient_keyword(joined) or re.search(r"유당|락토스|젖당|글루텐", joined):
+        return "ingredient_check"  # '매일우유 유당 있어?' asks about the milk sugar of that product
     return None
+
+
+def _tapped_from_this_search(req, text=None):
+    """'빼뺴로 먹어도 돼?' offered 빼빼로 (typo retry); the tap resends it with that barcode."""
+    from app.services.product import find_product_candidates_from_message
+    try:
+        found = find_product_candidates_from_message(text if text is not None else req.message, limit=5)
+    except Exception:
+        return False
+    return any(candidate.barcode == req.product.barcode for candidate in found)
+
+
+def _without_selection_from_before_reset(req):
+    """'대화 초기화해줘' then '먹어도 돼?': the app still sends the old barcode.
+
+    A product not mentioned since the reset (by the user's question, the
+    candidate it came from, or an answer about it) belongs to the cleared
+    conversation and is ignored.
+    """
+    from app.services.conversation_controls import history_after_reset, is_context_reset
+    from app.services.product_search import candidate_matches_product_query, extract_product_search_query
+    if req.product is None or not any(turn.role == "user" and is_context_reset(turn.content) for turn in req.chat_history):
+        return req
+    after = history_after_reset(req.chat_history)
+    name = req.product.product_name or ""
+
+    def mentions(text, from_user):
+        if name and name in text:
+            return True
+        query = extract_product_search_query(text) if from_user else ""
+        return bool(query) and (candidate_matches_product_query(query, req.product)
+                                or _tapped_from_this_search(req, text))
+
+    if mentions(req.message, True) or any(mentions(turn.content, turn.role == "user") for turn in after):
+        return req
+    return req.model_copy(update={"product": None, "raw_product": None, "barcode": None, "report_number": None,
+                                  "chat_history": after})
 
 
 def run_backend_pipeline(req, legacy_pipeline):
@@ -233,6 +284,7 @@ def run_backend_pipeline(req, legacy_pipeline):
     from app.services.condition_subject import unresolved_profile_target_response
     from app.services.conversation_controls import (
         conversation_control_response, followup_without_context_response, message_with_previous_topic,
+        say_it_is_safe_response, is_elaboration_followup,
     )
     from app.services.emergency_triage import build_emergency_triage_response
     from app.services.request_language import standalone_cancellation_response
@@ -240,24 +292,49 @@ def run_backend_pipeline(req, legacy_pipeline):
     from app.services.product_search import candidate_matches_product_query
 
     profiles = normalize_active_profiles(req)
+    req = _without_selection_from_before_reset(req)
     # Backend keys for request snapshots are local to THIS request. Never carry
     # last turn's allergy/vegetarian exceptions onto a different request:0.
     state = {k: v for k, v in req.conversation_state.items() if k not in {"vegetarian_allowances", "pending_allergy"}}
+    original_message = req.message
     req = req.model_copy(update={"message": current_topic_message(message_with_previous_topic(req.message, req.chat_history)),
                                  "conversation_state": state})
+    # The rewritten turn carries its own topic; the history would pull it back to the first question.
+    classify_history = [] if req.message != current_topic_message(original_message) else req.chat_history
     profile = profiles[0] if profiles else None
+    from app.services.emergency_triage import symptom_question_guidance
     interrupt = (build_emergency_triage_response(req.message, profiles=profiles, has_food_context=bool(req.product))
+                 # '목이 부으면 어떻게 해?': first-aid guidance, not a product summary.
+                 or symptom_question_guidance(req.message, profiles)
                  or conversation_control_response(req.message, state)
                  # The app never sends the previous turn; a bare follow-up needs its topic.
                  or (None if req.chat_history or req.product else followup_without_context_response(req.message, state))
+                 or say_it_is_safe_response(req.message, state)
                  or standalone_cancellation_response(req.message, state, profiles=profiles, known_profiles=profiles)
                  or unresolved_profile_target_response(req.message, profiles, profiles, state))
     named_query = _explicit_named_product_query(req.message, profile)
+    from app.intent.explanation_topics import explanation_intent
+    from app.intent.text import detect_ingredient_keyword, detect_nutrition_keyword
+    asks_meaning = re.search(r"뭐야|뭔가요|뭐예요|뭐에요|무엇|이란|란\s|뜻|의미|차이|어떻게\s*봐|왜|진짜|정말", req.message)
+    label_field = (detect_nutrition_keyword(req.message) or detect_ingredient_keyword(req.message)
+                   or re.search(r"글루텐|유당|제조\s*시설|비건|채식|함유|들어\s*있|있나", req.message))
+    if (req.product is not None and not named_query and not interrupt and explanation_intent(req.message)
+            # A label word ('글루텐 들어있나요?') asks about this product unless the
+            # question is about the word itself ('콜레스테롤이 뭐야?', '0g이면 진짜 없는 거야?').
+            and asks_meaning and not (label_field and not re.search(
+                r"뭐야|뭔가요|뭐예요|뭐에요|무엇|이란|뜻|의미|차이|(?:이|라)?면\s*(?:진짜|정말)", req.message))):
+        # 'HACCP 마크가 뭐야?' while a product is selected asks about the concept,
+        # not about that product: answer it as a general explanation.
+        # The question is self-contained; earlier turns ('쉽게 설명해줘') must not be searched as products.
+        req = req.model_copy(update={"product": None, "raw_product": None, "barcode": None, "report_number": None,
+                                     "chat_history": []})
+        classify_history = []
     person_named = len(profiles) > 1 and bool(
         re.search(r"(?:^|\s)(?:나|저)만", req.message)
         or any(p.profile_name and p.profile_name in req.message for p in profiles))
-    if named_query and re.sub(r"\s*(?:님|만|따로|은|는|도)(?=\s|$)|\s*따로", "", named_query).strip() in {
-            "나", "저", "나만", "저만", *(p.profile_name for p in profiles if p.profile_name)}:
+    person_words = {"나", "저", "나만", "저만", *(p.profile_name for p in profiles if p.profile_name)}
+    stripped_query = re.sub(r"\s*(?:님|만|따로|은|는|도)(?=\s|$)|\s*따로", "", named_query or "").strip()
+    if named_query and (stripped_query in person_words or re.sub(r"이$", "", stripped_query) in person_words):
         # '엄마만 따로 알려줘', '나만 알려줘' name a person, not a product.
         named_query = None
     # '바나나맛우유 먹어도 돼?' asks about the product, not about 우유: classify
@@ -265,7 +342,24 @@ def run_backend_pipeline(req, legacy_pipeline):
     intent_message = req.message
     for name in dict.fromkeys(filter(None, [named_query, req.product.product_name if req.product else None])):
         intent_message = intent_message.replace(name, " ")
-    intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, req.chat_history)
+    intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, classify_history)
+    if req.product and is_elaboration_followup(req.message):
+        # '조금만 더 자세하게 알려줘' with no earlier turn: the topic is unknown (it may
+        # have been a general question), so offer what can be asked about this product.
+        from app.services.conversation_controls import _control_reply
+        name = req.product.product_name or "이 상품"
+        reply = _control_reply(
+            f"이전 대화 내용은 함께 전달되지 않아서 어떤 내용을 더 알려 드릴지 알 수 없어요. "
+            f"'{name} 원재료 알려줘', '{name} 영양정보 알려줘'처럼 궁금한 내용을 함께 적어 주세요.", state)
+        reply = reply.model_copy(update={"backend_analysis": _summary(req, "context_only")})
+        return reply, None, dict(profile=profile, product=None, barcode=req.product.barcode,
+                                 report_number=req.product.report_number, message=req.message)
+    if (intent in {"unknown", "ambiguous"} and req.product and not named_query and not person_named
+            and not re.search(r"먹|마셔|마시|성분|원재료|알레르기|알러지|영양|칼로리|열량|나트륨|당류|단백질|지방|들어|함유|이거|이\s*제품|괜찮|어때|섭취|표시|요약|정보|설명", req.message)):
+        # '기절할 만큼 맛있어', '오늘 달리기했더니 숨이 차': nothing about the selected product.
+        legacy_req = req.model_copy(update={"product": None, "raw_product": None, "barcode": None, "report_number": None})
+        response, resolved, activity = legacy_pipeline(legacy_req, log_activity=False)
+        return response.model_copy(update={"backend_analysis": _summary(req, "context_only")}), resolved, activity
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
         intent = "can_i_eat"
     elif intent in {"unknown", "ambiguous"} and req.product and person_named:
@@ -286,7 +380,9 @@ def run_backend_pipeline(req, legacy_pipeline):
         # '새우깡은?' with 새우깡 selected (e.g. right after tapping its card)
         # asks about the selected product; asking to select it again loops.
         intent = "product_summary"
-    same_product = bool(req.product and (not named_query or candidate_matches_product_query(named_query, req.product)))
+    same_product = bool(req.product and (not named_query or named_query == req.product.barcode
+                                         or candidate_matches_product_query(named_query, req.product)
+                                         or _tapped_from_this_search(req)))
     if intent in {"unknown", "ambiguous"} and named_query and any(word in req.message for word in ("찾아", "검색")):
         intent = "product_summary"
     stale = None if interrupt else _stale_selection_choice(req, named_query, intent)
@@ -335,10 +431,14 @@ def run_backend_pipeline(req, legacy_pipeline):
             return response, None, activity
         # Diets are judged only from saved profiles; a diet named in the
         # message ('비건인데 먹어도 돼?') must not look as if it were applied.
-        diet = re.search(r"비건|채식|베지테리언|페스코|락토|vegan|vegetarian", req.message, re.IGNORECASE)
+        diet = re.search(r"비건|채식|베지테리언|페스코|락토(?!스|프리)|vegan|vegetarian", req.message, re.IGNORECASE)
         lead = ""
-        if diet and not any(p.resolved_special_diets() for p in profiles):
-            lead = (f"방금 말씀한 식단 조건({diet[0]})은 프로필에 없어 이번 판정에 반영되지 않았어요. "
+        if re.search(r"(?:하루에?|한\s*번에)\s*(?:몇|얼마)|몇\s*(?:개|봉지|봉|잔|캔|병|조각)\s*까지|얼마나\s*(?:먹|마셔|마시)", req.message):
+            # '하루에 몇 개까지': an amount is a personal judgment this service does not make.
+            lead += "얼마나 먹어도 되는지는 개인 상태에 따라 달라 안내하지 않아요. 아래는 알레르기 표시 기준으로 확인한 결과예요.\n"
+        saved_diets = " ".join(str(d) for p in profiles for d in p.resolved_special_diets())
+        if diet and not (diet[0] in saved_diets or ("채식" in saved_diets and diet[0] in {"비건", "채식", "베지테리언"})):
+            lead += (f"방금 말씀한 식단 조건({diet[0]})은 프로필에 없어 이번 판정에 반영되지 않았어요. "
                     "계속 적용하려면 설정에서 식단 조건을 추가해 주세요.\n")
         response = decision_response(req, intent, lead=lead)
         resolved = req.product
@@ -348,7 +448,12 @@ def run_backend_pipeline(req, legacy_pipeline):
 
     # Keep all legacy task handlers. Product decisions they compute for an
     # unselected barcode must not masquerade as a backend v2 decision.
-    response, resolved, activity = legacy_pipeline(req, log_activity=False)
+    legacy_req = req
+    if req.product is not None and named_query and not same_product:
+        # '스팸 나트륨 얼마야?' with 코카콜라 still selected names a new product:
+        # search for it instead of answering about the old selection.
+        legacy_req = req.model_copy(update={"product": None, "raw_product": None, "barcode": None, "report_number": None})
+    response, resolved, activity = legacy_pipeline(legacy_req, log_activity=False)
     application = "context_only"
     found_query = bool(named_query and response.intent in {"unknown", "ambiguous"})
     if not interrupt and (response.intent in PRODUCT_INTENTS or found_query) and response.current_product is not None:

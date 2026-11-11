@@ -87,7 +87,7 @@ _LEADING_CONVERSATION_PATTERN = re.compile(
 )
 
 _LEADING_PERSONAL_ALLERGY_PATTERN = re.compile(
-    r"^.{1,80}?(?:알레르기|알러지)"
+    r"^.{1,80}?(?:알레르기|알러지|allergy|allergic)"
     # '땅콩 알레르기인데/라서' states the same condition as '알레르기가 있는데'.
     r"(?:(?:가|는|이)?\s*(?:있는데|있어서|있고|있으니|있다면|있어)|(?:인데|이라서|라서|이니까|니까|이어서))"
     r"\s*[,.:;!?~…-]*\s*",
@@ -318,8 +318,10 @@ def extract_product_search_query(message: str) -> str:
     # product clause so the catalog does not offer every shrimp-containing item.
     cleaned = _LEADING_PERSONAL_ALLERGY_PATTERN.sub("", cleaned).strip()
     cleaned = re.sub(r"^(?:다이어트|식단\s*관리|운동|저염식|저당식|비건|채식|감량)\s*(?:중|하는\s*중)(?:인데|이라|이라서|이어서|이니까|이야)?\s+", "", cleaned)
+    # '유당불내증인데 바나나맛우유 마셔도 돼?': an intolerance statement, not a product.
+    cleaned = re.sub(r"^(?:나는?\s*|저는?\s*)?(?:유당|락토스|젖당|글루텐)\s*불내증(?:이|이\s*있|있)?(?:어서|는데|인데|이라|이라서|이니까|이야|이고)?[.,!]?\s+", "", cleaned)
     # '비건인데 먹어도 돼?', '나 채식주의자야. 이거 먹어도 돼?': a diet statement, not a product.
-    cleaned = re.sub(r"^(?:나는?\s*|저는?\s*)?(?:비건|채식주의자|채식|베지테리언|페스코|락토)(?:이야|야|이에요|예요|인데|이라|이라서|이니까|이고)?[.,!]?\s+", "", cleaned)
+    cleaned = re.sub(r"^(?:나는?\s*|저는?\s*)?(?:비건|채식주의자|채식|베지테리언|페스코|락토)(?:이야|야|이에요|예요|인데|이라|이라서|이니까|이고)[.,!]?\s+", "", cleaned)
     # The named person in '상품명은 아빠가 먹어도 돼?' is a subject,
     # not part of the product's catalog identity.
     cleaned = re.sub(r"^(.+?)(?:은|는)\s+\S+(?:이|가|도)\s+(?=먹어도|먹을\s*수|마셔도|드셔도|드실\s*수)", r"\1 ", cleaned)
@@ -336,6 +338,8 @@ def extract_product_search_query(message: str) -> str:
     query = _strip_product_query_suffix(cleaned)
     if compact_search_text(query) in PRODUCT_REFERENCE_ONLY_TOKENS:
         return ""
+    if re.fullmatch(r"(?:나|저|난|전)(?:도|는|은|만)?", query):
+        return ""  # '나도 먹을 수 있는 과자 추천해줘': the user, not a product
 
     compact_query = compact_search_text(query)
     canonical_generic_tokens = {

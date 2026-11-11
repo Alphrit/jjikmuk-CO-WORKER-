@@ -255,7 +255,9 @@ def _format_product_comparison_answer(
             # is noise to a user, so say what it means for this comparison.
             primary = f"{label} 수치는 있지만 상품 정보의 출처를 확인할 수 없어 어느 쪽이 낫다고 단정하지 않았어요."
             limitation = (
-                "괄호 안 기준량이 제품마다 달라 수치 차이를 그대로 영양성분 차이로 볼 수 없어요."
+                ("괄호 안 기준량이 제품마다 달라 수치 차이를 그대로 영양성분 차이로 볼 수 없어요."
+                 if len({display_basis_label(candidate) for candidate in comparable_products}) > 1
+                 else "상품 정보의 출처를 확인할 수 없어 수치 차이만으로 어느 쪽이 낫다고 볼 수 없어요.")
                 if all(display_basis_label(candidate) != nutrition_basis_label(candidate) or has_explicit_nutrition_basis(candidate)
                        for candidate in comparable_products)
                 else "기준량(1회 제공량·100g·총 내용량)이 확인되지 않은 제품이 있어 수치 차이를 그대로 영양성분 차이로 볼 수 없어요.")
@@ -369,7 +371,7 @@ def _comparison_allergy_status(
         )
     return (
         "no_known_match",
-        f"{product_name}: 현재 DB 표시에서 등록 알레르기의 직접 충돌을 찾지 못했어요.",
+        f"{product_name}: 등록된 표시에서 알레르기와 직접 충돌하는 표시를 찾지 못했어요.",
         [f"{product_name} 현재 표시에서 알레르기 직접 충돌 미확인"],
     )
 
@@ -403,6 +405,9 @@ def _key_nutrient_overview(products: Sequence[Product]) -> str:
         intro = f"주요 영양 수치를 {basis}당 환산값으로 맞춰 봤어요. 환산값이라 포장지 표기와 소수점이 다를 수 있어요.\n"
     else:
         intro = ("주요 영양 수치예요. 괄호 안 기준량이 제품마다 달라 수치 차이를 그대로 비교하면 안 될 수 있어요.\n"
+                 if all(display_basis_label(item) != "영양 수치 기준 미확인" for item in products)
+                 and len({display_basis_label(item) for item in products}) > 1
+                 else "주요 영양 수치예요. 상품 정보의 출처를 확인할 수 없어 수치 차이만으로 단정하지 않아요.\n"
                  if all(display_basis_label(item) != "영양 수치 기준 미확인" for item in products)
                  else "주요 영양 수치예요. 기준량이 확인되지 않아 수치 차이를 그대로 비교하면 안 될 수 있어요.\n")
     # The app does not send the previous turn, so the hint names both products.
@@ -617,7 +622,7 @@ def _comparison_allergy_summary(
         "conflict": "알레르기 기준으로 먼저 보면, 비교 제품 중 피해야 할 제품이 있어요.",
         "cross_contact": "알레르기 기준으로 먼저 보면, 교차접촉 주의가 필요한 제품이 있어요.",
         "unknown": "알레르기 기준으로 먼저 보면, 판정에 필요한 표시 정보가 부족해요.",
-        "no_known_match": "알레르기 기준으로 먼저 보면, 현재 DB 표시에서 등록 알레르기의 직접 충돌을 찾지 못했어요.",
+        "no_known_match": "알레르기 기준으로 먼저 보면, 등록된 표시에서 알레르기와 직접 충돌하는 표시를 찾지 못했어요.",
     }[overall_status]
     return (
         "\n".join([headline, *summary_lines]),

@@ -133,6 +133,10 @@ def find_product_candidates_from_message(
         return []
 
     repo = repository or get_product_repository()
+    if re.fullmatch(r"\d{8,14}", search_query.replace(" ", "")):
+        # '8801043035989 먹어도 돼?': a typed barcode names one product.
+        found = find_product_by_barcode(search_query.replace(" ", ""), repo)
+        return [found] if found is not None else []
     fetch_limit = max(limit * 4, 12)
     candidates = [
         product
