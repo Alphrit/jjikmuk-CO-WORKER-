@@ -102,7 +102,9 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
     # Stage A: no catalog fact and no personal verdict (general explanations,
     # out-of-domain and "which product?" guidance). Nothing here depends on the
     # unverified catalog, so it is kept instead of a product-search prompt.
-    if (resolved_product is None and response.intent in GENERAL_INTENTS | NO_PRODUCT_GUIDANCE_INTENTS
+    # A general explanation stays one even while a product is selected ('목이 부으면 어떻게 해?').
+    if ((resolved_product is None or response.intent in GENERAL_INTENTS)
+            and response.intent in GENERAL_INTENTS | NO_PRODUCT_GUIDANCE_INTENTS
             and (response.answer_source == 'rules' or external_enabled
                  or response.fallback_reason == LOCAL_EXCERPT_REASON)
             and summary is not None and not summary.safety_assessed

@@ -233,6 +233,7 @@ def run_backend_pipeline(req, legacy_pipeline):
     from app.services.condition_subject import unresolved_profile_target_response
     from app.services.conversation_controls import (
         conversation_control_response, followup_without_context_response, message_with_previous_topic,
+        say_it_is_safe_response,
     )
     from app.services.emergency_triage import build_emergency_triage_response
     from app.services.request_language import standalone_cancellation_response
@@ -246,10 +247,14 @@ def run_backend_pipeline(req, legacy_pipeline):
     req = req.model_copy(update={"message": current_topic_message(message_with_previous_topic(req.message, req.chat_history)),
                                  "conversation_state": state})
     profile = profiles[0] if profiles else None
+    from app.services.emergency_triage import symptom_question_guidance
     interrupt = (build_emergency_triage_response(req.message, profiles=profiles, has_food_context=bool(req.product))
+                 # '목이 부으면 어떻게 해?': first-aid guidance, not a product summary.
+                 or symptom_question_guidance(req.message, profiles)
                  or conversation_control_response(req.message, state)
                  # The app never sends the previous turn; a bare follow-up needs its topic.
                  or (None if req.chat_history or req.product else followup_without_context_response(req.message, state))
+                 or (None if req.product else say_it_is_safe_response(req.message, state))
                  or standalone_cancellation_response(req.message, state, profiles=profiles, known_profiles=profiles)
                  or unresolved_profile_target_response(req.message, profiles, profiles, state))
     named_query = _explicit_named_product_query(req.message, profile)

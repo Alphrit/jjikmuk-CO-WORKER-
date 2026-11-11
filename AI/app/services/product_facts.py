@@ -103,12 +103,19 @@ def product_facts_text(product, message, intent):
         ingredients = product.rawmtrl_nm or ", ".join(product.ingredients)
         allergens = product.resolved_allergies()
         text = asked_ingredient_text(product, message) if intent == "ingredient_check" else ""
-        text += (("등록된 원재료: " + ingredients[:1500] + "\n") if ingredients
+        text += (("등록된 원재료: " + _readable_ingredients(ingredients) + "\n") if ingredients
                  else "이 상품은 원재료가 등록되어 있지 않아 성분을 안내할 수 없어요. 포장지의 원재료명을 확인해 주세요.\n")
         if allergens:
             text += "등록된 알레르기 표시: " + ", ".join(allergens) + "\n"
         return text
     return ""
+
+
+def _readable_ingredients(text, limit=15):
+    """'향료, 향료, …' → each item once, the first `limit` shown and the rest counted."""
+    items = list(dict.fromkeys(item.strip() for item in re.split(r"\s*,\s*", text[:1500]) if item.strip()))
+    shown = ", ".join(items[:limit])
+    return shown + (f" 외 {len(items) - limit}가지" if len(items) > limit else "")
 
 
 def label_text_value(product, label):
@@ -242,17 +249,23 @@ def unknown_allergy_guidance(product, profile):
         from app.services.response_helpers import find_matching_aliases
         if any(find_matching_aliases(product, name) for name in names):
             return None
-        return (f"{listed} 알레르기 기준으로는 등록된 알레르기 표시({', '.join(labels)})에 {listed}{subject(names[-1])} 없어요. "
-                "다만 등록된 정보가 실제 포장과 다를 수 있으니, 드시기 전에 포장지의 알레르기 표시를 한 번 더 확인해 주세요.")
+        # Lead with what was found; name the label that kept the verdict open.
+        unclear = [label for label in labels if "불명" in label]
+        known = [label for label in labels if label not in unclear] or labels
+        text = f"등록된 알레르기 표시({', '.join(known)})에는 {listed}{subject(names[-1])} 없어요. "
+        if unclear:
+            text += f"다만 '{unclear[0]}'처럼 원료 출처가 표시되지 않은 항목이 있어 최종 확인이 필요해요. "
+        else:
+            text += "다만 등록된 정보가 실제 포장과 다를 수 있어요. "
+        return text + "드시기 전에 포장지의 알레르기 표시를 한 번 확인해 주세요."
     if product.rawmtrl_nm or product.ingredients:
         from app.services.response_helpers import find_matching_aliases
         if any(find_matching_aliases(product, name) for name in names):
             return None
-        # Conclusion first: the person must see at once that this is not a 'yes'.
-        return (f"{listed} 알레르기가 있다면 드셔도 되는지 아직 확실하지 않아요. "
-                f"원재료 목록에는 {listed}{subject(names[-1])} 없지만, '{names[0]} 함유' 같은 알레르기 표시가 등록되어 있지 않아 확인이 끝나지 않았어요. "
-                f"드시기 전에 포장지의 알레르기 표시에서 {listed}{subject(names[-1])} 있는지 확인해 주세요.")
+        # Lead with what was checked; the open part is only the missing allergy label.
+        return (f"원재료 목록에서 {listed}{object_particle(names[-1])} 찾지 못했어요. "
+                f"다만 '{names[0]} 함유' 같은 알레르기 표시가 등록되어 있지 않아, "
+                f"드시기 전에 포장지의 알레르기 표시에서 {listed}{subject(names[-1])} 있는지 한 번 확인해 주세요.")
     # Say what was checked and why it is not a 'no': the label is simply absent.
-    return (f"{listed} 알레르기가 있다면 드셔도 되는지 확실하지 않아요. "
-            "이 상품은 원재료와 알레르기 표시가 모두 등록되어 있지 않아 확인할 수 없어요. "
+    return (f"이 상품은 원재료와 알레르기 정보가 등록되어 있지 않아 {listed}{subject(names[-1])} 들어 있는지 알 수 없어요. "
             f"드시기 전에 포장지의 원재료명과 알레르기 표시에서 {listed}{subject(names[-1])} 있는지 확인해 주세요.")

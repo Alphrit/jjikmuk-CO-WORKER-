@@ -219,6 +219,43 @@ def build_emergency_triage_response(
     )
 
 
+_SYMPTOM_WORD_PATTERN = re.compile(
+    r"(?:목|혀|입술|얼굴|눈)(?:이|가|구멍이)?\s*(?:붓|부어|부으|부은)|숨(?:이|을)?\s*(?:막|차|쉬기\s*(?:힘|어려))|"
+    r"호흡\s*곤란|두드러기|아나필락시스|알레르기\s*반응"
+)
+_SYMPTOM_QUESTION_PATTERN = re.compile(
+    r"(?:면|다면|으면|할\s*때|일\s*때|생기면|나면|났을\s*때|왔을\s*때).{0,15}(?:어떻게|뭘|무엇|해야|대처|대응|응급)|"
+    r"아나필락시스(?:가|는|란|이)?\s*(?:뭐|무엇|어떤)"
+)
+
+
+def symptom_question_guidance(message: str, profiles: Optional[Sequence[Profile]] = None) -> Optional[ChatResponse]:
+    """'목이 부으면 어떻게 해야 해?': what to do, as fixed first-aid guidance (not a report)."""
+    text = " ".join((message or "").split())
+    if not (_SYMPTOM_QUESTION_PATTERN.search(text) and _SYMPTOM_WORD_PATTERN.search(text)):
+        return None
+    headline = "목이나 혀가 붓거나 숨쉬기 힘든 증상은 심한 알레르기 반응(아나필락시스)의 신호일 수 있어요."
+    actions = [
+        "이런 증상이 생기면 바로 119에 연락하세요.",
+        "처방받은 에피네프린 자동주사기가 있다면 처방받은 방법대로 바로 사용하세요.",
+        "증상이 잠시 좋아져도 응급 진료를 미루지 마세요.",
+        "두드러기나 가려움만 있어도 온몸으로 퍼지거나 계속되면 진료를 받으세요.",
+    ]
+    provenance = response_provenance(["emergency.anaphylaxis.action.v1"])
+    names = list(dict.fromkeys(profile.profile_name for profile in profiles or []))
+    return ChatResponse(
+        task_type="safety_triage", answer_source="rules", pipeline_stage="safety_triage", intent="general_allergy_guide",
+        answer=f"{headline}\n\n" + "\n".join(actions),
+        risk_level="unknown", overall_decision="check_required", allergy_status="unknown", assessment_status="complete",
+        reasons=["알레르기 응급 증상 대처 질문", "진단이 아닌 고정 안전 안내"],
+        profile_name=names[0] if names else None, active_profile_names=names,
+        safety_guidance=SafetyGuidance(urgency="routine", headline=headline, actions=actions, emergency_contact="119"),
+        sources=provenance["sources"], source_details=provenance["source_details"],
+        policy_version=provenance["policy_version"], applied_rule_ids=provenance["applied_rule_ids"],
+        evidence=provenance["evidence"], provenance_status=provenance["provenance_status"],
+    )
+
+
 def _allergic_reaction_guidance(profiles: Sequence[Profile]) -> ChatResponse:
     """Fixed guidance for a mild reaction reported right after eating; no diagnosis."""
     headline = "음식을 먹은 뒤 나타난 알레르기 반응일 수 있어요."
