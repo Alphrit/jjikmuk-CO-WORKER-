@@ -399,7 +399,12 @@ def normalize_chat_request(
 ) -> Tuple[Optional[Profile], Optional[Product], Optional[str], Optional[str]]:
     active_profiles = normalize_active_profiles(req)
     profile = active_profiles[0] if active_profiles else None
-    product = req.product or normalize_product_payload(req.raw_product)
+    try:
+        product = req.product or normalize_product_payload(req.raw_product)
+    except (ValueError, TypeError) as exc:
+        # A malformed raw_product is a client error (422), never a 500.
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="raw_product 형식이 올바르지 않습니다.") from exc
     barcode = req.barcode or (product.barcode if product else None)
     report_number = req.report_number or (product.report_number if product else None)
     return profile, product, barcode, report_number

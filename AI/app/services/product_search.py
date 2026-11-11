@@ -117,17 +117,27 @@ _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
     # '오레오 성분', '진라면 순한맛 나트륨', '새우깡 칼로리야?': a label field
     # as the last word ends the product name.
     re.compile(
-        r"\s+(?:알레르기|알러지|원재료명?|성분|영양성분|영양정보|영양|나트륨|당류|단백질|포화지방|트랜스지방|식이섬유|지방|"
-        r"탄수화물|칼로리|열량|콜레스테롤)(?:은|는|이|가|야|이야|요|정보|표시)?\s*[?？!.~]*$",
+        r"\s+(?:알레르기|알러지|원재료명?|성분표?|영양성분표?|영양정보|영양|나트륨|당류|단백질|포화지방|트랜스지방|식이섬유|지방|"
+        r"탄수화물|칼로리|열량|콜레스테롤|글루텐)(?:\s*성분)?(?:은|는|이|가|야|이야|요|정보|표시)?\s*[?？!.~]*$",
         re.IGNORECASE,
     ),
+    # '새우깡 칼로리랑 당류': a listed label field ends the name.
+    re.compile(r"\s+(?:나트륨|당류|단백질|포화지방|트랜스지방|식이섬유|지방|탄수화물|칼로리|열량|콜레스테롤)\s*(?:이랑|랑|하고|와|과|,)"),
+    # '새우깡 건강에 괜찮아?', '커피 하루에 몇잔까지': health or amount wording.
+    re.compile(r"\s+(?:건강|몸)(?:에|엔|상|에는)?\s*(?:괜찮|좋|나쁘|안\s*좋|해롭)"),
+    re.compile(r"(?:^|\s+)하루(?:에)?\s*(?:몇|얼마)"),
+    # '새우깡 맛있어?', '새우깡 맛 어때': taste is not part of the name.
+    re.compile(r"\s+맛(?:있|없|이\s*어때|은\s*어때|\s*어때)"),
     # '새우깡 몇 칼로리야'
     re.compile(r"\s+몇\s*(?:칼로리|kcal|그램|g|mg|밀리그램)", re.IGNORECASE),
+    # '새우깡 100g당 칼로리', '우유 100ml 기준 당류', '새우깡 1회 제공량': a basis, not a size
+    # ('포키스탠다드 42g' keeps its size because no 당/기준 follows).
+    re.compile(r"\s+(?:\d+(?:\.\d+)?\s*(?:g|ml|그램|밀리리터)\s*(?:당|기준)|1\s*회\s*(?:제공량|분))", re.IGNORECASE),
     # '허니버터칩 한 봉지 칼로리', '코카콜라 당 얼마나 있어', '오레오 오즈 엄마랑 같이 먹어도 돼'
     re.compile(r"\s+(?:한|두|세|네|반|\d+)\s*(?:봉지|봉|개|팩|병|캔|통|줄|조각|컵|잔)(?=\s|$|[은는이가을를도의])"),
     re.compile(r"\s+당(?=\s*(?:얼마|몇|함량|수치|은\s|는\s|이\s|가\s|[?？]|$))"),
     re.compile(r"\s+(?:엄마|아빠|어머니|아버지|아이|애기|아기|동생|언니|오빠|누나|형|가족|우리)"
-               r"(?:랑|하고|와|과|도|가|는|이|이랑)?\s*(?:같이|함께)?\s*(?=먹|마시|마셔|괜찮|섭취)"),
+               r"(?:랑|하고|와|과|도|가|는|이|이랑|만)?\s*(?:같이|함께)?\s*(?=먹|마시|마셔|괜찮|섭취)"),
     re.compile(
         r"\s+(?:제품(?:을|으로)?\s*)?(?:이용|활용)(?:한|해서|해)\s*"
         r"(?:레시피|요리|조리법)",
@@ -151,8 +161,8 @@ _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
         re.IGNORECASE,
     ),
     re.compile(
-        r"\s+(?:알레르기|알러지|원재료|성분|영양성분|나트륨|당류|단백질|"
-        r"포화지방|트랜스지방|식이섬유|지방|탄수화물|칼로리|열량|콜레스테롤)\s*"
+        r"\s+(?:알레르기|알러지|원재료|성분표?|영양성분표?|나트륨|당류|단백질|"
+        r"포화지방|트랜스지방|식이섬유|지방|탄수화물|칼로리|열량|콜레스테롤|글루텐|유당|락토스)\s*"
         r"(?:(?:성분|정보|표시)\s*)?"
         r"(?:은|는|이|가|도|만|을|를|함량|수치|뭐|몇|얼마|어떤|어떠|어때|"
         r"들어|포함|있|없|높|낮|많|적|알려|보여|설명|확인|궁금|알고\s*싶)",
@@ -307,6 +317,9 @@ def extract_product_search_query(message: str) -> str:
     # a user constraint and the second term is the product. Search only the
     # product clause so the catalog does not offer every shrimp-containing item.
     cleaned = _LEADING_PERSONAL_ALLERGY_PATTERN.sub("", cleaned).strip()
+    cleaned = re.sub(r"^(?:다이어트|식단\s*관리|운동|저염식|저당식|비건|채식|감량)\s*(?:중|하는\s*중)(?:인데|이라|이라서|이어서|이니까|이야)?\s+", "", cleaned)
+    # '비건인데 먹어도 돼?', '나 채식주의자야. 이거 먹어도 돼?': a diet statement, not a product.
+    cleaned = re.sub(r"^(?:나는?\s*|저는?\s*)?(?:비건|채식주의자|채식|베지테리언|페스코|락토)(?:이야|야|이에요|예요|인데|이라|이라서|이니까|이고)?[.,!]?\s+", "", cleaned)
     # The named person in '상품명은 아빠가 먹어도 돼?' is a subject,
     # not part of the product's catalog identity.
     cleaned = re.sub(r"^(.+?)(?:은|는)\s+\S+(?:이|가|도)\s+(?=먹어도|먹을\s*수|마셔도|드셔도|드실\s*수)", r"\1 ", cleaned)

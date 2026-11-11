@@ -997,6 +997,43 @@ class ProductLabelProvenance(BaseModel):
         return self
 
 
+class BackendNutritionQuantity(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    amount: Optional[float] = Field(default=None, gt=0)
+    unit: Optional[str] = None
+
+
+class BackendNutritionPortion(BackendNutritionQuantity):
+    values: Dict[str, Optional[float]] = Field(default_factory=dict)
+
+
+class BackendNutritionBasis(BackendNutritionQuantity):
+    raw: Optional[str] = None
+    status: Optional[str] = None
+
+
+class BackendNutrition(BaseModel):
+    """Backend 'nutrition-v1': the source basis of the scalar nutrients plus
+    backend-computed per-100g/ml and whole-package values (never re-scaled here)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    contract_version: str = Field(alias="contractVersion")
+    source_basis: Optional[BackendNutritionBasis] = Field(default=None, alias="sourceBasis")
+    package_quantity: Optional[BackendNutritionQuantity] = Field(default=None, alias="packageQuantity")
+    per100g: Optional[BackendNutritionPortion] = None
+    per100ml: Optional[BackendNutritionPortion] = None
+    per_package: Optional[BackendNutritionPortion] = Field(default=None, alias="perPackage")
+    package_calculation_status: Optional[str] = Field(default=None, alias="packageCalculationStatus")
+    package_calculation_reason: Optional[str] = Field(default=None, alias="packageCalculationReason")
+
+    @property
+    def basis_known(self) -> bool:
+        basis = self.source_basis
+        return bool(basis and basis.status == "KNOWN" and basis.amount and basis.unit in {"g", "ml"})
+
+
 class Product(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -1025,6 +1062,7 @@ class Product(BaseModel):
     allergy_info: List[str] = Field(default_factory=list)
     nutrition: Dict[str, float] = Field(default_factory=dict)
     nutrition_basis: NutritionBasis = Field(default_factory=NutritionBasis)
+    nutrition_contract: Optional[BackendNutrition] = Field(default=None, exclude=True)
     label_provenance: ProductLabelProvenance = Field(
         default_factory=ProductLabelProvenance
     )
@@ -1112,6 +1150,20 @@ class Product(BaseModel):
             payload.get("식품중량"),
         )
 
+        contract = payload.get("nutrition")
+        if isinstance(contract, dict) and contract.get("contractVersion") == "nutrition-v1":
+            payload["nutrition_contract"] = contract
+            basis = contract.get("sourceBasis") or {}
+            package = contract.get("packageQuantity") or {}
+            if (basis.get("status") == "KNOWN" and basis.get("unit") in {"g", "ml"} and basis.get("amount")
+                    and not _pick_non_empty(payload.get("nutrition_basis"), payload.get("nutritionBasis"))):
+                # The scalar nutrients are stated per this basis (e.g. 100g당).
+                amount, unit = float(basis["amount"]), basis["unit"]
+                mapped = ({"basis_type": f"per_100{unit}"} if amount == 100
+                          else {"basis_type": "per_serving", "serving_size_value": amount, "serving_size_unit": unit})
+                if package.get("amount") and package.get("unit") in {"g", "ml"}:
+                    mapped.update(package_size_value=float(package["amount"]), package_size_unit=package["unit"])
+                payload["nutrition_basis"] = mapped
         raw_basis = _pick_non_empty(
             payload.get("nutrition_basis"),
             payload.get("nutritionBasis"),

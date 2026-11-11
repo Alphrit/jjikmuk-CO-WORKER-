@@ -60,7 +60,9 @@ def _decision_text(decision):
         text += " 충돌 항목: " + ", ".join(x[:40] for x in decision.dangerousIngredients[:3]) + (" 등" if len(decision.dangerousIngredients) > 3 else "") + "."
     diet = decision.dietConstraints
     if decision.status != "NOT_EVALUATED":
-        text += " " + (_DIET_TEXT[diet.status] if diet.requiredFilters else "지정된 필수 식단 조건은 없어요.")
+        if diet.requiredFilters:
+            # Only a diet the person actually set is worth a sentence.
+            text += " " + _DIET_TEXT[diet.status]
         if diet.failedFilters:
             text += " 미충족 항목: " + ", ".join(_DIET_LABELS.get(x, x)[:30] for x in diet.failedFilters[:3]) + (" 등" if len(diet.failedFilters) > 3 else "") + "."
     return text
@@ -95,6 +97,16 @@ def _profile_results(req, intent, *, decisions=True):
     return results
 
 
+def _asked_people(results, message):
+    """The people a turn singles out ('엄마만 따로 알려줘', '나만'), or [] for everyone."""
+    asked = [item for item in results if item.get("profile_name") and re.search(
+        re.escape(item["profile_name"]) + r"(?:\s*님)?(?:만|은|는|이|가|도|의|한테|에게|랑|이랑|하고|와|과)?(?![가-힣A-Za-z0-9])",
+        message)]
+    if re.search(r"(?:^|\s)(?:나|저)만", message):
+        asked += [item for item in results if item.get("target_type") == "self" and item not in asked]
+    return asked if 0 < len(asked) < len(results) else []
+
+
 def decision_response(req, intent, *, lead=""):
     ctx = req.analysis_context
     profiles = [req.profile] if req.profile else req.profiles
@@ -113,12 +125,21 @@ def decision_response(req, intent, *, lead=""):
                     # Same UNKNOWN verdict, but a concrete next step for this person.
                     item["answer"] = item["answer"].replace(_SAFETY_TEXT["UNKNOWN"], guidance)
                     item["reasons"] = [item["answer"][:1000]]
-        text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
+        asked = _asked_people(results, req.message)
+        if len(results) == 1:
+            # One person: no name label ('웹테스트: …' reads like a log line).
+            text += results[0]["answer"]
+        elif asked:
+            # '엄마만 따로 알려줘': answer for the named people only.
+            names = ", ".join(f"{item['profile_name']} 님" for item in asked)
+            text += (f"요청하신 {names} 결과만 알려 드릴게요.\n"
+                     + "\n".join(f"{item['profile_name']}: {item['answer']}" for item in asked))
+        else:
+            text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
         text += _SAFETY_TEXT["NOT_EVALUATED"]
     if ctx.profileSource == "CLIENT_REQUEST" and profiles:
         text += "\n이번 요청에서 선택한 프로필 조건을 기준으로 한 결과예요."
-    text += "\n질환이나 개인별 섭취 가능량은 이 판정에 포함되지 않아요."
     state = dict(req.conversation_state)
     state.update(last_intent=intent)
     if req.product:
@@ -188,13 +209,31 @@ def same_product_name(query, product):
             or candidate_matches_product_query(query, product))
 
 
+def _bare_label_field(text):
+    """'칼로리', '한봉지 칼로리', '대두' (product name already removed) → its intent."""
+    from app.intent.text import detect_ingredient_keyword, detect_nutrition_keyword
+    words = re.sub(r"[?？!.~]+", " ", text).split()
+    filler = {"한봉지", "한", "봉지", "1회", "제공량", "얼마", "얼마야", "얼마나", "알려줘", "있어", "들어있어", "포함", "함량", "기준"}
+    rest = [w for w in words if w not in filler]
+    if not rest or len(rest) > 2:
+        return None
+    joined = " ".join(rest)
+    if detect_nutrition_keyword(joined) or joined in {"트랜스지방", "식이섬유"}:
+        return "nutrition_explain"
+    if detect_ingredient_keyword(joined):
+        return "ingredient_check"
+    return None
+
+
 def run_backend_pipeline(req, legacy_pipeline):
     """Return (response, product, audit context), logging only in the API wrapper."""
     from app.api.adapters import normalize_active_profiles
     from app.intent.request_semantics import current_topic_message, personal_assessment_request
     from app.intent.rules import rule_based_classify_intent
     from app.services.condition_subject import unresolved_profile_target_response
-    from app.services.conversation_controls import conversation_control_response
+    from app.services.conversation_controls import (
+        conversation_control_response, followup_without_context_response, message_with_previous_topic,
+    )
     from app.services.emergency_triage import build_emergency_triage_response
     from app.services.request_language import standalone_cancellation_response
     from app.services.conversation_router import _explicit_named_product_query
@@ -204,13 +243,23 @@ def run_backend_pipeline(req, legacy_pipeline):
     # Backend keys for request snapshots are local to THIS request. Never carry
     # last turn's allergy/vegetarian exceptions onto a different request:0.
     state = {k: v for k, v in req.conversation_state.items() if k not in {"vegetarian_allowances", "pending_allergy"}}
-    req = req.model_copy(update={"message": current_topic_message(req.message), "conversation_state": state})
+    req = req.model_copy(update={"message": current_topic_message(message_with_previous_topic(req.message, req.chat_history)),
+                                 "conversation_state": state})
     profile = profiles[0] if profiles else None
     interrupt = (build_emergency_triage_response(req.message, profiles=profiles, has_food_context=bool(req.product))
                  or conversation_control_response(req.message, state)
+                 # The app never sends the previous turn; a bare follow-up needs its topic.
+                 or (None if req.chat_history or req.product else followup_without_context_response(req.message, state))
                  or standalone_cancellation_response(req.message, state, profiles=profiles, known_profiles=profiles)
                  or unresolved_profile_target_response(req.message, profiles, profiles, state))
     named_query = _explicit_named_product_query(req.message, profile)
+    person_named = len(profiles) > 1 and bool(
+        re.search(r"(?:^|\s)(?:나|저)만", req.message)
+        or any(p.profile_name and p.profile_name in req.message for p in profiles))
+    if named_query and re.sub(r"\s*(?:님|만|따로|은|는|도)(?=\s|$)|\s*따로", "", named_query).strip() in {
+            "나", "저", "나만", "저만", *(p.profile_name for p in profiles if p.profile_name)}:
+        # '엄마만 따로 알려줘', '나만 알려줘' name a person, not a product.
+        named_query = None
     # '바나나맛우유 먹어도 돼?' asks about the product, not about 우유: classify
     # without the product's own name.
     intent_message = req.message
@@ -219,6 +268,13 @@ def run_backend_pipeline(req, legacy_pipeline):
     intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, req.chat_history)
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
         intent = "can_i_eat"
+    elif intent in {"unknown", "ambiguous"} and req.product and person_named:
+        # '엄마만 따로 알려줘' with a product: that person's verdict.
+        intent = "can_i_eat"
+    elif intent in {"unknown", "ambiguous"} and req.product and _bare_label_field(intent_message):
+        # '새우깡 칼로리', '새우깡 대두' right after picking the card: the
+        # remaining words name a label field of the selected product.
+        intent = _bare_label_field(intent_message)
     elif intent in {"unknown", "ambiguous"} and req.product and re.fullmatch(r"\s*\S+(?:은|는|도)\s*[?？]*\s*", intent_message):
         from app.intent.text import detect_ingredient_keyword
         if detect_ingredient_keyword(intent_message):
@@ -277,7 +333,14 @@ def run_backend_pipeline(req, legacy_pipeline):
             activity = dict(profile=profile, product=None, barcode=req.product.barcode,
                             report_number=req.product.report_number, message=req.message)
             return response, None, activity
-        response = decision_response(req, intent)
+        # Diets are judged only from saved profiles; a diet named in the
+        # message ('비건인데 먹어도 돼?') must not look as if it were applied.
+        diet = re.search(r"비건|채식|베지테리언|페스코|락토|vegan|vegetarian", req.message, re.IGNORECASE)
+        lead = ""
+        if diet and not any(p.resolved_special_diets() for p in profiles):
+            lead = (f"방금 말씀한 식단 조건({diet[0]})은 프로필에 없어 이번 판정에 반영되지 않았어요. "
+                    "계속 적용하려면 설정에서 식단 조건을 추가해 주세요.\n")
+        response = decision_response(req, intent, lead=lead)
         resolved = req.product
         activity = dict(profile=profile, product=resolved, barcode=resolved.barcode,
                         report_number=resolved.report_number, message=req.message)

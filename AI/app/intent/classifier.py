@@ -73,21 +73,28 @@ def _infer_followup_intent_from_history(
     return "unknown"
 
 
+_GENERAL_FOOD_CONCEPTS = (
+    "간식", "식품", "첨가물", "영양", "표시", "라벨", "알레르기", "알러지", "당류", "나트륨", "지방",
+    "단백질", "탄수화물", "칼로리", "열량", "식이섬유", "비건", "채식", "글루텐", "감미료",
+)
+
+
 def _general_food_question(message: str, product: Optional[Product], profile: Optional[Profile]) -> bool:
     if product is not None:
         return False
     from app.services.conversation_router import _explicit_named_product_query
-    from app.services.hybrid import _FOOD_DOMAIN_TERMS
     if _explicit_named_product_query(message, profile) is not None:
         # A named product still goes to the candidate search.
         return False
     text = message.lower()
-    if re.search(r"(?:이|그|저|해당|방금|아까)\s*(?:제품|상품|과자|음료|우유|거|것)", text):
+    if re.search(r"(?:이|그|저|해당|방금|아까)\s*(?:제품|상품|과자|음료|우유|거|것)|얘|이건|이거|요거|저거|그거", text):
         # '이 제품 설명해줘' refers to a product the turn did not name.
         return False
     # Only questions that ask for an explanation; '성분 좀 볼래' wants a product.
     asks = re.search(r"뭐|뭘|무엇|뜻|의미|차이|어떻게|왜|봐야|고를|고르|기준|설명", text)
-    return bool(asks) and any(term in text for term in _FOOD_DOMAIN_TERMS)
+    # A food concept, not a product field: '성분 뭐야?' or '새우깡 어떻게 먹어?'
+    # still need the product.
+    return bool(asks) and any(term in text for term in _GENERAL_FOOD_CONCEPTS)
 
 
 def classify_intent_result(

@@ -28,9 +28,12 @@ NO_PRODUCT_GUIDANCE_INTENTS = {'missing_product', 'unknown'}
 # One closing line for product answers; the final pass adds it where missing.
 COMPARISON_SOURCE_NOTE = PRODUCT_REFERENCE_NOTE
 COMPARISON_NO_CONFLICT_NOTE = '등록 표시에서 충돌을 찾지 못한 제품도 출처 미확인 정보라 안전하다고 판단할 수 없어요.'
+# The app sends neither the previous turn nor the earlier product, so '둘 중에'
+# cannot be resolved: ask for both names instead of refusing the comparison.
 COMPARISON_UNAVAILABLE_ANSWER = (
-    '출처가 확인되지 않은 상품 정보로는 알레르기 충돌이 없다고 비교해 드릴 수 없어요. '
-    '각 제품을 선택하면 등록된 원재료·알레르기 표시를 확인해 드릴게요.'
+    '비교할 두 제품을 확인하지 못했어요. 이전 대화의 제품은 함께 전달되지 않아요.\n\n'
+    "'허니버터칩이랑 포카칩 나트륨 비교해줘'처럼 두 제품 이름을 함께 적어 주시면 "
+    '등록된 알레르기 표시와 영양 수치를 나란히 보여 드릴게요.'
 )
 
 
@@ -79,7 +82,7 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
         # PASS/DANGER/UNKNOWN or discard profileKey/contextId with legacy rules.
         # Backend PASS means no detected conflict, not verified label provenance.
         note = PRODUCT_REFERENCE_NOTE
-        return response.model_copy(update={'answer': response.answer + '\n' + note})
+        return response.model_copy(update={'answer': response.answer.rstrip() + '\n\n' + note})
     if (response.backend_analysis is not None
             and response.backend_analysis.application in {'context_only', 'product_selection_required'}
             and response.answer_source == 'rules' and _bounded_verdict(response)
@@ -112,15 +115,18 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
     # single-product summary, provided it carries no reassurance.
     if (response.intent == 'food_compare' and response.comparison_products
             and response.answer_source == 'rules' and _bounded_verdict(response)):
+        # One product conflicting makes the overall verdict 'avoid', but the
+        # other product's 'no conflict found' still needs the same caveat.
+        caveat = COMPARISON_NO_CONFLICT_NOTE + '\n' if '찾지 못했' in response.answer else ''
         return response.model_copy(update={
-            'answer': response.answer + '\n' + COMPARISON_SOURCE_NOTE,
+            'answer': response.answer.rstrip() + '\n\n' + caveat + COMPARISON_SOURCE_NOTE,
             'recommended_products': [], 'recipe': None, 'product_candidates': [],
         })
     if response.intent == 'food_compare' and response.comparison_products and response.answer_source == 'rules':
         # No compared product conflicts: keep the label facts, but withhold the
         # no-conflict verdict an unverified catalog cannot support.
         return response.model_copy(update={
-            'answer': response.answer + '\n' + COMPARISON_NO_CONFLICT_NOTE + '\n' + COMPARISON_SOURCE_NOTE,
+            'answer': response.answer.rstrip() + '\n\n' + COMPARISON_NO_CONFLICT_NOTE + '\n' + COMPARISON_SOURCE_NOTE,
             'overall_decision': 'check_required', 'allergy_status': 'unknown', 'risk_level': 'unknown',
             'per_profile_results': [], 'recommended_products': [], 'recipe': None, 'product_candidates': [],
         })
@@ -135,6 +141,13 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
             'recommended_products': [], 'comparison_products': [], 'recipe': None,
             'product_candidates': [],
         })
+
+    if (response.intent == 'food_compare' and not response.comparison_products and not response.product_candidates
+            and response.answer_source == 'rules' and _no_positive_decision(response)):
+        # '신라면이랑 OO 중에 뭐가 나아?' where OO is not in the catalog: keep
+        # the upstream 'could not find' answer instead of a generic refusal.
+        return response.model_copy(update={'answer': response.answer.rstrip() + '\n\n' + COMPARISON_SOURCE_NOTE,
+                                           'recommended_products': [], 'recipe': None})
 
     candidates = [candidate.model_copy(update={
         'reason': '출처 미확인 검색 후보입니다. 이름·제조사·포장 정보를 비교해 선택해 주세요.',

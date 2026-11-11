@@ -535,7 +535,16 @@ def _product_candidate_key(product: Product) -> str:
     brand_removed = _brand_removed_text(name)
     normalized_name = _normalize_search_text(brand_removed or name).replace(" ", "")
     if normalized_name:
-        return normalized_name
+        # Same name from different makers (빙그레/롯데 바나나맛우유) can carry
+        # different allergen labels; keep both cards so the user picks one.
+        maker = product.manufacturer_name or product.company_name or ""
+        # One company's factories ('해태가루비(주)', '해태가루비(주) 제 2공장')
+        # are the same maker; only different companies stay separate.
+        maker = re.sub(r"\(주\)|주식회사|㈜|제\s*\d+\s*공장|\S*공장", " ", maker)
+        maker = _normalize_search_text(maker).replace(" ", "")
+        if maker in {"알수없음", "unknown", "미상"}:
+            maker = ""
+        return f"{normalized_name}|{maker}"
     if product.report_number:
         return f"report:{product.report_number}"
     if product.barcode:
@@ -582,7 +591,22 @@ def _dedupe_scored_products(scored: List[tuple[float, Product]]) -> List[tuple[f
             )
         ):
             deduped[key] = (score, product)
-    return sorted(deduped.values(), key=lambda item: item[0], reverse=True)
+    ranked = sorted(deduped.values(), key=lambda item: item[0], reverse=True)
+    # Different makers of the same name ('빼빼로' 롯데웰푸드/롯데제과) stay
+    # separate cards; among them the one with label data comes first. Rows
+    # with different names keep their search order ('진라면(순한맛)' first).
+    def same_name(product):
+        return _normalize_search_text(product.clean_product_name or product.product_name or "").replace(" ", "")
+    result: List[tuple[float, Product]] = []
+    for item in ranked:
+        result.append(item)
+        index = len(result) - 1
+        while (index > 0 and result[index - 1][0] == item[0]
+               and same_name(result[index - 1][1]) == same_name(item[1])
+               and _product_information_score(result[index - 1][1]) < _product_information_score(item[1])):
+            result[index - 1], result[index] = result[index], result[index - 1]
+            index -= 1
+    return result
 
 
 def _alternative_search_text(product: Product) -> str:

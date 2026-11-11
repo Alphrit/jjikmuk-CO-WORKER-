@@ -274,7 +274,8 @@ def create_preview_app(*, port: int = 8765, allow_external: bool = False) -> Fas
                     "calls": events,
                     "llm_output_adopted": (
                         response.answer_source in {"llm", "rag", "hybrid"}
-                        and response.fallback_reason not in {"rag_reviewed_excerpt_answer", "rag_generated_answer_rejected"}
+                        and response.fallback_reason not in {"rag_reviewed_excerpt_answer", "rag_generated_answer_rejected",
+                                                             "reviewed_excerpt_local"}
                     ),
                     "answer_source": response.answer_source,
                     "explanation": _explanation(response, events, usage),

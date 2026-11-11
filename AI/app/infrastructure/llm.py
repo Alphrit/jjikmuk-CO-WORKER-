@@ -316,7 +316,8 @@ def _extract_output_text(body: dict) -> Optional[str]:
     return "\n".join(parts) or None
 
 
-def _generate_openai(prompt: str, *, json_schema: Optional[dict] = None) -> Optional[str]:
+def _generate_openai(prompt: str, *, json_schema: Optional[dict] = None,
+                     reasoning_effort: Optional[str] = None) -> Optional[str]:
     api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
     endpoint = _endpoint_decision()
     if not api_key or not endpoint.allowed or not endpoint.canonical_url:
@@ -346,7 +347,7 @@ def _generate_openai(prompt: str, *, json_schema: Optional[dict] = None) -> Opti
             "strict": True, "schema": json_schema,
         }}
     if model.startswith(("gpt-6-", "gpt-6.")):
-        effort = (os.getenv("LLM_REASONING_EFFORT") or "").strip().lower()
+        effort = (reasoning_effort or os.getenv("LLM_REASONING_EFFORT") or "").strip().lower()
         if effort not in {"low", "medium", "high", "xhigh", "max"}:
             effort = DEFAULT_LLM_REASONING_EFFORT
         # GPT-6 reasoning requests reject incompatible sampling parameters.
@@ -369,7 +370,8 @@ def _generate_openai(prompt: str, *, json_schema: Optional[dict] = None) -> Opti
     return _extract_output_text(body) if body else None
 
 
-def generate_text(prompt: str, *, json_schema: Optional[dict] = None) -> Optional[str]:
+def generate_text(prompt: str, *, json_schema: Optional[dict] = None,
+                  reasoning_effort: Optional[str] = None) -> Optional[str]:
     if not isinstance(prompt, str) or not prompt.strip():
         return None
     if _override_client is not None:
@@ -386,7 +388,8 @@ def generate_text(prompt: str, *, json_schema: Optional[dict] = None) -> Optiona
     if not persistent_state_required():
         mark_external_ai_used("llm")
     return observe_llm_call(
-        lambda: _generate_openai(prompt, json_schema=json_schema) if json_schema is not None else _generate_openai(prompt),
+        lambda: (_generate_openai(prompt, json_schema=json_schema, reasoning_effort=reasoning_effort)
+                 if json_schema is not None or reasoning_effort is not None else _generate_openai(prompt)),
         provider="openai",
     )
 

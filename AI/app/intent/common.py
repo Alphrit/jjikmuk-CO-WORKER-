@@ -154,6 +154,10 @@ OUT_OF_DOMAIN_KEYWORDS = [
 ]
 
 FOOD_DOMAIN_KEYWORDS = [
+    "과자",
+    "쿠키",
+    "음료",
+    "라면",
     "식품",
     "제품",
     "음식",

@@ -254,8 +254,12 @@ def requested_topics(message: str) -> set[str]:
         # How the % is computed, or why 열량·트랜스지방 have none.
         topics.difference_update({"nutrition_percentage", "fat_types", "calories_basics"})
         topics.add("percentage_calculation")
+    if re.search(r"콜레스테롤|트랜스지방", text) and re.search(r"(?<![0-9.])0(?![0-9.])|미만", text) and re.search(r"표시|뜻|의미|없|진짜", text):
+        # '콜레스테롤 0 표시 무슨 뜻이야?' asks the zero-display rule, not the concept.
+        topics.difference_update({"fat_types"})
+        topics.add("nutrition_zero")
     if "콜레스테롤" in text and not topics.intersection({"nutrition_zero", "nutrition_percentage", "percentage_calculation"}) and re.search(
-            r"뭐|뜻|의미|이란|란|무엇|설명|어디|들어있|들어가|어떤", text):
+            r"뭐|뜻|의미|이란|란|무엇|설명|어디|들어있|들어가|어떤|자세히|자세하게", text):
         topics.add("cholesterol_basics")
     # These label terms name a product fact too ('카페인 함량 알려줘', '이 우유
     # 소비기한'): only questions about the term's meaning are explanations.

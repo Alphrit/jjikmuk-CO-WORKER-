@@ -67,10 +67,14 @@ def parse_llm_intent(raw: str) -> str:
         cleaned = re.sub(r"^```(?:json)?", "", cleaned).strip()
         cleaned = re.sub(r"```$", "", cleaned).strip()
 
+    # The model may only pick a routing intent: emergency triage and the
+    # scope notice are decided by fixed rules, never by a free model reply.
+    allowed = VALID_INTENTS - {"emergency_safety", "out_of_domain"}
     try:
         data = json.loads(cleaned)
-        intent = data.get("intent")
-        if intent in VALID_INTENTS:
+        # '"unknown"', '[...]' or 'null' are valid JSON but not an object.
+        intent = data.get("intent") if isinstance(data, dict) else None
+        if intent in allowed:
             return intent
     except json.JSONDecodeError:
         pass
@@ -78,7 +82,7 @@ def parse_llm_intent(raw: str) -> str:
     match = re.search(r'"intent"\s*:\s*"([^"]+)"', cleaned)
     if match:
         intent = match.group(1)
-        if intent in VALID_INTENTS:
+        if intent in allowed:
             return intent
 
     return "unknown"

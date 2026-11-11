@@ -8,6 +8,10 @@ unverified label.
 
 import re
 
+# Product.nutrition keys → backend nutrition-v1 value names.
+_CONTRACT_KEYS = {"kcal": "energyKcal", "carbohydrate": "carbsG", "protein": "proteinG", "fat": "fatG",
+                  "sugars": "sugarG", "sodium": "sodiumMg", "cholesterol": "cholesterolMg"}
+
 _INTOLERANCE_INGREDIENTS = ((r"(?:유당|락토스|젖당)\s*불내증", "우유"), (r"글루텐\s*불내증|셀리악", "밀"))
 
 
@@ -19,35 +23,132 @@ def product_facts_text(product, message, intent):
         from app.intent.text import detect_nutrition_keywords
         from app.services.handlers import NUTRITION_LABELS, NUTRITION_UNITS
         from app.data.dictionaries import NUTRITION_KEYWORDS
+        # Nutrients the backend never sends: say so instead of answering '지방'
+        # for '트랜스지방' (substring) or listing every nutrient.
+        missing = [name for name in ("트랜스지방", "식이섬유") if name in message.replace(" ", "")]
+        for name in missing:
+            message = message.replace(name, " ")
         requested = set(detect_nutrition_keywords(message))
+        if missing and not requested:
+            found = [label_text_value(product, name) for name in missing]
+            if all(found):
+                text = ("영양성분 표시 원문 기준 — " + ", ".join(f"{name}: {value}" for name, value in zip(missing, found))
+                        + (f" ({label_text_basis(product)[2:]})" if label_text_basis(product) else "") + ".")
+                if "트랜스지방" in missing and re.fullmatch(r"0(?:\.0+)?g", found[missing.index("트랜스지방")]):
+                    text += " 트랜스지방 0g은 0.2g 미만일 때도 이렇게 표시할 수 있어요."
+                return text + "\n"
+            return "등록된 영양정보 — " + ", ".join(f"{name}: {value or '정보 없음'}" for name, value in zip(missing, found)) + ". 포장지의 영양성분표를 확인해 주세요.\n"
         # The detector names nutrients by NUTRITION_KEYWORDS ('칼로리'), the
         # labels by display name ('열량'); match through the aliases. Show the
         # requested nutrients, or all of them when none matched (never an
         # empty list, which printed '등록된 영양정보 — .').
         keys = [key for key, label in NUTRITION_LABELS.items()
                 if any(label in NUTRITION_KEYWORDS.get(name, (name,)) for name in requested)] or list(NUTRITION_LABELS)
-        lines = [f"{NUTRITION_LABELS[key]}: {product.nutrition[key]:g}{NUTRITION_UNITS[key]}"
-                 if key in product.nutrition else f"{NUTRITION_LABELS[key]}: 정보 없음" for key in keys]
-        return "등록된 영양정보 — " + ", ".join(lines) + ". 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요.\n"
+        from app.core.nutrition_basis import has_explicit_nutrition_basis, label_text_serving, nutrition_basis_label
+        contract = getattr(product, "nutrition_contract", None)
+        basis_known = has_explicit_nutrition_basis(product)
+        # No basis field, but the label text the backend sent may state it ('30g당 160kcal').
+        serving = None if basis_known else label_text_serving(product)
+        package = contract.per_package if contract is not None else None
+        hundred = (contract.per100g or contract.per100ml) if contract is not None else None
+        wants_hundred = bool(re.search(r"100\s*(?:g|ml|그램|밀리)", message))
+
+        def number(value):
+            return f"{round(float(value), 1):,.10g}"
+
+        def line(key):
+            label, unit = NUTRITION_LABELS[key], NUTRITION_UNITS[key]
+            value = product.nutrition.get(key)
+            if value is None:
+                # Missing structured value: the label text the backend sent may still have it.
+                text_value = label_text_value(product, label)
+                return f"{label}: {text_value} (영양성분 표시 원문{label_text_basis(product)})" if text_value else f"{label}: 정보 없음"
+            if serving is not None:
+                return f"{label}: {value:,.10g}{unit} ({serving[0]}당)"
+            if not basis_known:
+                return f"{label}: {value:,.10g}{unit} (기준량 미확인)"
+            text = f"{label}: {value:,.10g}{unit} ({nutrition_basis_label(product)})"
+            # Backend-computed values; never multiplied again here.
+            contract_key = _CONTRACT_KEYS.get(key)
+            if package is not None and package.values.get(contract_key) is not None:
+                text += f", 한 봉지(총 {number(package.amount)}{package.unit}) 환산 {number(package.values[contract_key])}{unit}"
+            if (wants_hundred and hundred is not None and hundred.values.get(contract_key) is not None
+                    and nutrition_basis_label(product) != f"100{hundred.unit} 기준"):
+                text += f", 100{hundred.unit}당 환산 {number(hundred.values[contract_key])}{unit}"
+            return text
+
+        lines = [line(key) for key in keys]
+        if serving is not None:
+            tail = f" 포장지 영양성분 표시의 {serving[0]}당 수치예요" + (f"(총 내용량 {serving[1]})" if serving[1] else "") + "."
+            if wants_hundred and serving[0] not in {"100g", "100ml"}:
+                tail += f" 100g당 환산값은 전달되지 않아 표시 기준인 {serving[0]}당 수치로 안내했어요."
+            elif re.search(r"봉지|한\s*통|전체|다\s*먹", message):
+                tail += " 한 봉지 전체 값은 따로 전달되지 않아 계산하지 않았어요."
+        elif not basis_known:
+            tail = " 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요."
+        elif package is not None:
+            tail = " 환산값은 원본 수치를 계산한 값이라 포장지 표기와 소수점이 다를 수 있어요."
+        else:
+            tail = {
+                "PACKAGE_QUANTITY_UNKNOWN": " 상품 전체 용량이 없어 한 봉지 기준으로는 환산하지 못했어요.",
+                "UNIT_MISMATCH": " 기준량과 전체 용량의 단위(g/ml)가 달라 한 봉지 기준으로는 환산하지 못했어요.",
+            }.get(contract.package_calculation_reason if contract is not None else None,
+                  " 한 봉지 기준 환산값은 전달되지 않았어요.")
+        return "등록된 영양정보 — " + ", ".join(lines) + "." + tail + "\n"
     if intent in {"ingredient_check", "product_summary"}:
         ingredients = product.rawmtrl_nm or ", ".join(product.ingredients)
         allergens = product.resolved_allergies()
         text = asked_ingredient_text(product, message) if intent == "ingredient_check" else ""
-        text += ("등록된 원재료: " + ingredients[:1500] + "\n") if ingredients else "등록된 원재료 정보가 부족해요.\n"
+        text += (("등록된 원재료: " + ingredients[:1500] + "\n") if ingredients
+                 else "이 상품은 원재료가 등록되어 있지 않아 성분을 안내할 수 없어요. 포장지의 원재료명을 확인해 주세요.\n")
         if allergens:
             text += "등록된 알레르기 표시: " + ", ".join(allergens) + "\n"
         return text
     return ""
 
 
+def label_text_value(product, label):
+    """'트랜스지방0g' from the backend's raw label text, or None."""
+    text = getattr(product, "nutrient_text", None) or ""
+    found = re.search(rf"(?<![가-힣]){re.escape(label)}\s*([\d.,]+)\s*(mg|g|kcal)", text)
+    return f"{found[1]}{found[2]}" if found else None
+
+
+def label_text_basis(product):
+    """', 30g당' when the raw label text states its basis, else ''."""
+    text = getattr(product, "nutrient_text", None) or ""
+    found = re.search(r"([\d.]+\s*(?:g|ml|mL))\s*당", text)
+    return f", {found[1].replace(' ', '')}당" if found else ""
+
+
 def asked_ingredient_text(product, message):
     """Answer the asked ingredient from registered label text; never assert absence."""
     from app.intent.text import detect_ingredient_keyword
-    if product.product_name:
-        # '새우깡' must not read as a question about 새우.
-        message = message.replace(product.product_name, " ")
+    message = strip_product_name_words(product, message)
     ingredient = detect_ingredient_keyword(message)
+    if not ingredient and re.search(r"유당|락토스|젖당", message):
+        return "유당은 우유에 들어 있는 당이라 우유 표시로 확인했어요. " + ingredient_label_text(product, "우유")
+    if not ingredient and "글루텐" in message:
+        # Gluten is checked through its labelled source; 보리·호밀 are not label allergens.
+        return "글루텐은 밀·보리·호밀에 들어 있는 단백질이라 밀 표시로 확인했어요. " + ingredient_label_text(product, "밀")
     return ingredient_label_text(product, ingredient) if ingredient else ""
+
+
+def strip_product_name_words(product, message):
+    """'새우깡' must not read as a question about 새우, even when the selected
+    product is '농심 새우깡 90G' or '쌀새우깡'. Words that are ingredients
+    themselves ('바나나맛우유에 우유 있어?' → 우유) are kept."""
+    from app.data.dictionaries import INGREDIENT_KEYWORDS
+    name = product.product_name or ""
+    if name:
+        message = message.replace(name, " ")
+    compact_name = re.sub(r"\s+", "", name)
+    words = re.findall(r"[가-힣A-Za-z0-9]+", message)
+    for word in words:
+        stem = re.sub(r"(?:은|는|이|가|에|에는|의|도|을|를)$", "", word)
+        if len(stem) >= 2 and stem in compact_name and stem not in INGREDIENT_KEYWORDS:
+            message = re.sub(rf"(?<![가-힣A-Za-z0-9]){re.escape(word)}(?![가-힣A-Za-z0-9])", " ", message)
+    return message
 
 
 def intolerance_text(product, message):
@@ -70,8 +171,10 @@ def ingredient_label_text(product, ingredient):
         # '땅콩빼빼로' with no 땅콩 in its registered label: the name itself is
         # evidence, so never let a missing label field read as reassurance.
         subject = "이" if object_particle(ingredient) == "을" else "가"
-        return (f"제품명에 '{ingredient}'{subject} 들어 있어요. 등록된 표시에는 없지만 들어 있을 가능성이 높으니 "
-                "포장지의 알레르기 표시를 꼭 확인하고, 확인하기 전에는 드시지 마세요.\n")
+        # A fact about the product; whether to avoid it is said per person
+        # (unknown_allergy_guidance), only to those allergic to it.
+        return (f"제품명에 '{ingredient}'{subject} 들어 있어 {ingredient}{subject} 들어 있을 가능성이 높아요. "
+                "다만 DB의 원재료·알레르기 표시로는 확인되지 않았으니 포장지의 알레르기 표시를 확인해 주세요.\n")
     shared = find_cross_contamination_aliases(product, ingredient)
     if shared:
         return f"{ingredient}의 직접 함유 표기는 찾지 못했지만 교차오염 가능성 표시가 있어요: {', '.join(shared[:3])}.\n"
@@ -80,15 +183,16 @@ def ingredient_label_text(product, ingredient):
 
 
 def name_only_allergens(product, profile):
-    """Profile allergens named in the product name but missing from its label ('바나나맛우유')."""
-    from app.data.dictionaries import ALLERGEN_CANONICAL_ALIASES
-    from app.services.response_helpers import allergy_terms_from_product_name, find_matching_aliases
-    wanted = {allergen.lower() for allergen in profile.resolved_allergies()}
+    """Profile allergens named in the product name but missing from its label ('바나나맛우유', '아몬드빼빼로' for 견과류)."""
+    from app.services.response_helpers import aliases_for_allergen, allergy_terms_from_product_name, find_matching_aliases
+    terms = allergy_terms_from_product_name(product)
     found = []
-    for term in allergy_terms_from_product_name(product):
-        aliases = {alias.lower() for alias in ALLERGEN_CANONICAL_ALIASES.get("대두" if term == "콩" else term, ())} | {term}
-        if aliases & wanted and not find_matching_aliases(product, term):
-            found.append(term)
+    for allergen in profile.resolved_allergies():
+        # A parent such as 견과류 expands to its children (아몬드, 호두…).
+        aliases = {alias.lower() for alias in aliases_for_allergen(allergen)}
+        if find_matching_aliases(product, allergen):
+            continue
+        found.extend(term for term in terms if term.lower() in aliases and term not in found)
     return found
 
 
@@ -117,9 +221,17 @@ def unknown_allergy_guidance(product, profile):
         term = named[0]
         return (f"피하는 게 좋아요. 제품명에 '{term}'{subject(term)} 들어 있어 {term}{subject(term)} 들어 있을 가능성이 높아요. "
                 "등록된 알레르기 표시가 없어 DB로는 확인되지 않았어요.")
+    from app.data.dictionaries import ALLERGEN_CANONICAL_ALIASES
+    from app.services.response_helpers import find_cross_contamination_aliases
     names = list(dict.fromkeys(allergen_display_name(item) for item in profile.resolved_allergies()))
-    if not names:
+    if not names or any(name not in ALLERGEN_CANONICAL_ALIASES for name in names):
+        # An allergy this service cannot match keeps the generic UNKNOWN text.
         return None
+    shared = [name for name in names if find_cross_contamination_aliases(product, name)]
+    if shared:
+        listed_shared = ", ".join(shared)
+        return (f"등록된 표시에 {listed_shared}{subject(shared[-1])} 같은 제조시설 등에서 섞일 수 있다는 주의 문구가 있어요. "
+                "드시기 전에 제품 포장지의 알레르기 표시를 꼭 확인해 주세요.")
     listed = ", ".join(names)
     labels = product.resolved_allergies()
     if labels:
@@ -127,13 +239,13 @@ def unknown_allergy_guidance(product, profile):
         if any(find_matching_aliases(product, name) for name in names):
             return None
         return (f"확인한 결과 등록된 알레르기 표시({', '.join(labels)})에는 {listed}{subject(names[-1])} 보이지 않아요. "
-                "다만 표시 정보가 완전한지는 확인되지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+                "다만 DB 정보가 실제 포장과 다를 수 있으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
     if product.rawmtrl_nm or product.ingredients:
         from app.services.response_helpers import find_matching_aliases
         if any(find_matching_aliases(product, name) for name in names):
             return None
-        return (f"확인한 결과 등록된 원재료에서는 {listed}{subject(names[-1])} 보이지 않아요. 다만 알레르기 표시가 "
-                "등록되어 있지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+        return (f"확인한 결과 원재료 목록에는 {listed}{subject(names[-1])} 보이지 않아요. 다만 '{names[0]} 함유' 같은 "
+                "알레르기 표시는 DB에 따로 등록되어 있지 않아 확실하지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
     # Say what was checked and why it is not a 'no': the label is simply absent.
-    return (f"확인한 결과 등록된 정보에서는 {listed} 성분이 보이지 않아요. 다만 이 상품은 알레르기 표시가 등록되어 "
-            "있지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+    return (f"확인한 결과 등록된 정보에서는 {listed} 성분이 보이지 않아요. 다만 이 상품은 DB에 원재료와 알레르기 표시가 "
+            "모두 없어서 확실하지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")

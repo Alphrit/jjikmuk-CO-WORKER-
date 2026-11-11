@@ -268,6 +268,11 @@ class ChatRequestGuardMiddleware:
 
         method = str(scope.get("method") or "")
         path = str(scope.get("path") or "")
+        # Behind a path prefix (root_path '/api'), scope['path'] still carries
+        # it; compare the route itself so the guard can never be skipped.
+        root_path = str(scope.get("root_path") or "").rstrip("/")
+        if root_path and path.startswith(root_path + "/"):
+            path = path[len(root_path):]
         path_parts = path.split("/")
         is_chat_request = method == "POST" and path == "/chat"
         is_conversation_write = (

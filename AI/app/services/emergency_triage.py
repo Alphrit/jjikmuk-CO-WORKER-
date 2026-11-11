@@ -30,23 +30,28 @@ _PAST_OR_HYPOTHETICAL_PATTERN = re.compile(
     r"만약|가정|증상은|증상이\s*뭐|어떻게\s*대처)"
 )
 _ALLERGY_CONTEXT_PATTERN = re.compile(
-    r"(?:알레르기|알러지|아나필락시스|땅콩|견과|우유|달걀|계란|"
-    r"새우|게|갑각류|대두|콩|밀|메밀|복숭아|조개)"
+    r"(?:알레르기|알러지|아나필락시스|땅콩|견과|호두|아몬드|캐슈|피스타치오|잣|우유|달걀|계란|"
+    r"새우|꽃게|대게|갑각류|대두|메밀|밀가루|복숭아|토마토|조개|굴|전복|홍합|오징어|고등어|"
+    r"닭고기|돼지고기|소고기|쇠고기|참깨|키위|"
+    # One-syllable foods only as words: '어떻게'·'완두콩' are not 게·콩.
+    r"(?<![가-힣])(?:게|콩|밀)(?=\s|[을를이가도랑와과은는만]|먹|$))"
 )
 _SEVERE_PATTERN = re.compile(
-    r"(?:숨(?:이|을)?\s*(?:잘\s*)?(?:안|못)\s*쉬|"
+    r"(?:숨(?:이|을)?\s*(?:잘\s*)?(?:안|못)\s*쉬|숨(?:이)?\s*(?:막혀|막히|막힌|막혔|막힘)|"
+    r"숨(?:을)?\s*쉴\s*수(?:가|도)?\s*없|호흡(?:이|을)?\s*(?:안\s*(?:돼|되)|못\s*하)|쌕쌕|"
+    r"(?:축|축축)\s*(?:늘어|처지|처져)|늘어져\s*(?:있|서)|반응(?:이|을)?\s*(?:없|안\s*해)|"
     r"숨(?:을)?\s*쉬(?:기|기가|는\s*게|는\s*것이)?\s*(?:힘들|어렵|어려)|숨(?:이)?\s*(?:차|찹|찬)|"
     r"호흡(?:이|가)?\s*(?:힘들|어렵|어려|가빠|가쁘)|호흡곤란|"
-    r"목(?:이|가)?\s*(?:(?:꽉|점점|많이|갑자기)\s*)?(?:붓|부어|부었|부은|조여|조이|조인|막혀|막히|막힌)|"
-    r"혀(?:가|도)?\s*(?:(?:점점|많이|갑자기)\s*)?(?:붓|부어|부었|부은)|의식(?:이|가)?\s*(?:흐리|없)|"
-    r"쓰러|실신|기절|입술(?:이|가)?\s*(?:붓|부어|부었|부은|파래|푸르)|"
+    r"목(?:이|가)?\s*(?:(?:꽉|점점|많이|갑자기|너무|엄청|퉁퉁|심하게)\s*)?(?:붓|부어|부었|부은|조여|조이|조인|막혀|막히|막힌)|"
+    r"혀(?:가|도)?\s*(?:(?:점점|많이|갑자기|너무|엄청|퉁퉁|심하게)\s*)?(?:붓|부어|부었|부은)|의식(?:이|가)?\s*(?:흐리|없)|"
+    r"쓰러|실신|기절|입술(?:이|가)?\s*(?:(?:너무|엄청|퉁퉁|많이|갑자기)\s*)?(?:붓|부어|부었|부은|파래|푸르)|"
     r"침(?:을|도)?\s*(?:못|안)\s*삼키)"
 )
 # Hives, rash, itching, swelling or stomach symptoms after eating: not routed
 # as an emergency, but never left unanswered either.
 _MILD_REACTION_PATTERN = re.compile(
     r"(?:두드러기|발진|가려|간지러|붉게|빨갛게|울긋불긋|(?:눈|얼굴|입|손|몸)(?:이|가)?\s*(?:붓|부어|부었|부은)|"
-    r"토했|토해|구토|토할|복통|배(?:가)?\s*(?:아파|아프)|설사)"
+    r"토했|토해|토하|구토|토할|복통|배(?:가)?\s*(?:아파|아프)|설사)"
 )
 _EXPOSURE_PATTERN = re.compile(
     r"(?:먹고|먹었|마시고|마셨|들이켰|(?:먹은|마신)\s*(?:직후|뒤|후)|섭취\s*후|"
@@ -56,6 +61,17 @@ _FOOD_EXPOSURE_PATTERN = re.compile(
     r"(?:음식|식품|간식|과자|식사|음료|요리|제품|생선|고기|두부|밥).{0,12}(?:먹|마시|마신|마셨|섭취)|"
     r"(?:먹은|마신)\s*(?:음식|식품|간식|과자|식사|음료|요리|제품)"
 )
+
+
+# Airway or consciousness signs reported now are routed even without a named
+# food: in this app the likely cause is something just eaten, and 119 guidance
+# is never harmful. '숨이 차' alone (exercise) is excluded.
+_AIRWAY_PATTERN = re.compile(
+    r"숨(?:이)?\s*(?:막혀|막혔)|숨(?:을)?\s*쉴\s*수(?:가|도)?\s*없|숨(?:이|을)?\s*(?:잘\s*)?(?:안|못)\s*쉬|"
+    r"호흡곤란|목(?:이|가)?\s*(?:(?:꽉|점점|많이|갑자기|너무|엄청|퉁퉁|심하게)\s*)?(?:부어|부었|조여|막혀)|"
+    r"혀(?:가|도)?\s*(?:(?:점점|많이|갑자기|너무|엄청|퉁퉁|심하게)\s*)?(?:부어|부었)|의식(?:이|가)?\s*없|쓰러졌|실신|기절"
+)
+_PRESENT_REPORT_PATTERN = re.compile(r"(?:어요|아요|해요|워요|요|어|아|다|도와\s*줘|도와\s*주세요|살려\s*줘|살려\s*주세요)\s*[.!?…ㅠㅜ]*\s*$")
 
 
 def _symptom_clauses(message):
@@ -120,7 +136,11 @@ def _is_current_severe_allergic_reaction(
         return False
     # A quotation being translated/explained is not a reported symptom.
     # Remove that quotation only; a separate current report still has priority.
-    text = re.sub(r'''["“‘'].*?["”’']\s*(?:라는|이란|이라는)?\s*(?:예문|문장|표현).*?(?:번역|해석|설명)[^.!?]*''', "", text)
+    text = re.sub(r'''["“‘'][^"“”‘’'\n]{0,200}["”’']\s*(?:라는|이란|이라는)?\s*(?:예문|문장|표현)[^.!?\n]{0,80}?(?:번역|해석|설명)[^.!?]*''', "", text)
+    if (pattern is _SEVERE_PATTERN and not _PAST_OR_HYPOTHETICAL_PATTERN.search(text)
+            and _PRESENT_REPORT_PATTERN.search(text)
+            and any(_affirmed_severe_symptom(clause, _AIRWAY_PATTERN) for clause in _symptom_clauses(text))):
+        return True
     if not _CURRENT_PATTERN.search(text) or not any(_affirmed_severe_symptom(clause, pattern) for clause in _symptom_clauses(text)):
         return False
     has_allergy_context = (
@@ -132,7 +152,7 @@ def _is_current_severe_allergic_reaction(
             # does not require the food to occur in a fixed allergen list.
             # This is emergency routing, never an allergy diagnosis.
             and (has_food_context or _profile_allergen_mentioned(text, profiles)
-                 or re.search(r"[가-힣A-Za-z]+(?:을|를)\s*(?:먹|마셨|마신|마시|들이켰|섭취)", text))
+                 or re.search(r"[가-힣A-Za-z]+(?:을|를)?\s*(?:먹|마셨|마신|마시|들이켰|섭취)", text))
         )
     )
     return has_allergy_context
