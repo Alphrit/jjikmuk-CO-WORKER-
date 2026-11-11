@@ -92,10 +92,50 @@ def draft_keeps_facts(original: str, draft: str, response: ChatResponse) -> bool
     return _rejection_reason(original, draft, response) is None
 
 
+# Verdict wording a draft must keep, and wording that would weaken it.
+_AVOID = re.compile(r"피해\s*(?:주세요|주셔야|야|요)|피하(?:세요|시는|는\s*(?:게|것|편)|고|셔야|셔요|시길|시면\s*좋)")
+_NOT_AVOID = re.compile(r"피하지\s*않|피할\s*필요|피해(?:는|가)\s|피하실\s*필요")
+_UNCERTAIN = re.compile(r"찾지\s*못|발견되지\s*않|볼\s*수\s*없|알\s*수\s*없|확실하지\s*않|단정할?\s*수\s*없|확인되지\s*않|부족")
+# '새우가 없어요', '충돌이 없어요': an absence claim. Missing data ('정보가 없어요') is not one.
+_ABSENCE = re.compile(r"([가-힣]{1,12})(?:이|가|은|는)?\s*없(?:어요|습니다|다|음)")
+_DATA_WORDS = ("정보", "값", "기준량", "등록", "표시", "원재료", "자료", "기록")
+_SAFETY_PHRASES = (r"보장하는\s*뜻은\s*아니", r"같은\s*제조\s*시설|교차\s*(?:오염|접촉)", r"포장(?:지)?", r"미충족")
+_SKIP_CHECK = re.compile(r"확인(?:은|할|하실)?.{0,8}(?:안\s*하셔도|필요\s*(?:는\s*)?없)|걱정(?:은)?\s*(?:내려놓|안\s*하셔도|하지\s*않으셔도)")
+_NUTRIENT_VALUE = re.compile(r"(열량|칼로리|나트륨|당류|탄수화물|단백질|포화지방|트랜스지방|지방|콜레스테롤)\D{0,10}?(\d[\d,]*(?:\.\d+)?)\s*(mg|g|kcal|ml)")
+_EXTRA_ALLERGEN_WORDS = ("참깨", "생선", "어류", "해산물", "글루텐", "유당", "젤라틴", "셀러리", "겨자", "견과류", "갑각류")
+
+
+def _absences(text):
+    return [noun for noun in _ABSENCE.findall(text) if not any(word in noun for word in _DATA_WORDS)]
+
+
+def _person_segments(text, names):
+    """'민수: …피해주세요. 지은: …' → {name: the text from that name to the next one}."""
+    spots = sorted((text.find(name), name) for name in names if text.find(name) >= 0)
+    return {name: text[start:(spots[i + 1][0] if i + 1 < len(spots) else len(text))] for i, (start, name) in enumerate(spots)}
+
+
+def _allergen_words():
+    from app.data.dictionaries import ALLERGEN_CANONICAL_ALIASES
+    words = set(_EXTRA_ALLERGEN_WORDS)
+    for canonical, aliases in ALLERGEN_CANONICAL_ALIASES.items():
+        words.add(canonical)
+        words.update(alias for alias in aliases if alias)
+    return words
+
+
+def _mentions(text, word):
+    if len(word) == 1:
+        # '밀 알레르기', '게 성분' only: '피하시는 게 좋아요' is not crab.
+        return re.search(rf"(?<![가-힣]){re.escape(word)}(?=\s*(?:알레르기|알러지|성분|표시|함유|관련))", text) is not None
+    return word in text
+
+
 def _rejection_reason(original: str, draft: str, response: ChatResponse) -> str | None:
     """Why a draft must not replace the rule text, or None when it may."""
     from app.services.hybrid import (
         _contains_reassuring_conclusion, _has_unsupported_health_terms, _has_unsupported_ingredient_terms,
+        _split_claim_clauses,
     )
     # Line breaks and '•' bullets are layout, not content; they do not count toward length.
     body = re.sub(r"\s+|•", "", draft)
@@ -116,20 +156,65 @@ def _rejection_reason(original: str, draft: str, response: ChatResponse) -> str 
         return _numbers(re.sub(r"1\s*회(?=\s*제공량)|100\s*(?:g|ml)(?=\s*[·/,)])|외\s*\d+\s*가지|\d{4}\s*년(?:\s*\d{1,2}\s*월)?", " ", text))
     if values(draft) != values(original):
         return "numbers:" + ",".join(sorted(values(draft) ^ values(original)))[:40]
-    # Each verdict cue of the rule text must survive.
-    for cue, pattern in (("피해", r"피(?:해|하)"), ("포장지", r"포장지"), ("정보 없음", r"정보\s*(?:없음|가?\s*없)|값이\s*없|등록되어\s*있지\s*않"),
-                         ("질환", r"질환"), ("주의", r"주의")):
+    # No digit may appear that the rule text does not have ('하루1봉지', 'B6', '외 3가지').
+    def raw_digits(text):
+        return {token.replace(",", "") for token in re.findall(r"\d+(?:[.,]\d+)*", text)}
+    if raw_digits(draft) - raw_digits(original):
+        return "added_digits:" + ",".join(sorted(raw_digits(draft) - raw_digits(original)))[:40]
+    # A value must stay with its nutrient ('나트륨 1,790mg' never becomes '당류 1,790mg').
+    def pairs(text):
+        found = {}
+        for match in _NUTRIENT_VALUE.finditer(text):
+            if re.match(r"\s*(?:당|기준)", text[match.end():]):
+                continue  # '나트륨은 100g당 750mg': 100g is the basis, not the value
+            found.setdefault(match[1], set()).add(match[2].replace(",", ""))
+        return found
+    original_pairs = pairs(original)
+    for label, found_values in pairs(draft).items():
+        if label in original_pairs and not found_values <= original_pairs[label]:
+            return f"nutrient_value:{label}"
+    # The verdict must survive in the same strength, per person when there are several.
+    if _AVOID.search(original) and not _AVOID.search(draft):
+        return "verdict_cue:avoid"
+    if _NOT_AVOID.search(draft) and not _NOT_AVOID.search(original):
+        return "weakened_avoid"
+    if "찾지 못" in original and "찾지 못" not in draft:
+        return "verdict_cue:not_found"
+    if _UNCERTAIN.search(original) and not _UNCERTAIN.search(draft):
+        return "verdict_cue:uncertain"
+    if len(_absences(draft)) > len(_absences(original)):
+        return "absence_claim"
+    names = [name for name in _required_terms(original, response)
+             if any(name == (item.get("profile_name") if isinstance(item, dict) else getattr(item, "profile_name", None))
+                    for item in (response.per_profile_results or []))]
+    if len(names) >= 2:
+        before, after = _person_segments(original, names), _person_segments(draft, names)
+        for name in names:
+            if bool(_AVOID.search(before.get(name, ""))) != bool(_AVOID.search(after.get(name, ""))):
+                return f"person_verdict:{name}"
+    for cue, pattern in (("정보 없음", r"정보\s*(?:없음|가?\s*없)|값이\s*없|등록되어\s*있지\s*않"), ("질환", r"질환"), ("주의", r"주의")):
         if cue in original and not re.search(pattern, draft):
             return "verdict_cue"
+    for pattern in _SAFETY_PHRASES:
+        if re.search(pattern, original) and not re.search(pattern, draft):
+            return "safety_phrase"
+    if _SKIP_CHECK.search(draft) and not _SKIP_CHECK.search(original):
+        return "skip_check"
     lowered_original = original.lower()
-    # '드셔도 되는지 확실하지 않아요' and '드시기 전에' ask the person to check; they reassure no one.
-    checked = re.sub(r"드셔도\s*되는지|드시기\s*전에", " ", draft)
+    # '드셔도 되는지 확실하지 않아요' asks the person to check; it reassures no one.
+    checked = re.sub(r"드셔도\s*되는지[^.!?\n]{0,15}?(?:확실하지\s*않|알\s*수\s*없|확인해)", " ", draft)
     if _has_unsupported_ingredient_terms(checked, lowered_original) or _has_unsupported_health_terms(checked, original):
         from app.services.hybrid import _HEALTH_EFFECT_TERMS, _groundable_terms
         added = [term for term in _groundable_terms() if term in checked.lower() and term not in lowered_original]
         added += [term for term in _HEALTH_EFFECT_TERMS if term in checked and term not in original]
         return f"unsupported_terms:{(added or ['?'])[0]}"
-    if _contains_reassuring_conclusion(draft) and not _contains_reassuring_conclusion(original):
+    added_allergens = [word for word in _allergen_words() if _mentions(draft, word) and not _mentions(original, word)]
+    if added_allergens:
+        return f"added_allergen:{added_allergens[0]}"
+    # Reassurance may be reworded but never added, even when the rule text has some.
+    def reassuring(text):
+        return sum(1 for clause in _split_claim_clauses(text.lower(), split_contrasts=True) if _contains_reassuring_conclusion(clause))
+    if reassuring(draft) > reassuring(original):
         return "reassuring"
     return None
 
@@ -143,6 +228,9 @@ def _eligible(response: ChatResponse) -> bool:
         return False
     # Emergency guidance is fixed and must not wait; candidate prompts are UI text.
     if response.task_type == "safety_triage" or response.intent == "emergency_safety":
+        return False
+    # Recommendation and recipe replies are fixed refusals or replaced by the team filter.
+    if response.intent in {"recipe_recommend", "alternative_food_recommend"} or response.recipe or response.recommended_products:
         return False
     return not response.product_candidates
 

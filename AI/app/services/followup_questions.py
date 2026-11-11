@@ -42,7 +42,7 @@ def tidy_followups(response: ChatResponse, message: str, *, team_mode: bool) -> 
     # The app sends no barcode when a chip is tapped, so '이 상품의 원재료를
     # 알려줘' would lose the product; name it instead.
     name = getattr(response.current_product, "product_name", None) if has_product else None
-    named = [_DEICTIC_PRODUCT.sub(name, question) if name else question for question in response.recommended_questions]
+    named = [_DEICTIC_PRODUCT.sub(lambda _match: name, question) if name else question for question in response.recommended_questions]
     questions = [
         question for question in named
         if not _TEMPLATE.search(question)

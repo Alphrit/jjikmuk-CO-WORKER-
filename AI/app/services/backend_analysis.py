@@ -98,11 +98,20 @@ def _profile_results(req, intent, *, decisions=True):
 
 
 def _asked_people(results, message):
-    """The people a turn singles out ('엄마만 따로 알려줘', '나만'), or [] for everyone."""
-    asked = [item for item in results if item.get("profile_name") and re.search(
-        re.escape(item["profile_name"]) + r"(?:\s*님)?(?:만|은|는|이|가|도|의|한테|에게|랑|이랑|하고|와|과)?(?![가-힣A-Za-z0-9])",
-        message)]
-    if re.search(r"(?:^|\s)(?:나|저)만", message):
+    """The people a turn singles out ('엄마만 따로 알려줘', '엄마는?', '나만'), or [] for everyone.
+
+    '엄마랑 같이 먹어도 돼?' or '엄마도 먹어도 돼?' asks about more than 엄마, so a
+    joining particle (랑, 하고, 도…) never narrows the answer.
+    """
+    def singled(name):
+        return re.search(re.escape(name) + r"(?:\s*님)?(?:만|은|는|이|가|한테|에게)?(?![가-힣A-Za-z0-9])", message) and not re.search(
+            re.escape(name) + r"(?:\s*님)?(?:이랑|랑|하고|와|과|도|이도)(?![가-힣])", message)
+    if any(item.get("profile_name") and re.search(re.escape(item["profile_name"]) + r"(?:\s*님)?(?:이랑|랑|하고|와|과|도|이도)(?![가-힣])", message)
+           for item in results):
+        return []  # '엄마랑 아빠 먹어도 돼?' asks about everyone named
+    asked = [item for item in results if item.get("profile_name") and singled(item["profile_name"])]
+    if re.search(r"(?:^|\s)(?:나|저)만|(?:^|\s)(?:나|저)(?:는|도)?\s*(?:같이|함께|둘\s*다)", message):
+        # '엄마랑 나 둘 다' names the user too.
         asked += [item for item in results if item.get("target_type") == "self" and item not in asked]
     return asked if 0 < len(asked) < len(results) else []
 
@@ -134,6 +143,10 @@ def decision_response(req, intent, *, lead=""):
             names = ", ".join(f"{item['profile_name']} 님" for item in asked)
             text += (f"요청하신 {names} 결과만 알려 드릴게요.\n"
                      + "\n".join(f"{item['profile_name']}: {item['answer']}" for item in asked))
+            hidden = [item["profile_name"] for item in results if item not in asked and item.get("backend_status") != "PASS"]
+            if hidden:
+                # A narrowed answer must not hide someone else's warning.
+                text += f"\n참고로 {', '.join(hidden)} 님에게는 주의가 필요한 결과가 있어요."
         else:
             text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
@@ -220,9 +233,19 @@ def _bare_label_field(text):
     joined = " ".join(rest)
     if detect_nutrition_keyword(joined) or joined in {"트랜스지방", "식이섬유"}:
         return "nutrition_explain"
-    if detect_ingredient_keyword(joined):
-        return "ingredient_check"
+    if detect_ingredient_keyword(joined) or re.search(r"유당|락토스|젖당|글루텐", joined):
+        return "ingredient_check"  # '매일우유 유당 있어?' asks about the milk sugar of that product
     return None
+
+
+def _tapped_from_this_search(req, text=None):
+    """'빼뺴로 먹어도 돼?' offered 빼빼로 (typo retry); the tap resends it with that barcode."""
+    from app.services.product import find_product_candidates_from_message
+    try:
+        found = find_product_candidates_from_message(text if text is not None else req.message, limit=5)
+    except Exception:
+        return False
+    return any(candidate.barcode == req.product.barcode for candidate in found)
 
 
 def _without_selection_from_before_reset(req):
@@ -243,7 +266,8 @@ def _without_selection_from_before_reset(req):
         if name and name in text:
             return True
         query = extract_product_search_query(text) if from_user else ""
-        return bool(query) and candidate_matches_product_query(query, req.product)
+        return bool(query) and (candidate_matches_product_query(query, req.product)
+                                or _tapped_from_this_search(req, text))
 
     if mentions(req.message, True) or any(mentions(turn.content, turn.role == "user") for turn in after):
         return req
@@ -291,9 +315,13 @@ def run_backend_pipeline(req, legacy_pipeline):
     from app.intent.explanation_topics import explanation_intent
     from app.intent.text import detect_ingredient_keyword, detect_nutrition_keyword
     asks_meaning = re.search(r"뭐야|뭔가요|뭐예요|뭐에요|무엇|이란|란\s|뜻|의미|차이|어떻게\s*봐|왜|진짜|정말", req.message)
-    label_field = detect_nutrition_keyword(req.message) or detect_ingredient_keyword(req.message)
+    label_field = (detect_nutrition_keyword(req.message) or detect_ingredient_keyword(req.message)
+                   or re.search(r"글루텐|유당|제조\s*시설|비건|채식|함유|들어\s*있|있나", req.message))
     if (req.product is not None and not named_query and not interrupt and explanation_intent(req.message)
-            and (asks_meaning or not label_field)):
+            # A label word ('글루텐 들어있나요?') asks about this product unless the
+            # question is about the word itself ('콜레스테롤이 뭐야?', '0g이면 진짜 없는 거야?').
+            and asks_meaning and not (label_field and not re.search(
+                r"뭐야|뭔가요|뭐예요|뭐에요|무엇|이란|뜻|의미|차이|(?:이|라)?면\s*(?:진짜|정말)", req.message))):
         # 'HACCP 마크가 뭐야?' while a product is selected asks about the concept,
         # not about that product: answer it as a general explanation.
         # The question is self-contained; earlier turns ('쉽게 설명해줘') must not be searched as products.
@@ -303,8 +331,9 @@ def run_backend_pipeline(req, legacy_pipeline):
     person_named = len(profiles) > 1 and bool(
         re.search(r"(?:^|\s)(?:나|저)만", req.message)
         or any(p.profile_name and p.profile_name in req.message for p in profiles))
-    if named_query and re.sub(r"\s*(?:님|만|따로|은|는|도)(?=\s|$)|\s*따로", "", named_query).strip() in {
-            "나", "저", "나만", "저만", *(p.profile_name for p in profiles if p.profile_name)}:
+    person_words = {"나", "저", "나만", "저만", *(p.profile_name for p in profiles if p.profile_name)}
+    stripped_query = re.sub(r"\s*(?:님|만|따로|은|는|도)(?=\s|$)|\s*따로", "", named_query or "").strip()
+    if named_query and (stripped_query in person_words or re.sub(r"이$", "", stripped_query) in person_words):
         # '엄마만 따로 알려줘', '나만 알려줘' name a person, not a product.
         named_query = None
     # '바나나맛우유 먹어도 돼?' asks about the product, not about 우유: classify
@@ -337,7 +366,8 @@ def run_backend_pipeline(req, legacy_pipeline):
         # asks about the selected product; asking to select it again loops.
         intent = "product_summary"
     same_product = bool(req.product and (not named_query or named_query == req.product.barcode
-                                         or candidate_matches_product_query(named_query, req.product)))
+                                         or candidate_matches_product_query(named_query, req.product)
+                                         or _tapped_from_this_search(req)))
     if intent in {"unknown", "ambiguous"} and named_query and any(word in req.message for word in ("찾아", "검색")):
         intent = "product_summary"
     stale = None if interrupt else _stale_selection_choice(req, named_query, intent)
@@ -386,12 +416,13 @@ def run_backend_pipeline(req, legacy_pipeline):
             return response, None, activity
         # Diets are judged only from saved profiles; a diet named in the
         # message ('비건인데 먹어도 돼?') must not look as if it were applied.
-        diet = re.search(r"비건|채식|베지테리언|페스코|락토|vegan|vegetarian", req.message, re.IGNORECASE)
+        diet = re.search(r"비건|채식|베지테리언|페스코|락토(?!스|프리)|vegan|vegetarian", req.message, re.IGNORECASE)
         lead = ""
         if re.search(r"(?:하루에?|한\s*번에)\s*(?:몇|얼마)|몇\s*(?:개|봉지|봉|잔|캔|병|조각)\s*까지|얼마나\s*(?:먹|마셔|마시)", req.message):
             # '하루에 몇 개까지': an amount is a personal judgment this service does not make.
             lead += "얼마나 먹어도 되는지는 개인 상태에 따라 달라 안내하지 않아요. 아래는 알레르기 표시 기준으로 확인한 결과예요.\n"
-        if diet and not any(p.resolved_special_diets() for p in profiles):
+        saved_diets = " ".join(str(d) for p in profiles for d in p.resolved_special_diets())
+        if diet and not (diet[0] in saved_diets or ("채식" in saved_diets and diet[0] in {"비건", "채식", "베지테리언"})):
             lead += (f"방금 말씀한 식단 조건({diet[0]})은 프로필에 없어 이번 판정에 반영되지 않았어요. "
                     "계속 적용하려면 설정에서 식단 조건을 추가해 주세요.\n")
         response = decision_response(req, intent, lead=lead)

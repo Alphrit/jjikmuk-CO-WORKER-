@@ -33,7 +33,10 @@ def is_context_reset(message):
 def history_after_reset(history):
     history = list(history or [])
     for index in range(len(history) - 1, -1, -1):
-        if history[index].role == "user" and is_context_reset(history[index].content):
+        turn = history[index]
+        role = turn.get("role") if isinstance(turn, dict) else turn.role
+        content = turn.get("content") if isinstance(turn, dict) else turn.content
+        if role == "user" and is_context_reset(content):
             return history[index + 1:]
     return history
 
@@ -129,7 +132,8 @@ _FOLLOWUP_ONLY = re.compile(
     r"(?:알려|설명해|말해|풀어서\s*설명해|예를\s*들어)\s*(?:줘|줄래|주세요|줄\s*수\s*있어|봐)?[요?？.!~\s]*"
     r"|\s*(?:그게|그건|그거)\s*(?:무슨|어떤)\s*(?:말|뜻)(?:이야|이에요|인가요)?[?？.!\s]*"
     # '나는 먹어도 돼?' after a product answer: the app did not resend the product.
-    r"|\s*(?:나|저|난|전|본인)(?:는|도|은)?\s*(?:먹어도|마셔도|먹을\s*수|괜찮)[가-힣\s]*[?？.!~]*"
+    # Only the bare question; '나도 먹을 수 있는 과자 추천해줘' is a request of its own.
+    r"|\s*(?:나|저|난|전|본인)(?:는|도|은)?\s*(?:먹어도|마셔도|먹을\s*수|괜찮)\s*(?:돼|되나요?|될까요?|되니|있어|있나요?|있을까요?|아|을까|나요?)?[요?？.!~\s]*"
 )
 FOLLOWUP_WITHOUT_CONTEXT_ANSWER = (
     "이전 대화 내용은 함께 전달되지 않아서 어떤 주제를 이어서 말씀하시는지 알 수 없어요. "
@@ -146,7 +150,7 @@ def is_elaboration_followup(message):
 
 
 _COMPARE_FOLLOWUP = re.compile(r"^\s*(?:그럼\s*)?(?:둘|두\s*(?:개|제품|상품))\s*(?:중(?:에)?|다)?\s*(?:어느\s*(?:쪽|게|것)|뭐|무엇|어떤\s*게)")
-_COMPARE_REQUEST = re.compile(r"\S+\s*(?:이랑|랑|하고|와|과)\s+\S+.*(?:비교|나아|낫|어때|뭐가|어느)")
+_COMPARE_REQUEST = re.compile(r"^(?!.*(?:같이|함께|추천))\S+\s*(?:이랑|랑|하고|와|과)\s+\S+.*(?:비교|나아|낫|뭐가|어느)")
 
 
 def _turn_text(turn, key):
@@ -155,6 +159,9 @@ def _turn_text(turn, key):
 
 def message_with_previous_topic(message, chat_history):
     """'조금만 더 자세하게 알려줘' / '둘 중에 뭐가 나아?' with history: the last question's topic."""
+    # Only turns after the latest '대화 초기화해줘' count, and never the reset itself.
+    chat_history = [turn for turn in history_after_reset(chat_history)
+                    if not (_turn_text(turn, "role") == "user" and is_context_reset(_turn_text(turn, "content")))]
     if chat_history and _COMPARE_FOLLOWUP.search(message or ""):
         from app.intent.text import detect_nutrition_keyword
         for turn in reversed(chat_history):
@@ -183,7 +190,8 @@ def followup_without_context_response(message, state=None):
 
 
 _SAY_IT_IS_SAFE = re.compile(
-    r"(?:안전|괜찮|문제\s*없)(?:하|다|아)?\s*고\s*(?:말|해|대답|답)|먹어도\s*된다고\s*(?:말|해|대답|답)|"
+    # '안전하다고 말해줘', '괜찮다고 답해', '먹어도 된다고 해줘'; not '괜찮다고 해서 샀는데…'.
+    r"(?:안전하|안전|괜찮|문제\s*없)다?고\s*(?:말|대답|답)|먹어도\s*된다고\s*(?:말|대답|답|해\s*(?:줘|주세요|라))|"
     r"(?:지시|규칙|설정|프롬프트)(?:는|를|은|을)?\s*(?:다\s*)?무시")
 SAY_IT_IS_SAFE_ANSWER = (
     "안전하다고 대신 말씀드릴 수는 없어요. 등록된 원재료와 알레르기 표시로 확인한 결과만 안내해요.\n\n"

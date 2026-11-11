@@ -244,7 +244,7 @@ def test_unknown_allergy_verdict_gets_a_concrete_next_step_per_person():
     assert unknown_allergy_guidance(labelled, Profile(name="나", allergies=["shrimp"])) is None
     chips = Product(product_name="포카칩오리지널", barcode="3", allergy=["대두", "소고기", "우유"])
     assert unknown_allergy_guidance(chips, Profile(name="나", allergies=["shrimp"])) == (
-        "등록된 알레르기 표시(대두, 소고기, 우유)에는 새우가 없어요. "
+        "등록된 알레르기 표시(대두, 소고기, 우유)에서 새우 표시는 찾지 못했어요. "
         "다만 등록된 정보가 실제 포장과 다를 수 있어요. 드시기 전에 포장지의 알레르기 표시를 한 번 확인해 주세요.")
 
 

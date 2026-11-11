@@ -1669,7 +1669,8 @@ def _explicit_named_product_query(message, profile):
         # '칙촉 계란 들어 있어?' names 칙촉; '계란 들어 있어?' names only an ingredient.
         from app.data.dictionaries import INGREDIENT_KEYWORDS
         ingredient_words = {compact_search_text(word) for word in INGREDIENT_KEYWORDS}
-        bare = re.sub(r"^(?:혹시|그럼|그러면)\s+|\s*(?:있어요?|있나요?|있는지)$", "", query)
+        # '혹시 계란 들어 있어?' leaves '계란 들어 있어': strip the containment wording too.
+        bare = re.sub(r"^(?:혹시|그럼|그러면)\s+|\s*(?:은|는|이|가|도)?\s*(?:들어\s*(?:있|갔|가)\S*|들었\S*|포함\S*|함유\S*|있\S*)$", "", query)
         if any(compact_search_text(word) in ingredient_words or detect_ingredient_keyword(word) == word
                for word in (query, bare)):
             return None

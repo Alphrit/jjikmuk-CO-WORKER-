@@ -1159,7 +1159,10 @@ class Product(BaseModel):
                     and not _pick_non_empty(payload.get("nutrition_basis"), payload.get("nutritionBasis"))):
                 # The scalar nutrients are stated per this basis (e.g. 100g당).
                 amount, unit = float(basis["amount"]), basis["unit"]
+                same_as_package = (package.get("amount") and package.get("unit") == unit
+                                   and float(package["amount"]) == amount)
                 mapped = ({"basis_type": f"per_100{unit}"} if amount == 100
+                          else {"basis_type": "per_package"} if same_as_package  # '90g당' on a 90g bag
                           else {"basis_type": "per_serving", "serving_size_value": amount, "serving_size_unit": unit})
                 if package.get("amount") and package.get("unit") in {"g", "ml"}:
                     mapped.update(package_size_value=float(package["amount"]), package_size_unit=package["unit"])

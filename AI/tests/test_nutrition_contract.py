@@ -45,7 +45,7 @@ def test_answers_state_the_basis_and_use_backend_package_values():
     pocky = Product.model_validate({"barcode": "1", "productName": "포키 녹차", "energyKcal": 500.0,
                                     "nutrition": contract(per_package={"energyKcal": 220.0})})
     text = product_facts_text(pocky, "칼로리 얼마야?", "nutrition_explain")
-    assert "500kcal (100g 기준)" in text and "한 봉지(총 44g) 환산 220kcal" in text
+    assert "500kcal (100g 기준)" in text and "총 내용량(44g) 기준 환산 220kcal" in text
     assert "기준량이 전달되지 않아" not in text
     serving = Product.model_validate({"barcode": "2", "productName": "새우깡", "energyKcal": 160.0,
                                       "nutrition": contract(basis_amount=30, package=None, per100={"energyKcal": 533.3333},
@@ -100,7 +100,7 @@ def test_backend_request_with_nutrition_contract_end_to_end(client):
     response = client.post("/chat", json=payload, headers=headers(payload))
     assert response.status_code == 200
     answer = response.json()["answer"]
-    assert "60kcal (100ml 기준)" in answer and "한 봉지(총 200ml) 환산 120kcal" in answer
+    assert "60kcal (100ml 기준)" in answer and "총 내용량(200ml) 기준 환산 120kcal" in answer
 
 
 def test_backend_main_payload_for_the_latest_db_row():
@@ -121,8 +121,8 @@ def test_backend_main_payload_for_the_latest_db_row():
                       "perPackage": portion(60, 325.2, 229.8),
                       "packageCalculationStatus": "CALCULATED", "packageCalculationReason": None}})
     text = product_facts_text(honey, "칼로리랑 나트륨 알려줘", "nutrition_explain")
-    assert "열량: 542kcal (100g 기준), 한 봉지(총 60g) 환산 325.2kcal" in text
-    assert "나트륨: 383mg (100g 기준), 한 봉지(총 60g) 환산 229.8mg" in text
+    assert "열량: 542kcal (100g 기준), 총 내용량(60g) 기준 환산 325.2kcal" in text
+    assert "나트륨: 383mg (100g 기준), 총 내용량(60g) 기준 환산 229.8mg" in text
     assert "기준량" not in text.replace("기준)", "")
 
 

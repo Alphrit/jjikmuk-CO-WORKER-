@@ -74,7 +74,7 @@ def test_unknown_guidance_leads_with_what_was_found():
     from app.services.product_facts import unknown_allergy_guidance
     choco = Product(product_name="초코파이", barcode="c", allergy=["계란", "밀", "우유"], allergy_warning="젤라틴(기원불명)")
     text = unknown_allergy_guidance(choco, Profile(name="나", allergies=["shrimp"]))
-    assert text.startswith("등록된 알레르기 표시(") and "새우가 없어요" in text and "'젤라틴(기원불명)'처럼" in text
+    assert text.startswith("등록된 알레르기 표시(") and "새우 표시는 찾지 못했어요" in text and "'젤라틴(기원불명)'처럼" in text
     assert "확실하지 않아요" not in text
 
 
@@ -139,3 +139,58 @@ def test_source_dates_and_absent_products_are_not_required():
     response = ChatResponse(intent="general_nutrition_guide", answer=original, answer_source="rag", risk_level="unknown")
     draft = "해썹은 위해요소를 미리 분석하고 막는 식품안전관리 체계예요.\n\n포장지를 확인해 주세요."
     assert answer_polish.draft_keeps_facts(original, draft, response)
+
+
+@pytest.mark.parametrize("message", ["숨이 막혀", "호흡곤란", "목이 꽉 막혔어", "목이 부었는데 어떻게 해야 해?", "아나필락시스 온 것 같아",
+                                     "119 불러야 해?", "두드러기가 온몸에 퍼지고 숨이 차요", "이거 먹고 어지러워", "목안이 부었어"])
+def test_more_current_emergencies_are_routed(message):
+    response = build_emergency_triage_response(message, profiles=[], has_food_context=False)
+    assert response is not None and response.safety_guidance.urgency == "emergency"
+
+
+@pytest.mark.parametrize("message", ["나 땅콩 먹으면 목 부어. 이 과자 괜찮아?", "감기 걸려서 목이 부었어", "기절할 만큼 맛있어",
+                                     "매워서 숨이 막혀요", "목이 붓지는 않았어", "우유 먹고 목이 안 부었어요", "숨이 막히는 영화 추천해줘"])
+def test_habits_colds_jokes_and_denials_are_not_emergencies(message):
+    response = build_emergency_triage_response(message, profiles=[], has_food_context=False)
+    assert response is None or response.safety_guidance.urgency != "emergency"
+
+
+def test_person_narrowing_needs_a_singling_word():
+    from app.services.backend_analysis import _asked_people
+    results = [{"profile_name": "은비", "target_type": "self", "backend_status": "DANGER"},
+               {"profile_name": "엄마", "target_type": "family", "backend_status": "PASS"}]
+    assert _asked_people(results, "엄마랑 같이 먹어도 돼?") == []
+    assert [item["profile_name"] for item in _asked_people(results, "엄마만 따로 알려줘")] == ["엄마"]
+
+
+def test_polish_rejects_weakened_or_swapped_verdicts():
+    from app.core.models import ChatResponse
+    response = ChatResponse(intent="can_i_eat", answer="x", answer_source="backend", risk_level="high")
+    original = "새우깡은 직접 충돌하므로 피하는 것이 좋아요. 등록된 표시에서 땅콩은 찾지 못했어요. 포장지를 확인해 주세요."
+    assert not answer_polish.draft_keeps_facts(original, "새우깡은 피할 필요는 없어요. 땅콩은 찾지 못했어요. 포장지를 확인해 주세요. 새우깡은 괜찮아요.", response)
+    assert not answer_polish.draft_keeps_facts(original, "새우깡은 피하는 것이 좋아요. 등록된 표시에 땅콩은 없어요. 포장지를 확인해 주세요.", response)
+    assert not answer_polish.draft_keeps_facts(original, "새우깡은 피하는 것이 좋아요. 땅콩은 찾지 못했어요. 하루1봉지는 괜찮아요. 포장지를 확인해 주세요.", response)
+
+
+def test_gluten_grains_are_reported():
+    product = Product(product_name="보리과자", barcode="g", rawmtrl_nm="보리, 맥아추출물, 정제수")
+    assert "보리, 맥아" in product_facts_text(product, "글루텐 들어 있어?", "ingredient_check")
+
+
+def test_one_serving_regex_keeps_all_digits():
+    p = Product.model_validate({"barcode": "s", "productName": "과자", "energyKcal": 160.0,
+                                "nutrientText": "1회 제공량 30g 총 3회 제공량(90g) 열량 160kcal"})
+    from app.core.nutrition_basis import label_text_serving
+    assert label_text_serving(p) == ("30g", "90g")
+
+
+def test_polish_checks_do_not_misread_common_words():
+    from app.core.models import ChatResponse
+    response = ChatResponse(intent="nutrition_explain", answer="x", answer_source="backend", risk_level="unknown")
+    original = "등록된 영양정보 — 나트륨: 750mg (100g당). 새우깡은 피하시는 게 좋아요. 포장지를 확인해 주세요."
+    assert answer_polish.draft_keeps_facts(original, "나트륨은 100g당 750mg이에요.\n\n새우깡은 피하시는 게 좋아요. 포장지를 확인해 주세요.", response)
+
+
+def test_a_lactose_question_on_a_selected_product_checks_ingredients():
+    from app.services.backend_analysis import _bare_label_field
+    assert _bare_label_field(" 유당 있어?") == "ingredient_check"
