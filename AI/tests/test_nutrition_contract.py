@@ -101,3 +101,26 @@ def test_backend_request_with_nutrition_contract_end_to_end(client):
     assert response.status_code == 200
     answer = response.json()["answer"]
     assert "60kcal (100ml 기준)" in answer and "한 봉지(총 200ml) 환산 120kcal" in answer
+
+
+def test_backend_main_payload_for_the_latest_db_row():
+    # Shape of backend main ProductNutrition.from() for 허니버터칩 in the 2026-11-09 DB
+    # (energy_kcal 542, nutrition_basis_raw '100g', total_weight '60g').
+    def portion(amount, kcal, sodium):
+        return {"amount": amount, "unit": "g", "values": {"energyKcal": kcal, "carbsG": None, "proteinG": None,
+                                                          "fatG": None, "sugarG": None, "sodiumMg": sodium,
+                                                          "cholesterolMg": None},
+                "dailyReferencePercents": {"energyPercent": 16, "sodiumPercent": 11}}
+    honey = Product.model_validate({
+        "barcode": "8801019611278", "productName": "허니버터칩", "energyKcal": 542.0, "sodiumMg": 383.0,
+        "nutrition": {"contractVersion": "nutrition-v1",
+                      "sourceBasis": {"raw": "100g", "status": "KNOWN", "amount": 100, "unit": "g"},
+                      "sourceValues": portion(100, 542.0, 383.0)["values"],
+                      "packageQuantity": {"amount": 60, "unit": "g"},
+                      "per100g": portion(100, 542.0, 383.0), "per100ml": None,
+                      "perPackage": portion(60, 325.2, 229.8),
+                      "packageCalculationStatus": "CALCULATED", "packageCalculationReason": None}})
+    text = product_facts_text(honey, "칼로리랑 나트륨 알려줘", "nutrition_explain")
+    assert "열량: 542kcal (100g 기준), 한 봉지(총 60g) 환산 325.2kcal" in text
+    assert "나트륨: 383mg (100g 기준), 한 봉지(총 60g) 환산 229.8mg" in text
+    assert "기준량" not in text.replace("기준)", "")
