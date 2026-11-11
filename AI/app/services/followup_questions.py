@@ -52,7 +52,7 @@ def tidy_followups(response: ChatResponse, message: str, *, team_mode: bool) -> 
     # A requested one-line or short answer stays short.
     brief = re.search(r"한\s*줄|한\s*문장|짧게|간단히|요약", message)
     if _is_product_answer(response) and PRODUCT_REFERENCE_NOTE not in answer and not brief:
-        answer = answer.rstrip() + "\n" + PRODUCT_REFERENCE_NOTE
+        answer = answer.rstrip() + "\n\n" + PRODUCT_REFERENCE_NOTE
     if questions == response.recommended_questions and answer == response.answer:
         return response
     return response.model_copy(update={"recommended_questions": questions, "answer": answer})

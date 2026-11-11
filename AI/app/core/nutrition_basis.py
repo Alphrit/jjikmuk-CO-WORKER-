@@ -1,4 +1,5 @@
 import math
+import re
 from typing import Iterable, Optional, Tuple
 
 from app.core.models import Product
@@ -31,6 +32,34 @@ def nutrition_basis_label(product: Product) -> str:
         size = _formatted_size(basis.package_size_value, basis.package_size_unit)
         return f"총 내용량({size}) 기준" if size else "총 내용량 기준"
     return "영양 수치 기준 미확인"
+
+
+def label_text_serving(product: Product) -> Optional[Tuple[str, Optional[str]]]:
+    """('30g', '90g') when the raw label text states the basis of the DB values.
+
+    '총내용량 90g 30g당 160kcal' names the basis only for that label, so it is
+    trusted only when the label's kcal equals the structured kcal value.
+    """
+    text = getattr(product, "nutrient_text", None) or ""
+    kcal = (product.nutrition or {}).get("kcal")
+    found = re.search(r"(\d+(?:\.\d+)?)\s*(g|ml)\s*당\s*(\d[\d,]*(?:\.\d+)?)\s*kcal", text, re.IGNORECASE)
+    if kcal is None or not found:
+        return None
+    try:
+        if not math.isclose(float(found[3].replace(",", "")), float(kcal), abs_tol=0.05):
+            return None
+    except (TypeError, ValueError):
+        return None
+    package = re.search(r"총\s*내용량\s*(\d+(?:\.\d+)?)\s*(g|ml)", text, re.IGNORECASE)
+    return f"{found[1]}{found[2].lower()}", (f"{package[1]}{package[2].lower()}" if package else None)
+
+
+def display_basis_label(product: Product) -> str:
+    """The explicit basis, else the label text's ('30g당 표시 기준'), else unknown."""
+    if has_explicit_nutrition_basis(product):
+        return nutrition_basis_label(product)
+    serving = label_text_serving(product)
+    return f"{serving[0]}당 표시 기준" if serving else nutrition_basis_label(product)
 
 
 def nutrition_comparison_signature(product: Product) -> Optional[Tuple[str, float, str]]:

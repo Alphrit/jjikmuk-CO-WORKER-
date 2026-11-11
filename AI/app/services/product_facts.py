@@ -44,9 +44,11 @@ def product_facts_text(product, message, intent):
         # empty list, which printed '등록된 영양정보 — .').
         keys = [key for key, label in NUTRITION_LABELS.items()
                 if any(label in NUTRITION_KEYWORDS.get(name, (name,)) for name in requested)] or list(NUTRITION_LABELS)
-        from app.core.nutrition_basis import has_explicit_nutrition_basis, nutrition_basis_label
+        from app.core.nutrition_basis import has_explicit_nutrition_basis, label_text_serving, nutrition_basis_label
         contract = getattr(product, "nutrition_contract", None)
         basis_known = has_explicit_nutrition_basis(product)
+        # No basis field, but the label text the backend sent may state it ('30g당 160kcal').
+        serving = None if basis_known else label_text_serving(product)
         package = contract.per_package if contract is not None else None
         hundred = (contract.per100g or contract.per100ml) if contract is not None else None
         wants_hundred = bool(re.search(r"100\s*(?:g|ml|그램|밀리)", message))
@@ -61,6 +63,8 @@ def product_facts_text(product, message, intent):
                 # Missing structured value: the label text the backend sent may still have it.
                 text_value = label_text_value(product, label)
                 return f"{label}: {text_value} (영양성분 표시 원문{label_text_basis(product)})" if text_value else f"{label}: 정보 없음"
+            if serving is not None:
+                return f"{label}: {value:,.10g}{unit} ({serving[0]}당)"
             if not basis_known:
                 return f"{label}: {value:,.10g}{unit} (기준량 미확인)"
             text = f"{label}: {value:,.10g}{unit} ({nutrition_basis_label(product)})"
@@ -74,7 +78,11 @@ def product_facts_text(product, message, intent):
             return text
 
         lines = [line(key) for key in keys]
-        if not basis_known:
+        if serving is not None:
+            tail = f" 포장지 영양성분 표시의 {serving[0]}당 수치예요" + (f"(총 내용량 {serving[1]})" if serving[1] else "") + "."
+            if wants_hundred and serving[0] not in {"100g", "100ml"}:
+                tail += f" 100g당 환산값은 전달되지 않아 표시 기준인 {serving[0]}당 수치로 안내했어요."
+        elif not basis_known:
             tail = " 기준량이 전달되지 않아 1회분·한 봉지 섭취량으로 환산할 수 없어요."
         elif package is not None:
             tail = " 환산값은 원본 수치를 계산한 값이라 포장지 표기와 소수점이 다를 수 있어요."

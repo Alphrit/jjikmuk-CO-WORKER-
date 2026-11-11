@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 
 from app.core.models import ChatResponse, Product, Profile
 from app.core.nutrition_basis import (
+    display_basis_label,
     has_explicit_nutrition_basis,
     nutrition_basis_label,
     products_have_comparable_nutrition_basis,
@@ -182,7 +183,7 @@ def _format_product_comparison_answer(
     if len(comparable) != len(products):
         available_lines = [
             f"{candidate.product_name or '이 제품'}: "
-            f"{format_measurement(value, unit)}({nutrition_basis_label(candidate)})"
+            f"{format_measurement(value, unit)}({display_basis_label(candidate)})"
             for candidate, value in comparable
         ]
         unavailable_names = [
@@ -229,7 +230,7 @@ def _format_product_comparison_answer(
         ), "")
         value_lines = [
             f"{candidate.product_name or '이 제품'}: "
-            f"{format_measurement(value, unit)}({nutrition_basis_label(candidate)})"
+            f"{format_measurement(value, unit)}({display_basis_label(candidate)})"
             for candidate, value in comparable
         ]
         primary = (
@@ -253,7 +254,11 @@ def _format_product_comparison_answer(
             # Team mode has no label lineage at all; the record-binding detail
             # is noise to a user, so say what it means for this comparison.
             primary = f"{label} 수치는 있지만 상품 정보의 출처를 확인할 수 없어 어느 쪽이 낫다고 단정하지 않았어요."
-            limitation = "기준량(1회 제공량·100g·총 내용량)도 확인되지 않아 수치 차이를 그대로 영양성분 차이로 볼 수 없어요."
+            limitation = (
+                "괄호 안 기준량이 제품마다 달라 수치 차이를 그대로 영양성분 차이로 볼 수 없어요."
+                if all(display_basis_label(candidate) != nutrition_basis_label(candidate) or has_explicit_nutrition_basis(candidate)
+                       for candidate in comparable_products)
+                else "기준량(1회 제공량·100g·총 내용량)이 확인되지 않은 제품이 있어 수치 차이를 그대로 영양성분 차이로 볼 수 없어요.")
             next_step = "포장지의 영양성분표에서 같은 기준량으로 확인해 주세요."
         answer = format_general_answer(
             primary,
@@ -314,6 +319,12 @@ def _format_product_comparison_answer(
     return answer, reasons
 
 
+def _allergy_with_aliases(allergy: str, aliases) -> str:
+    """'새우' for the alias 새우, '우유(탈지분유)' when the label used another word."""
+    others = [alias for alias in aliases if alias != allergy][:3]
+    return f"{allergy}({', '.join(others)})" if others else allergy
+
+
 def _comparison_allergy_status(
     product: Product,
     profile: Profile,
@@ -329,7 +340,7 @@ def _comparison_allergy_status(
     direct = find_triggered_allergies(profile, product)
     if direct:
         findings = [
-            f"{allergy}({', '.join(aliases[:3])})"
+            _allergy_with_aliases(allergy, aliases)
             for allergy, aliases in direct
         ]
         return (
@@ -341,7 +352,7 @@ def _comparison_allergy_status(
     cross_contact = find_cross_contamination_allergies(profile, product)
     if cross_contact:
         findings = [
-            f"{allergy}({', '.join(aliases[:3])})"
+            _allergy_with_aliases(allergy, aliases)
             for allergy, aliases in cross_contact
         ]
         return (
@@ -381,7 +392,7 @@ def _key_nutrient_overview(products: Sequence[Product]) -> str:
                       for item, portion in zip(products, common[1]) if portion.values.get(contract_keys[key]) is not None]
         else:
             values = [f"{item.product_name or '이 제품'} {format_measurement(item.nutrition[key], unit)}"
-                      + (f"({nutrition_basis_label(item)})" if has_explicit_nutrition_basis(item) else "")
+                      + (f"({display_basis_label(item)})" if display_basis_label(item) != "영양 수치 기준 미확인" else "")
                       for item in products if item.nutrition.get(key) is not None]
         if values:
             rows.append(f"- {label}: {', '.join(values)}")
@@ -391,7 +402,9 @@ def _key_nutrient_overview(products: Sequence[Product]) -> str:
         basis = "100g" if common[0] == "per100g" else "100ml"
         intro = f"주요 영양 수치를 {basis}당 환산값으로 맞춰 봤어요. 환산값이라 포장지 표기와 소수점이 다를 수 있어요.\n"
     else:
-        intro = "주요 영양 수치예요. 기준량이 확인되지 않아 수치 차이를 그대로 비교하면 안 될 수 있어요.\n"
+        intro = ("주요 영양 수치예요. 괄호 안 기준량이 제품마다 달라 수치 차이를 그대로 비교하면 안 될 수 있어요.\n"
+                 if all(display_basis_label(item) != "영양 수치 기준 미확인" for item in products)
+                 else "주요 영양 수치예요. 기준량이 확인되지 않아 수치 차이를 그대로 비교하면 안 될 수 있어요.\n")
     # The app does not send the previous turn, so the hint names both products.
     names = [item.product_name for item in products[:2] if item.product_name]
     def with_rang(name):
@@ -562,7 +575,8 @@ def _comparison_allergy_summary(
             "answer": profile_answer,
             "reasons": reasons,
         })
-        summary_lines.append(f"[{active_profile.profile_name}] {profile_answer}")
+        # One person needs no name tag; several are told apart by it.
+        summary_lines.append(f"[{active_profile.profile_name}] {profile_answer}" if len(profiles) > 1 else profile_answer)
         all_reasons.extend(reasons)
         all_statuses.extend(statuses)
         diet_statuses.append(profile_diet)
