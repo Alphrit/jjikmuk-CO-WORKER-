@@ -37,21 +37,33 @@ def nutrition_basis_label(product: Product) -> str:
 def label_text_serving(product: Product) -> Optional[Tuple[str, Optional[str]]]:
     """('30g', '90g') when the raw label text states the basis of the DB values.
 
-    '총내용량 90g 30g당 160kcal' names the basis only for that label, so it is
+    '총내용량 90g 30g당 160kcal', '1봉지(120g)당 500kcal' and '1회 제공량
+    1봉지(120g) … 열량 500kcal' name the basis only for that label, so it is
     trusted only when the label's kcal equals the structured kcal value.
     """
     text = getattr(product, "nutrient_text", None) or ""
     kcal = (product.nutrition or {}).get("kcal")
-    found = re.search(r"(\d+(?:\.\d+)?)\s*(g|ml)\s*당\s*(\d[\d,]*(?:\.\d+)?)\s*kcal", text, re.IGNORECASE)
-    if kcal is None or not found:
+    if kcal is None or not text:
         return None
+    number = r"(\d[\d,]*(?:\.\d+)?)"
+    found = re.search(number + r"\s*(g|ml)\s*\)?\s*당\s*" + number + r"\s*kcal", text, re.IGNORECASE)
+    if found:
+        amount, unit, label_kcal = found[1], found[2], found[3]
+    else:
+        serving = re.search(r"1\s*회\s*제공량\s*(?:\d*\s*[^\d(,]{0,6})?\(?\s*" + number + r"\s*(g|ml)", text, re.IGNORECASE)
+        energy = re.search(r"열량\s*" + number + r"\s*kcal", text) or re.search(number + r"\s*kcal", text)
+        if not (serving and energy):
+            return None
+        amount, unit, label_kcal = serving[1], serving[2], energy[1]
     try:
-        if not math.isclose(float(found[3].replace(",", "")), float(kcal), abs_tol=0.05):
+        if not math.isclose(float(label_kcal.replace(",", "")), float(kcal), abs_tol=0.05):
             return None
     except (TypeError, ValueError):
         return None
-    package = re.search(r"총\s*내용량\s*(\d+(?:\.\d+)?)\s*(g|ml)", text, re.IGNORECASE)
-    return f"{found[1]}{found[2].lower()}", (f"{package[1]}{package[2].lower()}" if package else None)
+    package = (re.search(r"총\s*내용량\s*" + number + r"\s*(g|ml)", text, re.IGNORECASE)
+               or re.search(r"총\s*\d+\s*회\s*제공량\s*\(\s*" + number + r"\s*(g|ml)", text, re.IGNORECASE))
+    return (f"{amount.replace(',', '')}{unit.lower()}",
+            f"{package[1].replace(',', '')}{package[2].lower()}" if package else None)
 
 
 def display_basis_label(product: Product) -> str:

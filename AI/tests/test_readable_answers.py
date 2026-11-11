@@ -26,6 +26,17 @@ def test_label_text_states_the_basis_only_when_its_kcal_matches():
     assert label_text_serving(other) is None and display_basis_label(other) == "영양 수치 기준 미확인"
 
 
+@pytest.mark.parametrize("label, kcal, expected", [
+    ("총내용량600g(120g×5봉지) 1봉지(120g)당 500kcal, 나트륨1,790mg 90%", 500.0, ("120g", "600g")),
+    ("1회 제공량 1봉지(120g), 총 30회 제공량(3,600g) 1회 제공량당 함량 *%영양성분 기준치 열량 500kcal 탄수화물 80%",
+     500.0, ("120g", "3600g")),
+    ("1회 제공량 1봉지(120g) 열량 500kcal", 417.0, None),  # another record's label
+])
+def test_other_label_layouts_state_the_basis(label, kcal, expected):
+    product = Product.model_validate({"barcode": "r", "productName": "라면", "energyKcal": kcal, "nutrientText": label})
+    assert label_text_serving(product) == expected
+
+
 def test_nutrition_answer_uses_the_label_basis_instead_of_unknown():
     text = product_facts_text(_saeukkang(), "100g당 칼로리 알려줘", "nutrition_explain")
     assert "열량: 160kcal (30g당)" in text and "(총 내용량 90g)" in text
