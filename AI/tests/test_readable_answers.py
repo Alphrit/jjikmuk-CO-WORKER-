@@ -129,3 +129,7 @@ def test_an_elaboration_follow_up_takes_the_previous_topic():
 def test_a_person_singled_out_is_not_part_of_the_product_name():
     from app.services.product_search import extract_product_search_query
     assert extract_product_search_query("포키 엄마만 먹어도 돼?") == "포키"
+
+
+def test_digits_inside_ingredient_names_are_not_values():
+    assert answer_polish._numbers("등록된 원재료: 제3인산나트륨, 설탕. 나트륨1,790mg, 30g당 160kcal") == {"1790", "30", "160"}

@@ -24,19 +24,22 @@ _PROMPT = """아래는 식품 알레르기 안내 챗봇이 규칙으로 만든 
 - 판정(피해야 함 / 포장지 확인 필요 / 충돌을 찾지 못함), 제품명, 사람 이름, 성분·알레르기 이름, 숫자와 단위는 원문 그대로 쓰세요.
 - 원문에 없는 정보, 이유, 건강 효과, 섭취 권유를 덧붙이지 마세요.
 - 원문에 없는 숫자를 계산해서 넣지 마세요(환산·합계·비율 포함).
-- '안전해요', '먹어도 돼요'처럼 원문보다 안심시키는 표현을 쓰지 마세요.
+- '안전해요', '먹어도 돼요'처럼 원문보다 안심시키는 표현을 쓰지 마세요. 원문에 '드셔도'가 없으면 '드셔도'라는 말도 쓰지 마세요. 충돌을 못 찾았으면 '충돌하는 표시를 찾지 못했어요'처럼 원문대로 쓰세요.
 - 원문에 사람 이름이 여러 명 있으면 사람마다 따로 한 문장 이상 남기고 'OO 님'으로 부르세요. 원문에 이름이 없으면 이름을 쓰지 마세요.
 - '판정됐어요' 같은 딱딱한 말 대신 '피하시는 게 좋아요', '포장지를 확인해 주세요'처럼 직접 권하는 말로 쓰세요.
 - '확인 필요예요', '포장지 확인 필요해요'처럼 명사로 끝내지 말고 '포장지를 확인해 주세요'처럼 자연스러운 문장으로 끝내세요.
 - 원문에 따옴표로 든 예시 문장('…처럼 물어봐 주세요')은 그대로 두세요.
 
 읽기 쉽게 쓰는 법:
-- 첫 문단에는 결론(판정이나 질문에 대한 답)을 1~2문장으로 쓰세요.
-- 내용이 여러 가지면 문단을 나누고 문단 사이에 빈 줄을 넣으세요. 한 문단은 2문장 이하로 쓰세요.
+- 첫 문단에는 질문에 대한 결론을 한 문장으로 먼저 쓰세요. 먹어도 되는지 물었다면 '피하시는 게 좋아요', '드셔도 되는지 확실하지 않아요'처럼 판정을, 성분이나 영양을 물었다면 그 답을 먼저 쓰세요.
+- 둘째 문단에는 이유를 1~2문장으로 쓰세요.
+- 마지막 문단에는 사용자가 할 일(포장지 확인 등)을 한 번만 쓰세요.
+- 질문한 성분(예: 유당) 이야기와 알레르기 판정(예: 새우 알레르기 기준) 이야기는 다른 문단에 쓰고 한 문장에 섞지 마세요. 알레르기 판정 문단은 '새우 알레르기 기준으로는'처럼 어떤 알레르기 기준인지 밝히세요.
 - 사람이 여러 명이면 사람마다 문단을 나누고 'OO 님,'으로 시작하세요.
 - 영양 수치나 제품별 수치처럼 값을 3개 이상 나열할 때는 한 줄에 하나씩 '• 열량: 160kcal'처럼 쓰세요.
+- 문단은 4개 이하로, 문단 사이에는 빈 줄을 넣고, 한 문단은 2문장 이하로 쓰세요.
+- 'DB'라는 말 대신 '등록된 정보'라고 쓰세요.
 - '•' 말고 다른 목록 기호(-, *, 1.), 마크다운(**굵게**, # 제목), 이모지는 쓰지 마세요.
-- 확인 안내(포장지를 확인해 주세요 등)는 마지막 문단에 한 번만 쓰세요.
 
 원문:
 \"\"\"
@@ -74,7 +77,10 @@ def _required_terms(original: str, response: ChatResponse) -> list[str]:
 
 
 def _numbers(text: str) -> set[str]:
-    return {n.replace(",", "") for n in re.findall(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?", text)}
+    # A digit inside a word ('제3인산나트륨') is part of an ingredient name, not a value.
+    return {n.replace(",", "") for n in re.findall(
+        r"(?<![가-힣])(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)|(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![가-힣\d.,])",
+        text)}
 
 
 def draft_keeps_facts(original: str, draft: str, response: ChatResponse) -> bool:
@@ -108,7 +114,10 @@ def _rejection_reason(original: str, draft: str, response: ChatResponse) -> str 
             return "verdict_cue"
     lowered_original = original.lower()
     if _has_unsupported_ingredient_terms(draft, lowered_original) or _has_unsupported_health_terms(draft, original):
-        return "unsupported_terms"
+        from app.services.hybrid import _HEALTH_EFFECT_TERMS, _groundable_terms
+        added = [term for term in _groundable_terms() if term in draft.lower() and term not in lowered_original]
+        added += [term for term in _HEALTH_EFFECT_TERMS if term in draft and term not in original]
+        return f"unsupported_terms:{(added or ['?'])[0]}"
     if _contains_reassuring_conclusion(draft) and not _contains_reassuring_conclusion(original):
         return "reassuring"
     return None

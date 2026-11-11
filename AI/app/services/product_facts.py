@@ -174,7 +174,7 @@ def ingredient_label_text(product, ingredient):
         # A fact about the product; whether to avoid it is said per person
         # (unknown_allergy_guidance), only to those allergic to it.
         return (f"제품명에 '{ingredient}'{subject} 들어 있어 {ingredient}{subject} 들어 있을 가능성이 높아요. "
-                "다만 DB의 원재료·알레르기 표시로는 확인되지 않았으니 포장지의 알레르기 표시를 확인해 주세요.\n")
+                "다만 등록된 원재료·알레르기 표시로는 확인되지 않았으니 포장지의 알레르기 표시를 확인해 주세요.\n")
     shared = find_cross_contamination_aliases(product, ingredient)
     if shared:
         return f"{ingredient}의 직접 함유 표기는 찾지 못했지만 교차오염 가능성 표시가 있어요: {', '.join(shared[:3])}.\n"
@@ -220,7 +220,7 @@ def unknown_allergy_guidance(product, profile):
     if named:
         term = named[0]
         return (f"피하는 게 좋아요. 제품명에 '{term}'{subject(term)} 들어 있어 {term}{subject(term)} 들어 있을 가능성이 높아요. "
-                "등록된 알레르기 표시가 없어 DB로는 확인되지 않았어요.")
+                "등록된 알레르기 표시가 없어 확인되지는 않았어요.")
     from app.data.dictionaries import ALLERGEN_CANONICAL_ALIASES
     from app.services.response_helpers import find_cross_contamination_aliases
     names = list(dict.fromkeys(allergen_display_name(item) for item in profile.resolved_allergies()))
@@ -238,14 +238,17 @@ def unknown_allergy_guidance(product, profile):
         from app.services.response_helpers import find_matching_aliases
         if any(find_matching_aliases(product, name) for name in names):
             return None
-        return (f"확인한 결과 등록된 알레르기 표시({', '.join(labels)})에는 {listed}{subject(names[-1])} 보이지 않아요. "
-                "다만 DB 정보가 실제 포장과 다를 수 있으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+        return (f"{listed} 알레르기 기준으로는 등록된 알레르기 표시({', '.join(labels)})에 {listed}{subject(names[-1])} 없어요. "
+                "다만 등록된 정보가 실제 포장과 다를 수 있으니, 드시기 전에 포장지의 알레르기 표시를 한 번 더 확인해 주세요.")
     if product.rawmtrl_nm or product.ingredients:
         from app.services.response_helpers import find_matching_aliases
         if any(find_matching_aliases(product, name) for name in names):
             return None
-        return (f"확인한 결과 원재료 목록에는 {listed}{subject(names[-1])} 보이지 않아요. 다만 '{names[0]} 함유' 같은 "
-                "알레르기 표시는 DB에 따로 등록되어 있지 않아 확실하지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+        # Conclusion first: the person must see at once that this is not a 'yes'.
+        return (f"{listed} 알레르기가 있다면 드셔도 되는지 아직 확실하지 않아요. "
+                f"원재료 목록에는 {listed}{subject(names[-1])} 없지만, '{names[0]} 함유' 같은 알레르기 표시가 등록되어 있지 않아 확인이 끝나지 않았어요. "
+                f"드시기 전에 포장지의 알레르기 표시에서 {listed}{subject(names[-1])} 있는지 확인해 주세요.")
     # Say what was checked and why it is not a 'no': the label is simply absent.
-    return (f"확인한 결과 등록된 정보에서는 {listed} 성분이 보이지 않아요. 다만 이 상품은 DB에 원재료와 알레르기 표시가 "
-            "모두 없어서 확실하지 않으니, 불안하시면 드시기 전에 제품 포장지를 확인해 주세요.")
+    return (f"{listed} 알레르기가 있다면 드셔도 되는지 확실하지 않아요. "
+            "이 상품은 원재료와 알레르기 표시가 모두 등록되어 있지 않아 확인할 수 없어요. "
+            f"드시기 전에 포장지의 원재료명과 알레르기 표시에서 {listed}{subject(names[-1])} 있는지 확인해 주세요.")
