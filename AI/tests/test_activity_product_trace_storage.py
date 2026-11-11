@@ -286,34 +286,30 @@ def test_mysql_activity_trace_and_null_rows_round_trip():
     assert records[1].response_product_label_trace is None
 
 
-def test_mysql_readiness_requires_product_trace_column():
+def test_mysql_log_works_on_a_db_without_the_later_audit_columns():
+    """An older chatbot_logs (no 20260909 trace, short policy_version) still logs and passes /ready."""
     trace_column = "response_product_label_trace"
-    required_columns = MySQLActivityRepository.CHATBOT_LOG_REQUIRED_COLUMNS
-    assert trace_column in required_columns
+    base_columns = MySQLActivityRepository.CHATBOT_LOG_REQUIRED_COLUMNS
+    assert trace_column not in base_columns
 
     repository = MySQLActivityRepository(password="test")
-    repository._connect = lambda: _FakeConnection()
+    captured = {}
+    repository._connect = lambda: _FakeConnection(captured=captured)
     repository._table_exists = lambda _conn, _table: True
     repository._table_columns = lambda _conn, table: (
-        required_columns - {trace_column}
-        if table == repository.quoted_chat_log_table_name
-        else set()
+        set(base_columns) | {"policy_version"} if table == repository.quoted_chat_log_table_name else set()
     )
+    repository._column_widths = {"policy_version": 32}
 
-    missing = repository.readiness_check()
-    assert missing["available"] is False
-    assert missing["audit_log_ready"] is False
-    assert missing["missing_audit_column_count"] == 1
-
-    repository._table_columns = lambda _conn, table: (
-        required_columns
-        if table == repository.quoted_chat_log_table_name
-        else set()
-    )
     ready = repository.readiness_check()
-    assert ready["available"] is True
-    assert ready["audit_log_ready"] is True
-    assert ready["missing_audit_column_count"] == 0
+    assert ready["available"] is True and ready["audit_log_ready"] is True
+
+    repository._save_chatbot_log(ActivityRecord(
+        user_id=1, barcode="880", action_type="SCAN", message="먹어도 돼?", intent="can_i_eat",
+        policy_version="unified-hard-constraints-purpose-v5.2",
+    ))
+    assert trace_column not in captured["query"] and "external_ai_services" not in captured["query"]
+    assert any(isinstance(value, str) and len(value) == 32 and "~" in value for value in captured["params"])
 
 
 def test_mysql_product_trace_migration_is_additive_and_content_free():
