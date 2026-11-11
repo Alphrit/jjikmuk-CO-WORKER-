@@ -58,7 +58,7 @@ def test_answers_state_the_basis_and_use_backend_package_values():
 def test_without_the_contract_the_answer_is_unchanged_but_names_the_unknown_basis():
     legacy = Product.model_validate({"barcode": "3", "productName": "허니버터칩", "energyKcal": 325.2})
     text = product_facts_text(legacy, "칼로리", "nutrition_explain")
-    assert "325.2kcal (기준량 미확인)" in text and "기준량이 전달되지 않아" in text
+    assert "열량: 325.2kcal" in text and "(기준량 미확인)" not in text and "기준량이 전달되지 않아" in text
 
 
 def test_comparison_uses_a_common_per_100_basis():
@@ -172,4 +172,35 @@ def test_a_newly_named_product_is_not_answered_with_the_kept_one(client, message
     payload["message"] = message
     body = client.post("/chat", json=payload, headers=headers(payload)).json()
     assert (body.get("current_product") or {}).get("product_name") != "합성 시험 우유"
+    assert "합성 시험 우유" not in body["answer"]
+
+
+def test_a_typed_barcode_of_the_selected_product_is_answered(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = f"{payload['product']['barcode']} 먹어도 돼?"
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert not body["product_candidates"] and body["intent"] == "can_i_eat"
+
+
+def test_elaboration_with_a_product_and_no_history_summarizes_it(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "조금만 더 자세하게 알려줘"
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert body["intent"] == "product_summary" and "합성 시험 우유" in body["answer"]
+
+
+def test_elaboration_with_history_keeps_the_previous_topic(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "조금만 더 자세하게 알려줘"
+    payload["chat_history"] = [{"role": "user", "content": "이 제품 먹어도 돼?"}, {"role": "assistant", "content": "충돌 없음"},
+                               {"role": "user", "content": "나트륨은?"}, {"role": "assistant", "content": "40mg"}]
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert body["intent"] == "nutrition_explain" and "나트륨" in body["answer"]
+
+
+def test_a_general_question_while_a_product_is_selected_is_answered_generally(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "HACCP 마크가 뭐야?"
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert body["intent"].startswith("general_") and body["current_product"] is None
     assert "합성 시험 우유" not in body["answer"]

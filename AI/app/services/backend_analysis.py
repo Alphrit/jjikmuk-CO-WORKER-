@@ -233,7 +233,7 @@ def run_backend_pipeline(req, legacy_pipeline):
     from app.services.condition_subject import unresolved_profile_target_response
     from app.services.conversation_controls import (
         conversation_control_response, followup_without_context_response, message_with_previous_topic,
-        say_it_is_safe_response,
+        say_it_is_safe_response, is_elaboration_followup,
     )
     from app.services.emergency_triage import build_emergency_triage_response
     from app.services.request_language import standalone_cancellation_response
@@ -244,8 +244,11 @@ def run_backend_pipeline(req, legacy_pipeline):
     # Backend keys for request snapshots are local to THIS request. Never carry
     # last turn's allergy/vegetarian exceptions onto a different request:0.
     state = {k: v for k, v in req.conversation_state.items() if k not in {"vegetarian_allowances", "pending_allergy"}}
+    original_message = req.message
     req = req.model_copy(update={"message": current_topic_message(message_with_previous_topic(req.message, req.chat_history)),
                                  "conversation_state": state})
+    # The rewritten turn carries its own topic; the history would pull it back to the first question.
+    classify_history = [] if req.message != current_topic_message(original_message) else req.chat_history
     profile = profiles[0] if profiles else None
     from app.services.emergency_triage import symptom_question_guidance
     interrupt = (build_emergency_triage_response(req.message, profiles=profiles, has_food_context=bool(req.product))
@@ -254,10 +257,22 @@ def run_backend_pipeline(req, legacy_pipeline):
                  or conversation_control_response(req.message, state)
                  # The app never sends the previous turn; a bare follow-up needs its topic.
                  or (None if req.chat_history or req.product else followup_without_context_response(req.message, state))
-                 or (None if req.product else say_it_is_safe_response(req.message, state))
+                 or say_it_is_safe_response(req.message, state)
                  or standalone_cancellation_response(req.message, state, profiles=profiles, known_profiles=profiles)
                  or unresolved_profile_target_response(req.message, profiles, profiles, state))
     named_query = _explicit_named_product_query(req.message, profile)
+    from app.intent.explanation_topics import explanation_intent
+    from app.intent.text import detect_ingredient_keyword, detect_nutrition_keyword
+    asks_meaning = re.search(r"뭐야|뭔가요|뭐예요|뭐에요|무엇|이란|란\s|뜻|의미|차이|어떻게\s*봐|왜|진짜|정말", req.message)
+    label_field = detect_nutrition_keyword(req.message) or detect_ingredient_keyword(req.message)
+    if (req.product is not None and not named_query and not interrupt and explanation_intent(req.message)
+            and (asks_meaning or not label_field)):
+        # 'HACCP 마크가 뭐야?' while a product is selected asks about the concept,
+        # not about that product: answer it as a general explanation.
+        # The question is self-contained; earlier turns ('쉽게 설명해줘') must not be searched as products.
+        req = req.model_copy(update={"product": None, "raw_product": None, "barcode": None, "report_number": None,
+                                     "chat_history": []})
+        classify_history = []
     person_named = len(profiles) > 1 and bool(
         re.search(r"(?:^|\s)(?:나|저)만", req.message)
         or any(p.profile_name and p.profile_name in req.message for p in profiles))
@@ -270,7 +285,10 @@ def run_backend_pipeline(req, legacy_pipeline):
     intent_message = req.message
     for name in dict.fromkeys(filter(None, [named_query, req.product.product_name if req.product else None])):
         intent_message = intent_message.replace(name, " ")
-    intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, req.chat_history)
+    intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, classify_history)
+    if req.product and is_elaboration_followup(req.message):
+        # '조금만 더 자세하게 알려줘' with a product and no earlier turn: the product's full summary.
+        intent = "product_summary"
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
         intent = "can_i_eat"
     elif intent in {"unknown", "ambiguous"} and req.product and person_named:
@@ -291,7 +309,8 @@ def run_backend_pipeline(req, legacy_pipeline):
         # '새우깡은?' with 새우깡 selected (e.g. right after tapping its card)
         # asks about the selected product; asking to select it again loops.
         intent = "product_summary"
-    same_product = bool(req.product and (not named_query or candidate_matches_product_query(named_query, req.product)))
+    same_product = bool(req.product and (not named_query or named_query == req.product.barcode
+                                         or candidate_matches_product_query(named_query, req.product)))
     if intent in {"unknown", "ambiguous"} and named_query and any(word in req.message for word in ("찾아", "검색")):
         intent = "product_summary"
     stale = None if interrupt else _stale_selection_choice(req, named_query, intent)

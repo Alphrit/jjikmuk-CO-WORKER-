@@ -882,7 +882,7 @@ def generate_chat_response(
     if control is None and not chat_history and product is None:
         # The app sends no previous turn: a bare '더 자세히 알려줘' needs its topic.
         control = followup_without_context_response(message, conversation_state)
-    if control is None and product is None:
+    if control is None:
         control = say_it_is_safe_response(message, conversation_state)
     if control is not None:
         return attach_response_assessment(control, profiles=effective_profiles, product=None)

@@ -66,7 +66,8 @@ def product_facts_text(product, message, intent):
             if serving is not None:
                 return f"{label}: {number(value)}{unit} ({serving[0]}당)"
             if not basis_known:
-                return f"{label}: {number(value)}{unit} (기준량 미확인)"
+                # The closing sentence says the basis is unknown once, not on every line.
+                return f"{label}: {number(value)}{unit}"
             text = f"{label}: {number(value)}{unit} ({nutrition_basis_label(product)})"
             # Backend-computed values; never multiplied again here.
             contract_key = _CONTRACT_KEYS.get(key)
@@ -77,6 +78,8 @@ def product_facts_text(product, message, intent):
                 text += f", 100{hundred.unit}당 환산 {number(hundred.values[contract_key])}{unit}"
             return text
 
+        order = ["kcal", "carbohydrate", "sugars", "protein", "fat", "saturated_fat", "sodium", "cholesterol"]
+        keys = sorted(keys, key=lambda key: order.index(key) if key in order else len(order))
         lines = [line(key) for key in keys]
         if all(text.endswith(": 정보 없음") for text in lines):
             # Nothing to state a basis for: say what is missing, not why it cannot be scaled.

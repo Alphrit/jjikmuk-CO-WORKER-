@@ -77,7 +77,8 @@ def _required_terms(original: str, response: ChatResponse) -> list[str]:
     for match in re.finditer(r"충돌 항목:\s*([^.\n]+)", original):
         terms += [part.strip() for part in match[1].split(",") if part.strip()]
     terms += [name for name in ALLERGEN_CANONICAL_ALIASES if len(name) >= 2 and name in original]
-    return list(dict.fromkeys(term for term in terms if term))
+    # A product only kept as context ('바나나맛우유' during another comparison) is not in the text to keep.
+    return list(dict.fromkeys(term for term in terms if term and term in original))
 
 
 def _numbers(text: str) -> set[str]:
@@ -111,7 +112,8 @@ def _rejection_reason(original: str, draft: str, response: ChatResponse) -> str 
         return f"required_term:{missing[0][:30]}"
     # '(1회 제공량·100g·총 내용량)' names kinds of basis, not values.
     def values(text):
-        return _numbers(re.sub(r"1\s*회(?=\s*제공량)|100\s*(?:g|ml)(?=\s*[·/,)])", " ", text))
+        # Source dates ('2022년 4월 안내에 따르면') cite the excerpt; they are not facts to keep.
+        return _numbers(re.sub(r"1\s*회(?=\s*제공량)|100\s*(?:g|ml)(?=\s*[·/,)])|외\s*\d+\s*가지|\d{4}\s*년(?:\s*\d{1,2}\s*월)?", " ", text))
     if values(draft) != values(original):
         return "numbers:" + ",".join(sorted(values(draft) ^ values(original)))[:40]
     # Each verdict cue of the rule text must survive.
