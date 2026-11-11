@@ -10,6 +10,7 @@ from app.infrastructure.repository import InMemoryActivityRepository, InMemoryPr
 from app.services import activity, product as product_service
 from app.services.general_handlers import _key_nutrient_overview
 from app.services.product_facts import product_facts_text
+from app.services.product_search import extract_product_search_query
 from backend_v2_helpers import TOKEN, headers, request_payload
 
 
@@ -67,6 +68,16 @@ def test_comparison_uses_a_common_per_100_basis():
                                 "nutrition": contract(basis_amount=50, package=None, per100={"energyKcal": 519.4})})
     text = _key_nutrient_overview([a, b])
     assert "100g당 환산값으로 맞춰" in text and "새우깡 533.3kcal" in text and "칸쵸 519.4kcal" in text
+
+
+@pytest.mark.parametrize("message, query", [
+    ("새우깡 100g당 칼로리 알려줘", "새우깡"),
+    ("매일우유 100ml 기준 당류는?", "매일우유"),
+    ("새우깡 1회 제공량 열량", "새우깡"),
+    ("포키스탠다드 42g 칼로리", "포키스탠다드 42g"),
+])
+def test_a_nutrition_basis_is_not_part_of_the_product_name(message, query):
+    assert extract_product_search_query(message) == query
 
 
 @pytest.fixture

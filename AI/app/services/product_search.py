@@ -130,6 +130,9 @@ _PRODUCT_QUERY_BOUNDARY_PATTERNS = [
     re.compile(r"\s+맛(?:있|없|이\s*어때|은\s*어때|\s*어때)"),
     # '새우깡 몇 칼로리야'
     re.compile(r"\s+몇\s*(?:칼로리|kcal|그램|g|mg|밀리그램)", re.IGNORECASE),
+    # '새우깡 100g당 칼로리', '우유 100ml 기준 당류', '새우깡 1회 제공량': a basis, not a size
+    # ('포키스탠다드 42g' keeps its size because no 당/기준 follows).
+    re.compile(r"\s+(?:\d+(?:\.\d+)?\s*(?:g|ml|그램|밀리리터)\s*(?:당|기준)|1\s*회\s*(?:제공량|분))", re.IGNORECASE),
     # '허니버터칩 한 봉지 칼로리', '코카콜라 당 얼마나 있어', '오레오 오즈 엄마랑 같이 먹어도 돼'
     re.compile(r"\s+(?:한|두|세|네|반|\d+)\s*(?:봉지|봉|개|팩|병|캔|통|줄|조각|컵|잔)(?=\s|$|[은는이가을를도의])"),
     re.compile(r"\s+당(?=\s*(?:얼마|몇|함량|수치|은\s|는\s|이\s|가\s|[?？]|$))"),
