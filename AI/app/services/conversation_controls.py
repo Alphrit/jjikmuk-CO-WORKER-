@@ -137,6 +137,22 @@ FOLLOWUP_WITHOUT_CONTEXT_ANSWER = (
 )
 
 
+_ELABORATE = re.compile(r"자세히|자세하게|쉽게|풀어서|이어서|예를\s*들어|무슨\s*(?:말|뜻)")
+
+
+def message_with_previous_topic(message, chat_history):
+    """'조금만 더 자세하게 알려줘' with history: ask again about the last question's topic."""
+    if not chat_history or not _FOLLOWUP_ONLY.fullmatch(message or "") or not _ELABORATE.search(message):
+        return message
+    for turn in reversed(chat_history):
+        role = turn.get("role") if isinstance(turn, dict) else getattr(turn, "role", None)
+        content = (turn.get("content") if isinstance(turn, dict) else getattr(turn, "content", None)) or ""
+        if role == "user" and content.strip() and not _FOLLOWUP_ONLY.fullmatch(content):
+            # No sentence break: the topic and the request stay one current message.
+            return re.sub(r"[?？.!~\s]+$", "", content.strip()) + " 자세히 알려줘"
+    return message
+
+
 def followup_without_context_response(message, state=None):
     """'조금만 더 자세하게 알려줘' with no previous turn: ask for the topic."""
     if _FOLLOWUP_ONLY.fullmatch(message or ""):

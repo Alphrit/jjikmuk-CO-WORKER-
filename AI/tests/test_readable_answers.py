@@ -115,3 +115,17 @@ def test_only_quoted_example_questions_must_stay_verbatim():
     terms = answer_polish._required_terms(original, ChatResponse(intent="ingredient_check", answer=original,
                                                                  answer_source="backend", risk_level="unknown"))
     assert "새우깡 나트륨 알려줘" in terms and "새우 함유" not in terms and "새우" in terms
+
+
+def test_an_elaboration_follow_up_takes_the_previous_topic():
+    from app.services.conversation_controls import message_with_previous_topic
+    history = [{"role": "user", "content": "콜레스테롤이 뭐야?"}, {"role": "assistant", "content": "콜레스테롤은 …"}]
+    assert message_with_previous_topic("조금만 더 자세하게 알려줘", history) == "콜레스테롤이 뭐야 자세히 알려줘"
+    assert message_with_previous_topic("그게 무슨 말이야?", history) == "콜레스테롤이 뭐야 자세히 알려줘"
+    assert message_with_previous_topic("조금만 더 자세하게 알려줘", []) == "조금만 더 자세하게 알려줘"
+    assert message_with_previous_topic("나는 먹어도 돼?", history) == "나는 먹어도 돼?"  # not an elaboration
+
+
+def test_a_person_singled_out_is_not_part_of_the_product_name():
+    from app.services.product_search import extract_product_search_query
+    assert extract_product_search_query("포키 엄마만 먹어도 돼?") == "포키"

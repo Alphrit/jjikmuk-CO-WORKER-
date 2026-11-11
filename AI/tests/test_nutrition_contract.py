@@ -132,3 +132,28 @@ def test_a_diet_named_in_the_message_is_said_to_be_unapplied(client):
     response = client.post("/chat", json=payload, headers=headers(payload))
     assert response.status_code == 200
     assert "식단 조건(비건)은 프로필에 없어 이번 판정에 반영되지 않았어요" in response.json()["answer"]
+
+
+@pytest.mark.parametrize("message, shown, hidden", [
+    ("엄마만 따로 알려줘", "엄마:", "아빠:"),
+    ("아빠는 먹어도 돼?", "아빠:", "엄마:"),
+])
+def test_a_named_person_gets_only_their_result(client, message, shown, hidden):
+    payload = request_payload(statuses=("DANGER", "PASS"))
+    payload["message"] = message
+    answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+    assert shown in answer and hidden not in answer and "결과만 알려 드릴게요" in answer
+
+
+def test_both_people_named_get_both_results(client):
+    payload = request_payload(statuses=("DANGER", "PASS"))
+    payload["message"] = "엄마랑 아빠 먹어도 돼?"
+    answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+    assert "엄마:" in answer and "아빠:" in answer and "결과만" not in answer
+
+
+def test_me_only_is_a_person_not_a_product_search(client):
+    payload = request_payload(statuses=("DANGER", "PASS"))
+    payload["message"] = "나만 알려줘"
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert body["intent"] == "can_i_eat" and not body["product_candidates"]

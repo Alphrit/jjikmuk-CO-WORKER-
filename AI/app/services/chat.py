@@ -873,8 +873,10 @@ def generate_chat_response(
     from app.services.request_language import standalone_cancellation_response, request_lifecycle, request_state_after_action
     from app.services.conversation_controls import (
         conversation_control_response, followup_without_context_response, history_after_reset,
+        message_with_previous_topic,
     )
     chat_history = history_after_reset(chat_history)
+    message = message_with_previous_topic(message, chat_history)
     control = conversation_control_response(message, conversation_state)
     if control is None and not chat_history and product is None:
         # The app sends no previous turn: a bare '더 자세히 알려줘' needs its topic.

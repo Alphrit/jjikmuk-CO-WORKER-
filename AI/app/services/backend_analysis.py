@@ -97,6 +97,16 @@ def _profile_results(req, intent, *, decisions=True):
     return results
 
 
+def _asked_people(results, message):
+    """The people a turn singles out ('엄마만 따로 알려줘', '나만'), or [] for everyone."""
+    asked = [item for item in results if item.get("profile_name") and re.search(
+        re.escape(item["profile_name"]) + r"(?:\s*님)?(?:만|은|는|이|가|도|의|한테|에게|랑|이랑|하고|와|과)?(?![가-힣A-Za-z0-9])",
+        message)]
+    if re.search(r"(?:^|\s)(?:나|저)만", message):
+        asked += [item for item in results if item.get("target_type") == "self" and item not in asked]
+    return asked if 0 < len(asked) < len(results) else []
+
+
 def decision_response(req, intent, *, lead=""):
     ctx = req.analysis_context
     profiles = [req.profile] if req.profile else req.profiles
@@ -115,9 +125,15 @@ def decision_response(req, intent, *, lead=""):
                     # Same UNKNOWN verdict, but a concrete next step for this person.
                     item["answer"] = item["answer"].replace(_SAFETY_TEXT["UNKNOWN"], guidance)
                     item["reasons"] = [item["answer"][:1000]]
+        asked = _asked_people(results, req.message)
         if len(results) == 1:
             # One person: no name label ('웹테스트: …' reads like a log line).
             text += results[0]["answer"]
+        elif asked:
+            # '엄마만 따로 알려줘': answer for the named people only.
+            names = ", ".join(f"{item['profile_name']} 님" for item in asked)
+            text += (f"요청하신 {names} 결과만 알려 드릴게요.\n"
+                     + "\n".join(f"{item['profile_name']}: {item['answer']}" for item in asked))
         else:
             text += "\n".join(f"{item['profile_name']}: {item['answer']}" for item in results)
     else:
@@ -215,7 +231,9 @@ def run_backend_pipeline(req, legacy_pipeline):
     from app.intent.request_semantics import current_topic_message, personal_assessment_request
     from app.intent.rules import rule_based_classify_intent
     from app.services.condition_subject import unresolved_profile_target_response
-    from app.services.conversation_controls import conversation_control_response, followup_without_context_response
+    from app.services.conversation_controls import (
+        conversation_control_response, followup_without_context_response, message_with_previous_topic,
+    )
     from app.services.emergency_triage import build_emergency_triage_response
     from app.services.request_language import standalone_cancellation_response
     from app.services.conversation_router import _explicit_named_product_query
@@ -225,7 +243,8 @@ def run_backend_pipeline(req, legacy_pipeline):
     # Backend keys for request snapshots are local to THIS request. Never carry
     # last turn's allergy/vegetarian exceptions onto a different request:0.
     state = {k: v for k, v in req.conversation_state.items() if k not in {"vegetarian_allowances", "pending_allergy"}}
-    req = req.model_copy(update={"message": current_topic_message(req.message), "conversation_state": state})
+    req = req.model_copy(update={"message": current_topic_message(message_with_previous_topic(req.message, req.chat_history)),
+                                 "conversation_state": state})
     profile = profiles[0] if profiles else None
     interrupt = (build_emergency_triage_response(req.message, profiles=profiles, has_food_context=bool(req.product))
                  or conversation_control_response(req.message, state)
@@ -234,6 +253,13 @@ def run_backend_pipeline(req, legacy_pipeline):
                  or standalone_cancellation_response(req.message, state, profiles=profiles, known_profiles=profiles)
                  or unresolved_profile_target_response(req.message, profiles, profiles, state))
     named_query = _explicit_named_product_query(req.message, profile)
+    person_named = len(profiles) > 1 and bool(
+        re.search(r"(?:^|\s)(?:나|저)만", req.message)
+        or any(p.profile_name and p.profile_name in req.message for p in profiles))
+    if named_query and re.sub(r"\s*(?:님|만|따로|은|는|도)(?=\s|$)|\s*따로", "", named_query).strip() in {
+            "나", "저", "나만", "저만", *(p.profile_name for p in profiles if p.profile_name)}:
+        # '엄마만 따로 알려줘', '나만 알려줘' name a person, not a product.
+        named_query = None
     # '바나나맛우유 먹어도 돼?' asks about the product, not about 우유: classify
     # without the product's own name.
     intent_message = req.message
@@ -241,6 +267,9 @@ def run_backend_pipeline(req, legacy_pipeline):
         intent_message = intent_message.replace(name, " ")
     intent = rule_based_classify_intent(intent_message if req.product else req.message, req.product, profile, req.chat_history)
     if intent in {"unknown", "ambiguous"} and personal_assessment_request(req.message):
+        intent = "can_i_eat"
+    elif intent in {"unknown", "ambiguous"} and req.product and person_named:
+        # '엄마만 따로 알려줘' with a product: that person's verdict.
         intent = "can_i_eat"
     elif intent in {"unknown", "ambiguous"} and req.product and _bare_label_field(intent_message):
         # '새우깡 칼로리', '새우깡 대두' right after picking the card: the
