@@ -369,7 +369,7 @@ def _comparison_allergy_status(
         )
     return (
         "no_known_match",
-        f"{product_name}: 현재 DB 표시에서 등록 알레르기의 직접 충돌을 찾지 못했어요.",
+        f"{product_name}: 등록된 표시에서 알레르기와 직접 충돌하는 표시를 찾지 못했어요.",
         [f"{product_name} 현재 표시에서 알레르기 직접 충돌 미확인"],
     )
 
@@ -617,7 +617,7 @@ def _comparison_allergy_summary(
         "conflict": "알레르기 기준으로 먼저 보면, 비교 제품 중 피해야 할 제품이 있어요.",
         "cross_contact": "알레르기 기준으로 먼저 보면, 교차접촉 주의가 필요한 제품이 있어요.",
         "unknown": "알레르기 기준으로 먼저 보면, 판정에 필요한 표시 정보가 부족해요.",
-        "no_known_match": "알레르기 기준으로 먼저 보면, 현재 DB 표시에서 등록 알레르기의 직접 충돌을 찾지 못했어요.",
+        "no_known_match": "알레르기 기준으로 먼저 보면, 등록된 표시에서 알레르기와 직접 충돌하는 표시를 찾지 못했어요.",
     }[overall_status]
     return (
         "\n".join([headline, *summary_lines]),

@@ -1144,7 +1144,7 @@ def _stateless_chat_response(
         trusted_user_id=trusted_user_id,
     )
     from app.services.answer_polish import polish_answer
-    response = polish_answer(response)
+    response = polish_answer(response, req.message)
     if _team_unverified_catalog():
         response = _team_catalog_response(response, resolved_product=_resolved_product)
     from app.services.followup_questions import tidy_followups
@@ -1614,7 +1614,7 @@ def _chat_persisted(req: ChatRequest, *, user_id: int) -> ChatResponse:
         )
         # Same post-processing as the stateless path: polish, team bounds and chips.
         from app.services.answer_polish import polish_answer
-        response = polish_answer(response)
+        response = polish_answer(response, req.message)
         if _team_unverified_catalog():
             response = _team_catalog_response(response, resolved_product=resolved_product)
         from app.services.followup_questions import tidy_followups

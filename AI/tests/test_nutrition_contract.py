@@ -157,3 +157,10 @@ def test_me_only_is_a_person_not_a_product_search(client):
     payload["message"] = "나만 알려줘"
     body = client.post("/chat", json=payload, headers=headers(payload)).json()
     assert body["intent"] == "can_i_eat" and not body["product_candidates"]
+
+
+def test_an_amount_question_says_amounts_are_not_judged(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "하루에 몇 개까지 먹어도 돼?"
+    answer = client.post("/chat", json=payload, headers=headers(payload)).json()["answer"]
+    assert "얼마나 먹어도 되는지는 개인 상태에 따라 달라 안내하지 않아요" in answer

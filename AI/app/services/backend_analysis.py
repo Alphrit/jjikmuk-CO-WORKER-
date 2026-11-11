@@ -337,8 +337,11 @@ def run_backend_pipeline(req, legacy_pipeline):
         # message ('비건인데 먹어도 돼?') must not look as if it were applied.
         diet = re.search(r"비건|채식|베지테리언|페스코|락토|vegan|vegetarian", req.message, re.IGNORECASE)
         lead = ""
+        if re.search(r"(?:하루에?|한\s*번에)\s*(?:몇|얼마)|몇\s*(?:개|봉지|봉|잔|캔|병|조각)\s*까지|얼마나\s*(?:먹|마셔|마시)", req.message):
+            # '하루에 몇 개까지': an amount is a personal judgment this service does not make.
+            lead += "얼마나 먹어도 되는지는 개인 상태에 따라 달라 안내하지 않아요. 아래는 알레르기 표시 기준으로 확인한 결과예요.\n"
         if diet and not any(p.resolved_special_diets() for p in profiles):
-            lead = (f"방금 말씀한 식단 조건({diet[0]})은 프로필에 없어 이번 판정에 반영되지 않았어요. "
+            lead += (f"방금 말씀한 식단 조건({diet[0]})은 프로필에 없어 이번 판정에 반영되지 않았어요. "
                     "계속 적용하려면 설정에서 식단 조건을 추가해 주세요.\n")
         response = decision_response(req, intent, lead=lead)
         resolved = req.product

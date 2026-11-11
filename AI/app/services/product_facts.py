@@ -64,10 +64,10 @@ def product_facts_text(product, message, intent):
                 text_value = label_text_value(product, label)
                 return f"{label}: {text_value} (영양성분 표시 원문{label_text_basis(product)})" if text_value else f"{label}: 정보 없음"
             if serving is not None:
-                return f"{label}: {value:,.10g}{unit} ({serving[0]}당)"
+                return f"{label}: {number(value)}{unit} ({serving[0]}당)"
             if not basis_known:
-                return f"{label}: {value:,.10g}{unit} (기준량 미확인)"
-            text = f"{label}: {value:,.10g}{unit} ({nutrition_basis_label(product)})"
+                return f"{label}: {number(value)}{unit} (기준량 미확인)"
+            text = f"{label}: {number(value)}{unit} ({nutrition_basis_label(product)})"
             # Backend-computed values; never multiplied again here.
             contract_key = _CONTRACT_KEYS.get(key)
             if package is not None and package.values.get(contract_key) is not None:
@@ -78,6 +78,10 @@ def product_facts_text(product, message, intent):
             return text
 
         lines = [line(key) for key in keys]
+        if all(text.endswith(": 정보 없음") for text in lines):
+            # Nothing to state a basis for: say what is missing, not why it cannot be scaled.
+            missing_labels = ", ".join(NUTRITION_LABELS[key] for key in keys)
+            return f"등록된 영양정보에 {missing_labels} 값이 없어요. 포장지의 영양성분표를 확인해 주세요.\n"
         if serving is not None:
             tail = f" 포장지 영양성분 표시의 {serving[0]}당 수치예요" + (f"(총 내용량 {serving[1]})" if serving[1] else "") + "."
             if wants_hundred and serving[0] not in {"100g", "100ml"}:

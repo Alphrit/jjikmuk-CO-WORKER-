@@ -21,7 +21,7 @@ def normalize_message(message: str) -> str:
     }
     for before, after in replacements.items():
         text = text.replace(before, after)
-    text = re.sub(r"먹어두(?=\s*(?:돼|되|괜찮))", "먹어도", text)
+    text = re.sub(r"(?:먹어두|머거도|머거두)(?=\s*(?:돼|되|괜찮))", "먹어도", text)
     return " ".join(text.split())
 
 

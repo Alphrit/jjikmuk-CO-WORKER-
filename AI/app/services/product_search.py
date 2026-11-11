@@ -87,7 +87,7 @@ _LEADING_CONVERSATION_PATTERN = re.compile(
 )
 
 _LEADING_PERSONAL_ALLERGY_PATTERN = re.compile(
-    r"^.{1,80}?(?:알레르기|알러지)"
+    r"^.{1,80}?(?:알레르기|알러지|allergy|allergic)"
     # '땅콩 알레르기인데/라서' states the same condition as '알레르기가 있는데'.
     r"(?:(?:가|는|이)?\s*(?:있는데|있어서|있고|있으니|있다면|있어)|(?:인데|이라서|라서|이니까|니까|이어서))"
     r"\s*[,.:;!?~…-]*\s*",
