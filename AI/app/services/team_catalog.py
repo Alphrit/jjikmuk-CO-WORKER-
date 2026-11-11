@@ -176,7 +176,12 @@ def restrict_team_catalog_response(response: ChatResponse, *, resolved_product=N
             answer += '\n선택 전 정보나 출처 미확인 정보로는 섭취 가능 여부를 확정할 수 없어요.'
 
     warning = response.overall_decision in {'avoid', 'caution'}
-    if warning:
+    if warning and response.intent in {'recipe_recommend', 'alternative_food_recommend', 'food_compare'}:
+        # The warning is about the product chosen earlier, not about this request:
+        # keep it, but after the answer and naming that product.
+        name = getattr(resolved_product, 'product_name', None) or '상품'
+        answer += f'\n\n참고로 앞서 선택한 {name}에는 등록 정보상 주의 신호가 있어요. 섭취 전에 해당 표시를 확인해 주세요.'
+    elif warning:
         answer = '등록 정보에 주의 신호가 있어요. 섭취 전에 해당 표시를 확인해 주세요.\n\n' + answer
     bounded = ChatResponse(
         response_id=response.response_id, generated_at=response.generated_at,

@@ -225,6 +225,32 @@ def _bare_label_field(text):
     return None
 
 
+def _without_selection_from_before_reset(req):
+    """'대화 초기화해줘' then '먹어도 돼?': the app still sends the old barcode.
+
+    A product not mentioned since the reset (by the user's question, the
+    candidate it came from, or an answer about it) belongs to the cleared
+    conversation and is ignored.
+    """
+    from app.services.conversation_controls import history_after_reset, is_context_reset
+    from app.services.product_search import candidate_matches_product_query, extract_product_search_query
+    if req.product is None or not any(turn.role == "user" and is_context_reset(turn.content) for turn in req.chat_history):
+        return req
+    after = history_after_reset(req.chat_history)
+    name = req.product.product_name or ""
+
+    def mentions(text, from_user):
+        if name and name in text:
+            return True
+        query = extract_product_search_query(text) if from_user else ""
+        return bool(query) and candidate_matches_product_query(query, req.product)
+
+    if mentions(req.message, True) or any(mentions(turn.content, turn.role == "user") for turn in after):
+        return req
+    return req.model_copy(update={"product": None, "raw_product": None, "barcode": None, "report_number": None,
+                                  "chat_history": after})
+
+
 def run_backend_pipeline(req, legacy_pipeline):
     """Return (response, product, audit context), logging only in the API wrapper."""
     from app.api.adapters import normalize_active_profiles
@@ -241,6 +267,7 @@ def run_backend_pipeline(req, legacy_pipeline):
     from app.services.product_search import candidate_matches_product_query
 
     profiles = normalize_active_profiles(req)
+    req = _without_selection_from_before_reset(req)
     # Backend keys for request snapshots are local to THIS request. Never carry
     # last turn's allergy/vegetarian exceptions onto a different request:0.
     state = {k: v for k, v in req.conversation_state.items() if k not in {"vegetarian_allowances", "pending_allergy"}}

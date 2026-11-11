@@ -71,7 +71,7 @@ def test_team_mode_says_recommendations_and_recipes_are_unavailable(client, monk
     assert ask(client, "간단한 레시피 추천해줘")["answer"] == RECIPE_UNAVAILABLE_ANSWER
     swap = ask(client, "이거 대신 먹을 만한 거 추천해줘", barcode="8800000000000",
                profile={"name": "검증", "allergies": ["대두"]})
-    assert swap["answer"].endswith(RECOMMENDATION_UNAVAILABLE_ANSWER)
+    assert swap["answer"].startswith(RECOMMENDATION_UNAVAILABLE_ANSWER)  # the request first, the earlier product's warning after
     assert not swap.get("recommended_products")
     assert "주의 신호" in swap["answer"], "a registered conflict warning must remain"
 

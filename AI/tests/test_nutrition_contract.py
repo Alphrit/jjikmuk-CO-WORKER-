@@ -204,3 +204,22 @@ def test_a_general_question_while_a_product_is_selected_is_answered_generally(cl
     body = client.post("/chat", json=payload, headers=headers(payload)).json()
     assert body["intent"].startswith("general_") and body["current_product"] is None
     assert "합성 시험 우유" not in body["answer"]
+
+
+
+def test_after_a_reset_the_old_selection_is_not_answered(client):
+    payload = request_payload(statuses=("PASS",))  # the app still sends '합성 시험 우유'
+    payload["message"] = "먹어도 돼?"
+    payload["chat_history"] = [{"role": "user", "content": "이 제품 먹어도 돼?"}, {"role": "assistant", "content": "합성 시험 우유는 …"},
+                               {"role": "user", "content": "대화 초기화해줘"}, {"role": "assistant", "content": "맥락을 비웠어요."},
+                               {"role": "user", "content": "고마워"}, {"role": "assistant", "content": "천만에요."}]
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert "합성 시험 우유" not in body["answer"] and body["current_product"] is None
+
+
+def test_a_product_chosen_after_the_reset_is_kept(client):
+    payload = request_payload(statuses=("PASS",))
+    payload["message"] = "합성 시험 우유 먹어도 돼?"
+    payload["chat_history"] = [{"role": "user", "content": "대화 초기화해줘"}, {"role": "assistant", "content": "맥락을 비웠어요."}]
+    body = client.post("/chat", json=payload, headers=headers(payload)).json()
+    assert (body.get("current_product") or {}).get("product_name") == "합성 시험 우유"
